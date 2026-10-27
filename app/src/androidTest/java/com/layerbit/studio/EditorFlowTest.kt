@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -63,6 +64,13 @@ class EditorFlowTest {
         Thread.sleep(1_200)
         compose.waitForIdle()
     }
+
+    /**
+     * The walk invokes each control's own onClick through semantics. Injected touches right after
+     * a recreate or a programmatic scroll were dropped on the emulator; the flow test above keeps
+     * real touches as the proof that they work.
+     */
+    private fun SemanticsNodeInteraction.tap() { performSemanticsAction(SemanticsActions.OnClick) }
 
     private fun back() {
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
@@ -130,30 +138,29 @@ class EditorFlowTest {
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
         screenshot("01-intro")
-        // The first touch after a recreate was dropped on the emulator; the semantics action is the same onClick.
-        compose.onNodeWithText(app.getString(R.string.intro_skip)).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithText(app.getString(R.string.intro_skip)).tap()
         waitFor { compose.onAllNodesWithTag("openPhotos").fetchSemanticsNodes().isNotEmpty() }
         screenshot("02-home")
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
-        compose.onNodeWithText(app.getString(R.string.home_door_batch)).performClick()
+        compose.onNodeWithText(app.getString(R.string.home_door_batch)).tap()
         waitFor { compose.onAllNodesWithTag("pipelineRun").fetchSemanticsNodes().isNotEmpty() }
         screenshot("03-batch-empty")
         // The picker cannot be driven from a test; the handoff is how a share arrives, and it is the same path.
         app.handoff.offer(fixtures.map { Uri.fromFile(it) })
         back()
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
-        compose.onNodeWithText(app.getString(R.string.home_door_batch)).performClick()
+        compose.onNodeWithText(app.getString(R.string.home_door_batch)).tap()
         compose.waitUntil(20_000) { compose.onAllNodesWithText(app.getString(R.string.tools_clear_all)).fetchSemanticsNodes().isNotEmpty() }
         for (step in listOf("resize", "under", "frame")) {
             compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("step-$step"))
-            compose.onNodeWithTag("step-$step").performClick()
+            compose.onNodeWithTag("step-$step").tap()
         }
         compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("step-under"))
         compose.waitForIdle()
         screenshot("04-batch-steps")
         compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("pipelineRun"))
-        compose.onNodeWithTag("pipelineRun").performClick()
+        compose.onNodeWithTag("pipelineRun").tap()
         compose.waitUntil(60_000) { compose.onAllNodesWithText(app.getString(R.string.tools_start_again)).fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("05-batch-done")
@@ -161,28 +168,28 @@ class EditorFlowTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(project.name))
-        compose.onNodeWithText(project.name).performClick()
+        compose.onNodeWithText(project.name).tap()
         compose.waitUntil(20_000) { compose.onAllNodesWithText("640 × 480").fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("06-editor-crop")
-        compose.onNodeWithContentDescription(app.getString(R.string.panel_light)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_light)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.light_auto)).fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("07-editor-light")
-        compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.looks_presets)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("08-editor-looks")
         back()
         compose.waitForIdle()
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_settings)))
-        compose.onNodeWithContentDescription(app.getString(R.string.app_settings)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.app_settings)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.settings_appearance)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("09-settings")
         back()
         compose.waitForIdle()
         compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_about)))
-        compose.onNodeWithContentDescription(app.getString(R.string.app_about)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.app_about)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.about_title)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("10-about")
         back()
