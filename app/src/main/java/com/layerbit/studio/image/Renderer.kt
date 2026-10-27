@@ -82,13 +82,25 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         BitmapFactory.decodeFile(file.path, b)
         require(b.outWidth > 0 && b.outHeight > 0) { "unsupported" }
         check()
+        val sample = Geometry2D.sampleSize(b.outWidth, b.outHeight, maxPixels, Budget.MAX_EDGE)
+        // A sampled decode skips pixels (PNG, WebP) or drops DCT terms (JPEG), which is not the
+        // filtered shrink the export gets. Where memory allows, decode at half the sampling and
+        // halve with the filter, so a preview is the export's own arithmetic at a smaller size.
+        val over = sample > 1 && 4 * maxPixels <= OVERSAMPLE_CAP && (max(b.outWidth, b.outHeight) + sample / 2 - 1) / (sample / 2) <= Budget.MAX_EDGE
         val opts = BitmapFactory.Options().apply {
-            inSampleSize = Geometry2D.sampleSize(b.outWidth, b.outHeight, maxPixels, Budget.MAX_EDGE)
+            inSampleSize = if (over) sample / 2 else sample
             inPreferredConfig = Bitmap.Config.ARGB_8888
             inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
             inMutable = true
         }
-        val raw = BitmapFactory.decodeFile(file.path, opts) ?: error("undecodable")
+        var raw = BitmapFactory.decodeFile(file.path, opts) ?: error("undecodable")
+        if (over) {
+            check()
+            val fit = Geometry2D.fit(raw.width, raw.height, maxPixels, Budget.MAX_EDGE)
+            val fitted = scale(raw, fit.width, fit.height)
+            if (fitted !== raw) raw.recycle()
+            raw = fitted
+        }
         val m = Matrix()
         when (orientation(file)) {
             2 -> m.setScale(-1f, 1f); 3 -> m.setRotate(180f); 4 -> m.setScale(1f, -1f)
@@ -438,6 +450,9 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     }
 
     companion object {
+        /** The most a preview decode may oversample to: 24 MB of pixels, passing, on any phone. */
+        const val OVERSAMPLE_CAP = 6_000_000L
+
         /** A thumbnail of [file] at about [maxPixels], or null when it cannot be decoded. */
         fun thumbnail(file: File, maxPixels: Long = Budget.THUMB_PIXELS): Bitmap? =
             runCatching { Renderer().decode(file, maxPixels) }.getOrNull()

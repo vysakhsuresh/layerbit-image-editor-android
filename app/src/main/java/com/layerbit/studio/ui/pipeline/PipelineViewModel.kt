@@ -40,7 +40,7 @@ data class Steps(
     val watermarkOn: Boolean = false, val watermarkText: String = "", val watermarkOpacity: Float = 0.35f, val watermarkAngle: Float = -30f, val watermarkSize: Float = 0.03f, val watermarkColor: Int = 0xFFFFFFFF.toInt(),
     val frameOn: Boolean = false, val frame: Frame = Frame(padding = 0.05f),
     val keepCamera: Boolean = false, val allowShrink: Boolean = true,
-    val pattern: String = "{name}"
+    val pattern: String = ""
 ) {
     val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn
 }

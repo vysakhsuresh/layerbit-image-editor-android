@@ -215,10 +215,13 @@ class RendererTest {
         val text = Mark(MarkKind.TEXT, listOf(Pt(0.7f, 0.7f)), text = "Layerbit", color = Color.WHITE, width = 0.06f)
         val watermark = Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), text = "©", opacity = 0.5f, angle = -30f)
         for (pixels in listOf(100_000L, 120_000L)) {
-            val b = renderer.render(src, Recipe(marks = listOf(cover, text, watermark)), maxPixels = pixels)
+            // The watermark tiles the whole canvas, so the cover is checked under the text alone.
+            val b = renderer.render(src, Recipe(marks = listOf(cover, text)), maxPixels = pixels)
             val inside = b.getPixel((b.width * 0.25f).toInt(), (b.height * 0.25f).toInt())
             assertEquals(Color.BLACK, inside)
-            b.recycle()
+            val marked = renderer.render(src, Recipe(marks = listOf(cover, text, watermark)), maxPixels = pixels)
+            assertTrue("A watermark changes the picture", renderer.difference(b, marked) > 0.0)
+            b.recycle(); marked.recycle()
         }
         val blur = Mark(MarkKind.BLUR, listOf(Pt(0.1f, 0.1f), Pt(0.9f, 0.9f)), width = 0.1f)
         val plain = renderer.render(src, Recipe())

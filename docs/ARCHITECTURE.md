@@ -26,7 +26,7 @@ Recipes are JSON written and read by hand, with a default for every missing fiel
 
 ## Two render stages
 
-`Renderer.geometry` decodes within the budget, turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
+`Renderer.geometry` decodes within the budget (a preview decodes at twice the sampling and is halved with the filter, so it is the export's own shrink rather than skipped pixels), turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
 
 `Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables, across the cores by rows), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas and the frame. Every pure step is the same at any size, which `RendererTest.previewPredictsExport` measures.
 

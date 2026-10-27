@@ -47,7 +47,8 @@ data class Pipeline(
     val quality: Int = 90,
     val keepCamera: Boolean = false,
     val allowShrink: Boolean = true,
-    val pattern: String = "{name}"
+    /** Blank means the step's own default: "{name}-clean" for a cleaning-only run, "{name}" otherwise. */
+    val pattern: String = ""
 ) {
     data class Watermark(val text: String, val opacity: Float = 0.35f, val angle: Float = -30f, val size: Float = 0.03f, val color: Int = 0xFFFFFFFF.toInt())
 
