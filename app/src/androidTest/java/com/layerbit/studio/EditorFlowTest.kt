@@ -6,15 +6,19 @@ import android.net.Uri
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import com.layerbit.studio.prefs.ThemeChoice
 import androidx.emoji2.text.EmojiCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -43,6 +47,11 @@ class EditorFlowTest {
         val image = requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
         File(folder, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
         image.recycle()
+    }
+
+    private fun back() {
+        compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
     }
 
     @Test
@@ -81,5 +90,91 @@ class EditorFlowTest {
 
         assertArrayEquals(original, fixture.readBytes())
         assertFalse("Opening the editor must not enable downloadable fonts", EmojiCompat.isConfigured())
+    }
+
+    /**
+     * Every screen once, for the listing and for a look at the build: intro, home in both
+     * themes, the batch pipeline with steps on and its results, the editor on two panels,
+     * settings and about. Nothing is asserted beyond the walk completing.
+     */
+    @Test
+    fun everyScreenOnce() {
+        val app = ApplicationProvider.getApplicationContext<StudioApplication>()
+        val fixtures = (1..3).map { i ->
+            File(app.cacheDir, "walk-$i.jpg").also { f ->
+                Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888).apply {
+                    for (y in 0 until 480) for (x in 0 until 640) setPixel(x, y, Color.rgb((x * 255 / 640 + i * 40) % 256, (y * 255 / 480), (255 - x * 255 / 640 + i * 60) % 256))
+                    f.outputStream().use { compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                    recycle()
+                }
+            }
+        }
+        val project = runBlocking { app.store.importProject(Uri.fromFile(fixtures[0])) }
+        app.settings.update { it.copy(theme = ThemeChoice.LIGHT) }
+        app.prompts.introSeen = false
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        screenshot("01-intro")
+        compose.onNodeWithText(app.getString(R.string.intro_skip)).performClick()
+        compose.waitForIdle()
+        screenshot("02-home")
+
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
+        compose.onNodeWithText(app.getString(R.string.home_door_batch)).performClick()
+        compose.waitForIdle()
+        screenshot("03-batch-empty")
+        // The picker cannot be driven from a test; the handoff is how a share arrives, and it is the same path.
+        app.handoff.offer(fixtures.map { Uri.fromFile(it) })
+        back()
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
+        compose.onNodeWithText(app.getString(R.string.home_door_batch)).performClick()
+        compose.waitUntil(20_000) { compose.onAllNodesWithText(app.getString(R.string.tools_clear_all)).fetchSemanticsNodes().isNotEmpty() }
+        for (step in listOf("resize", "under", "frame")) {
+            compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("step-$step"))
+            compose.onNodeWithTag("step-$step").performClick()
+        }
+        compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("step-under"))
+        compose.waitForIdle()
+        screenshot("04-batch-steps")
+        compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("pipelineRun"))
+        compose.onNodeWithTag("pipelineRun").performClick()
+        compose.waitUntil(60_000) { compose.onAllNodesWithText(app.getString(R.string.tools_start_again)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        screenshot("05-batch-done")
+        back()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(project.name))
+        compose.onNodeWithText(project.name).performClick()
+        compose.waitUntil(20_000) { compose.onAllNodesWithTag("editorExport").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        screenshot("06-editor-crop")
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_light)).performClick()
+        compose.waitForIdle()
+        screenshot("07-editor-light")
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).performClick()
+        compose.waitForIdle()
+        screenshot("08-editor-looks")
+        back()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_settings)))
+        compose.onNodeWithContentDescription(app.getString(R.string.app_settings)).performClick()
+        compose.waitForIdle()
+        screenshot("09-settings")
+        back()
+        compose.waitForIdle()
+        compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_about)))
+        compose.onNodeWithContentDescription(app.getString(R.string.app_about)).performClick()
+        compose.waitForIdle()
+        screenshot("10-about")
+        back()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("openPhotos"))
+        app.settings.update { it.copy(theme = ThemeChoice.DARK) }
+        compose.waitForIdle()
+        screenshot("11-home-dark")
+        app.settings.update { it.copy(theme = ThemeChoice.SYSTEM) }
     }
 }

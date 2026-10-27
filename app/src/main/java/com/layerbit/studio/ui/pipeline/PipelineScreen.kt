@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -113,7 +114,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StudioFile) -> Unit, vm: Pip
     val shown = if (job.belongsTo(ToolId.PROCESS)) job else JobState.Idle
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
+        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize().testTag("pipelineList")) {
             if (shown is JobState.Finished) {
                 item {
                     Panel(Modifier.fillMaxWidth(), tint = if (shown.failed.isEmpty()) StudioColors.Done else StudioColors.Skipped) {
@@ -170,7 +171,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StudioFile) -> Unit, vm: Pip
                     }
                 } else {
                     val label = if (vm.steps.anyOn) stringResource(R.string.pipeline_run, ui.files.size) else stringResource(R.string.pipeline_run_clean, ui.files.size)
-                    PrimaryButton(label, onClick = vm::run, modifier = Modifier.fillMaxWidth(), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
+                    PrimaryButton(label, onClick = vm::run, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                     Hint(stringResource(R.string.tools_run_note))
                 }
             }
@@ -193,7 +194,7 @@ private fun InputRow(files: List<StudioFile>, thumbnail: suspend (StudioFile) ->
 
 /** One panel per step: a switch in its header, the options under it when it is on. */
 @Composable
-private fun Step(title: String, detail: String, iconRes: Int, accent: Color, on: Boolean, onToggle: (Boolean) -> Unit, content: @Composable () -> Unit) {
+private fun Step(key: String, title: String, detail: String, iconRes: Int, accent: Color, on: Boolean, onToggle: (Boolean) -> Unit, content: @Composable () -> Unit) {
     Panel(Modifier.fillMaxWidth().padding(bottom = 10.dp), tint = if (on) accent else null, inset = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(iconRes = iconRes, accent = accent, size = 34.dp, lively = on)
@@ -201,7 +202,7 @@ private fun Step(title: String, detail: String, iconRes: Int, accent: Color, on:
                 Text(title, style = MaterialTheme.typography.titleMedium, color = StudioColors.Text)
                 Text(detail, style = MaterialTheme.typography.bodySmall, color = StudioColors.Dim)
             }
-            Switch(checked = on, onCheckedChange = onToggle, colors = SwitchDefaults.colors(checkedThumbColor = StudioColors.OnBand, checkedTrackColor = StudioColors.Band, uncheckedThumbColor = StudioColors.Muted, uncheckedTrackColor = StudioColors.SurfaceDim, uncheckedBorderColor = StudioColors.Border))
+            Switch(checked = on, onCheckedChange = onToggle, modifier = Modifier.testTag("step-$key"), colors = SwitchDefaults.colors(checkedThumbColor = StudioColors.OnBand, checkedTrackColor = StudioColors.Band, uncheckedThumbColor = StudioColors.Muted, uncheckedTrackColor = StudioColors.SurfaceDim, uncheckedBorderColor = StudioColors.Border))
         }
         AnimatedVisibility(on) { Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { content() } }
     }
@@ -210,7 +211,7 @@ private fun Step(title: String, detail: String, iconRes: Int, accent: Color, on:
 @Composable
 private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
     Column {
-        Step(stringResource(R.string.tool_resize_title), stringResource(R.string.step_resize_detail), R.drawable.ic_tool_resize, Color(0xFF3ED3C0), s.resizeOn, { set(s.copy(resizeOn = it)) }) {
+        Step("resize", stringResource(R.string.tool_resize_title), stringResource(R.string.step_resize_detail), R.drawable.ic_tool_resize, Color(0xFF3ED3C0), s.resizeOn, { set(s.copy(resizeOn = it)) }) {
             ChipRow(listOf("edge" to stringResource(R.string.resize_long_edge), "percent" to stringResource(R.string.resize_percent), "exact" to stringResource(R.string.resize_exact)), s.resizeMode, { set(s.copy(resizeMode = it)) })
             when (s.resizeMode) {
                 "edge" -> { ChipRow(listOf("640", "1080", "1600", "1920", "2560", "4096").map { it to it }, s.longEdge, { set(s.copy(longEdge = it)) }); NumberField(s.longEdge, { set(s.copy(longEdge = it)) }, stringResource(R.string.resize_long_edge_px)) }
@@ -218,33 +219,33 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
                 else -> ExactSize(s.exactWidth, s.exactHeight, { set(s.copy(exactWidth = it)) }, { set(s.copy(exactHeight = it)) })
             }
         }
-        Step(stringResource(R.string.tool_resize_kb_title), stringResource(R.string.step_under_detail), R.drawable.ic_tool_resize_kb, Color(0xFF3ED3C0), s.underOn, { set(s.copy(underOn = it)) }) {
+        Step("under", stringResource(R.string.tool_resize_kb_title), stringResource(R.string.step_under_detail), R.drawable.ic_tool_resize_kb, Color(0xFF3ED3C0), s.underOn, { set(s.copy(underOn = it)) }) {
             ChipRow(listOf("20", "50", "100", "200", "500", "1000").map { it to FitSize.limitText(it.toFloat()) }, s.underKb, { set(s.copy(underKb = it)) })
             NumberField(s.underKb, { set(s.copy(underKb = it)) }, stringResource(R.string.kb_limit_label), decimal = true)
             ToggleRow(stringResource(R.string.kb_passport), s.passport, { set(s.copy(passport = it)) }, detail = stringResource(R.string.engine_passport_note))
             ToggleRow(stringResource(R.string.export_allow_shrink), s.allowShrink, { set(s.copy(allowShrink = it)) }, detail = stringResource(R.string.export_allow_shrink_detail))
             Hint(stringResource(R.string.kb_hint))
         }
-        Step(stringResource(R.string.tool_convert_title), stringResource(R.string.step_format_detail), R.drawable.ic_tool_convert, Color(0xFF3ED3C0), s.formatOn, { set(s.copy(formatOn = it)) }) {
+        Step("format", stringResource(R.string.tool_convert_title), stringResource(R.string.step_format_detail), R.drawable.ic_tool_convert, Color(0xFF3ED3C0), s.formatOn, { set(s.copy(formatOn = it)) }) {
             ChipRow(OutputFormat.entries.filter { it.available }.map { it to it.label }, s.format, { set(s.copy(format = it)) })
             if (s.format.lossy) Knob(stringResource(R.string.export_quality), s.quality / 100f, 0.4f..1f, onChange = { set(s.copy(quality = (it * 100).roundToInt())) }, onDone = {}, onReset = { set(s.copy(quality = 90)) }, format = { "${(it * 100).roundToInt()}" })
             Hint(stringResource(R.string.convert_hint))
         }
-        Step(stringResource(R.string.tool_enhance_title), stringResource(R.string.step_enhance_detail), R.drawable.ic_tool_enhance, Color(0xFF5B9DFF), s.enhance, { set(s.copy(enhance = it)) }) { Hint(stringResource(R.string.enhance_hint)) }
-        Step(stringResource(R.string.tool_looks_title), stringResource(R.string.step_look_detail), R.drawable.ic_tool_looks, Color(0xFF5B9DFF), s.lookOn, { set(s.copy(lookOn = it)) }) {
+        Step("enhance", stringResource(R.string.tool_enhance_title), stringResource(R.string.step_enhance_detail), R.drawable.ic_tool_enhance, Color(0xFF5B9DFF), s.enhance, { set(s.copy(enhance = it)) }) { Hint(stringResource(R.string.enhance_hint)) }
+        Step("look", stringResource(R.string.tool_looks_title), stringResource(R.string.step_look_detail), R.drawable.ic_tool_looks, Color(0xFF5B9DFF), s.lookOn, { set(s.copy(lookOn = it)) }) {
             ChipRow(Look.entries.map { it to lookLabel(it) }, s.look, { set(s.copy(look = it)) })
             if (s.look != Look.NONE) Knob(stringResource(R.string.looks_strength), s.lookStrength, 0f..1f, onChange = { set(s.copy(lookStrength = it)) }, onDone = {}, onReset = { set(s.copy(lookStrength = 1f)) })
             if (presets.isNotEmpty()) { SectionHeading(stringResource(R.string.looks_presets), modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)); ChipRow(listOf("" to stringResource(R.string.look_none)) + presets.map { it to it }, s.recipeName, { set(s.copy(recipeName = it)) }) }
             else Hint(stringResource(R.string.recipe_none))
         }
-        Step(stringResource(R.string.tool_watermark_title), stringResource(R.string.step_watermark_detail), R.drawable.ic_tool_watermark, Color(0xFFB08CFF), s.watermarkOn, { set(s.copy(watermarkOn = it)) }) {
+        Step("watermark", stringResource(R.string.tool_watermark_title), stringResource(R.string.step_watermark_detail), R.drawable.ic_tool_watermark, Color(0xFFB08CFF), s.watermarkOn, { set(s.copy(watermarkOn = it)) }) {
             OutlinedTextField(s.watermarkText, { set(s.copy(watermarkText = it.take(60))) }, label = { Text(stringResource(R.string.watermark_text)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColours())
             ColourRow(InkColours, s.watermarkColor, { set(s.copy(watermarkColor = it)) })
             Knob(stringResource(R.string.layers_opacity), s.watermarkOpacity, 0.05f..1f, onChange = { set(s.copy(watermarkOpacity = it)) }, onDone = {}, onReset = { set(s.copy(watermarkOpacity = 0.35f)) })
             Knob(stringResource(R.string.layers_angle), s.watermarkAngle, -90f..90f, onChange = { set(s.copy(watermarkAngle = it)) }, onDone = {}, onReset = { set(s.copy(watermarkAngle = -30f)) }, format = { "${it.toInt()}°" })
             Knob(stringResource(R.string.mark_text_size), s.watermarkSize, 0.01f..0.1f, onChange = { set(s.copy(watermarkSize = it)) }, onDone = {}, onReset = { set(s.copy(watermarkSize = 0.03f)) }, format = { "${(it * 1000).roundToInt()}" })
         }
-        Step(stringResource(R.string.tool_frame_title), stringResource(R.string.step_frame_detail), R.drawable.ic_tool_frame, Color(0xFFB08CFF), s.frameOn, { set(s.copy(frameOn = it)) }) {
+        Step("frame", stringResource(R.string.tool_frame_title), stringResource(R.string.step_frame_detail), R.drawable.ic_tool_frame, Color(0xFFB08CFF), s.frameOn, { set(s.copy(frameOn = it)) }) {
             ChipRow(listOf(0f to stringResource(R.string.crop_original), 1f to "1:1", 4f / 5f to "4:5", 16f / 9f to "16:9", 9f / 16f to "9:16"), s.frame.aspect, { a -> set(s.copy(frame = s.frame.copy(aspect = a))) })
             Knob(stringResource(R.string.frame_padding), s.frame.padding, 0f..0.3f, onChange = { set(s.copy(frame = s.frame.copy(padding = it))) }, onDone = {}, onReset = { set(s.copy(frame = s.frame.copy(padding = 0.05f))) })
             Knob(stringResource(R.string.frame_border), s.frame.border, 0f..0.1f, onChange = { set(s.copy(frame = s.frame.copy(border = it))) }, onDone = {}, onReset = { set(s.copy(frame = s.frame.copy(border = 0f))) })

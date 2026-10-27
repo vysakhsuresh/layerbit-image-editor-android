@@ -55,7 +55,9 @@ jobs:
             app/build/reports/
   device:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -75,6 +77,18 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: bash tools/device_checks.sh
+      - name: Keep the screenshots in docs/screenshots when the commit asks ([screens])
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[screens]')
+        run: |
+          mkdir -p docs/screenshots
+          find device-screenshots -name '*.png' -exec cp {} docs/screenshots/ \;
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          git diff --cached --quiet && exit 0
+          git commit -m "Screenshots from emulator run ${{ github.run_id }} [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin HEAD:"${{ github.ref_name }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
