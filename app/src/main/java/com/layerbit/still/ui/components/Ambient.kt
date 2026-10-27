@@ -46,10 +46,11 @@ fun AmbientBackdrop(modifier: Modifier = Modifier, strength: Float = 1f) {
             val centre = Offset(cx, cy)
             drawCircle(Brush.radialGradient(listOf(c.copy(alpha = a * k), c.copy(alpha = 0f)), center = centre, radius = r), r, centre)
         }
-        pool(band, w * (0.88f + 0.06f * sin(t)), h * (0.06f + 0.04f * cos(t * 0.7f)), w * 0.6f, 0.30f)
-        pool(teal, w * (0.08f + 0.05f * cos(t * 0.9f)), h * (0.42f + 0.05f * sin(t * 1.1f)), w * 0.55f, 0.20f)
-        pool(pink, w * (0.72f + 0.05f * sin(t * 0.8f + 1f)), h * (0.78f + 0.04f * cos(t)), w * 0.5f, 0.16f)
-        pool(blue, w * (0.18f + 0.04f * sin(t * 1.3f)), h * 0.98f, w * 0.45f, 0.12f)
+        // One drift a lap, each pool on its own phase, so the loop joins without a jump.
+        pool(band, w * (0.88f + 0.06f * sin(t)), h * (0.06f + 0.04f * cos(t + 1.2f)), w * 0.6f, 0.30f)
+        pool(teal, w * (0.08f + 0.05f * cos(t + 2.4f)), h * (0.42f + 0.05f * sin(t + 0.6f)), w * 0.55f, 0.20f)
+        pool(pink, w * (0.72f + 0.05f * sin(t + 4.1f)), h * (0.78f + 0.04f * cos(t + 3.3f)), w * 0.5f, 0.16f)
+        pool(blue, w * (0.18f + 0.04f * sin(t + 5.2f)), h * (0.98f + 0.03f * cos(t + 1.9f)), w * 0.45f, 0.12f)
     }
 }
 
