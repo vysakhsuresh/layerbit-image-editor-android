@@ -132,7 +132,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         dropBase()
         undo.clear(); redo.clear()
         baseline = p.recipe
-        _ui.update { u -> u.original?.recycle(); u.preview?.recycle(); Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
+        _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
         requestRender()
     }
 
@@ -270,10 +270,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     Histogram.of(px)
                 }
                 val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
-                _ui.update { u ->
-                    u.preview?.takeIf { it !== finished && it !== u.original }?.recycle()
-                    u.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas)
-                }
+                // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
+                // old one, and from API 26 the garbage collector frees pixel memory itself.
+                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas) }
             } catch (c: CancellationException) {
                 throw c
             } catch (e: OutOfMemoryError) {
@@ -359,9 +358,6 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         dropBase()
-        _ui.value.preview?.recycle()
-        _ui.value.original?.recycle()
-        _ui.value.exportPreview?.recycle()
     }
 
     companion object {
