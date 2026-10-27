@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="app_name">Layerbit Studio</string>
+    <string name="app_name_short">Studio</string>
+    <string name="app_tagline">तस्वीर का हर टूल. आपके फ़ोन से बाहर कुछ नहीं जाता.</string>
+    <string name="app_settings">सेटिंग</string>
+    <string name="app_about">जानकारी</string>
+    <string name="app_back">वापस जाएं</string>
+    <string name="app_clear">हटाएं</string>
+    <string name="app_delete">मिटाएं</string>
+    <string name="app_cancel">रद्द करें</string>
+    <string name="app_close">बंद करें</string>
+    <string name="app_ok">ठीक है</string>
+    <string name="app_save">सहेजें</string>
+    <string name="app_share">साझा करें</string>
+    <string name="app_pill_free">सभी टूल मुफ़्त</string>
+    <string name="app_pill_no_internet">इंटरनेट नहीं</string>
+    <string name="app_pill_no_account">खाता नहीं</string>
+    <string name="app_pill_no_tracking">ट्रैकिंग नहीं</string>
+    <string name="app_theme_system">फ़ोन जैसा</string>
+    <string name="app_theme_light">हल्का</string>
+    <string name="app_theme_dark">गहरा</string>
+    <string name="app_job_stopped">काम अचानक रुक गया. जो तस्वीरें बन चुकी थीं, वे रखी गई हैं.</string>
+    <plurals name="app_tool_count">
+        <item quantity="one">%d टूल</item>
+        <item quantity="other">%d टूल</item>
+    </plurals>
+
+    <!-- Errors around files -->
+    <string name="app_error_open_revoked">%1$s पढ़ी नहीं जा सकी. जिस ऐप के पास यह है, उसने पहुंच वापस ले ली होगी; इसे फिर से चुनें.</string>
+    <string name="app_error_empty">%1$s खाली है.</string>
+    <string name="app_error_too_large">%1$s 100 MB से बड़ी है, जो फ़ोन पर संपादन के लिए बहुत ज़्यादा है.</string>
+    <string name="app_error_not_image">%1$s ऐसी स्थिर तस्वीर नहीं है जिसे यह फ़ोन खोल सके.</string>
+    <string name="app_error_write_location">उस जगह पर लिखा नहीं जा सकता.</string>
+    <string name="app_error_write_removed_replaced">%1$s लिखी नहीं जा सकी. अधूरी फ़ाइल हटा दी गई; जिस दस्तावेज़ को आपने बदलना चुना था वह भी चला गया, और तस्वीर यहां फिर से सहेजने के लिए मौजूद है.</string>
+    <string name="app_error_write_removed">%1$s लिखी नहीं जा सकी. अधूरी फ़ाइल हटा दी गई; तस्वीर यहां फिर से सहेजने के लिए मौजूद है.</string>
+    <string name="app_error_write_incomplete">%1$s लिखी नहीं जा सकी और वहां की फ़ाइल अब अधूरी है. उस पर फिर से सहेजें.</string>
+    <string name="app_error_write_left_behind">%1$s लिखी नहीं जा सकी. आपकी चुनी जगह पर एक अधूरी फ़ाइल रह गई है; उसे मिटाकर फिर से सहेजें.</string>
+    <string name="app_error_with_reason">%1$s %2$s</string>
+    <string name="app_error_permission_withdrawn">उस जगह की अनुमति वापस ले ली गई.</string>
+    <string name="app_error_no_space">स्टोरेज भर गया है.</string>
+    <string name="app_error_read_only">वह स्टोरेज सिर्फ़ पढ़ने के लिए है.</string>
+    <string name="app_error_folder_gone">आपका चुना फ़ोल्डर अब उपलब्ध नहीं है. दूसरा चुनें.</string>
+    <string name="app_error_folder_denied">आपका चुना फ़ोल्डर लिखने की अनुमति नहीं देता. दूसरा चुनें.</string>
+    <string name="app_error_create_failed">%1$s उस फ़ोल्डर में बनाई नहीं जा सकी.</string>
+
+    <!-- Shortcuts -->
+    <string name="shortcut_edit_short">संपादन</string>
+    <string name="shortcut_edit_long">तस्वीर संपादित करें</string>
+    <string name="shortcut_resize_short">KB के नीचे</string>
+    <string name="shortcut_resize_long">फ़ोटो तय आकार के नीचे</string>
+    <string name="shortcut_strip_short">छिपा डेटा हटाएं</string>
+    <string name="shortcut_strip_long">छिपा डेटा हटाएं</string>
+
+    <!-- Groups -->
+    <string name="group_edit">तस्वीर संपादित करें</string>
+    <string name="group_mark">निशान और सजावट</string>
+    <string name="group_size">आकार और फ़ॉर्मैट</string>
+    <string name="group_privacy">निजता</string>
+    <string name="group_batch">एक साथ कई</string>
+
+    <!-- Tools -->
+    <string name="tool_edit_title">संपादन</string>
+    <string name="tool_edit_summary">क्रॉप, रोशनी, रंग, कर्व, लुक, परतें और निर्यात, सब एक जगह</string>
+    <string name="tool_edit_action">एडिटर खोलें</string>
+    <string name="tool_crop_title">क्रॉप और सीधा करें</string>
+    <string name="tool_crop_summary">कोने खींचें, क्षितिज सीधा करें, घुमाएं और पलटें, सटीक पिक्सेल तय करें</string>
+    <string name="tool_crop_action">क्रॉप करें</string>
+    <string name="tool_perspective_title">दस्तावेज़ सीधा करें</string>
+    <string name="tool_perspective_summary">पन्ने, स्क्रीन या बोर्ड के चारों कोनों पर खींचें और वह चौकोर हो जाता है</string>
+    <string name="tool_perspective_action">चौकोर करें</string>
+    <string name="tool_light_title">रोशनी</string>
+    <string name="tool_light_summary">एक्सपोज़र, कंट्रास्ट, हाइलाइट, छाया, सफ़ेद और काला, एक टैप के ऑटो के साथ</string>
+    <string name="tool_light_action">रोशनी बदलें</string>
+    <string name="tool_colour_title">रंग</string>
+    <string name="tool_colour_summary">तापमान, टिंट, वाइब्रेंस, संतृप्ति और ह्यू</string>
+    <string name="tool_colour_action">रंग बदलें</string>
+    <string name="tool_curves_title">कर्व</string>
+    <string name="tool_curves_summary">टोन कर्व जिसे आप खींचते हैं, सभी चैनलों या हर एक के लिए</string>
+    <string name="tool_curves_action">कर्व खोलें</string>
+    <string name="tool_looks_title">लुक और रेसिपी</string>
+    <string name="tool_looks_summary">चौदह लुक जो बताते हैं कि कौन-से स्लाइडर बदलते हैं, और आपकी सहेजी रेसिपी</string>
+    <string name="tool_looks_action">लुक चुनें</string>
+    <string name="tool_detail_title">बारीकी और बनावट</string>
+    <string name="tool_detail_summary">तीखापन, स्पष्टता, धुंध हटाना, फ़ेड, विग्नेट और ग्रेन</string>
+    <string name="tool_detail_action">बारीकी बदलें</string>
+    <string name="tool_markup_title">बनाएं और लिखें</string>
+    <string name="tool_markup_summary">हाथ से रेखा, तीर, डिब्बे, गोले और टेक्स्ट जिसे बाद में हिलाया जा सके</string>
+    <string name="tool_markup_action">निशान लगाएं</string>
+    <string name="tool_retouch_title">छिपाएं और सुधारें</string>
+    <string name="tool_retouch_summary">कोई हिस्सा धुंधला, पिक्सेलेट या ढकें, पारदर्शी मिटाएं, दाग पर क्लोन करें</string>
+    <string name="tool_retouch_action">सुधारें</string>
+    <string name="tool_frame_title">फ़्रेम और पैड</string>
+    <string name="tool_frame_summary">चौकोर या स्टोरी के लिए पैड करें, किनारा जोड़ें, कोने गोल करें, भराव धुंधला करें</string>
+    <string name="tool_frame_action">फ़्रेम करें</string>
+    <string name="tool_watermark_title">वॉटरमार्क</string>
+    <string name="tool_watermark_summary">हर तस्वीर पर आपका नाम या ©, तिरछा, हल्का या गहरा</string>
+    <string name="tool_watermark_action">वॉटरमार्क लगाएं</string>
+    <string name="tool_resize_title">आकार बदलें</string>
+    <string name="tool_resize_summary">सबसे लंबा किनारा, प्रतिशत या सटीक पिक्सेल, एक तस्वीर या पचास के लिए</string>
+    <string name="tool_resize_action">आकार बदलें</string>
+    <string name="tool_resize_kb_title">फ़ोटो तय आकार के नीचे</string>
+    <string name="tool_resize_kb_summary">20 KB, 50 KB या जो भी फ़ॉर्म मांगे, पासपोर्ट फ़ोटो या सटीक पिक्सेल के रूप में</string>
+    <string name="tool_resize_kb_action">आकार के नीचे लाएं</string>
+    <string name="tool_compress_title">संपीड़ित करें</string>
+    <string name="tool_compress_summary">आपकी चुनी गुणवत्ता या तय आकार के नीचे, असली फ़ाइल पर मापा हुआ</string>
+    <string name="tool_compress_action">संपीड़ित करें</string>
+    <string name="tool_convert_title">बदलें</string>
+    <string name="tool_convert_summary">JPEG, PNG, WebP और लॉसलेस WebP, फ़ोन जो भी खोल सके उससे</string>
+    <string name="tool_convert_action">फ़ॉर्मैट बदलें</string>
+    <string name="tool_strip_title">छिपा डेटा हटाएं</string>
+    <string name="tool_strip_summary">लोकेशन, कैमरा और फ़ोटो में छिपा बाकी सब, JPEG को दोबारा एन्कोड किए बिना</string>
+    <string name="tool_strip_action">हटाएं</string>
+    <string name="tool_details_title">अंदर क्या है</string>
+    <string name="tool_details_summary">पिक्सेल, कैमरा फ़ील्ड और फ़ाइल में लोकेशन छिपी है या नहीं</string>
+    <string name="tool_details_action">अंदर देखें</string>
+    <string name="tool_enhance_title">अपने आप निखारें</string>
+    <string name="tool_enhance_summary">हर तस्वीर के अपने हिस्टोग्राम से लेवल और एक्सपोज़र, बिना किसी मॉडल के</string>
+    <string name="tool_enhance_action">निखारें</string>
+    <string name="tool_recipe_title">रेसिपी लागू करें</string>
+    <string name="tool_recipe_summary">आपका सहेजा संपादन, जितनी चाहें उतनी तस्वीरों पर</string>
+    <string name="tool_recipe_action">लागू करें</string>
+    <string name="tool_collage_title">कोलाज</string>
+    <string name="tool_collage_summary">दो से बारह तस्वीरें एक कैनवस पर: ग्रिड, कॉलम, फ़ीचर, पट्टी या पोलरॉइड</string>
+    <string name="tool_collage_action">कोलाज बनाएं</string>
+    <string name="tool_export">निर्यात</string>
+
+    <!-- Home -->
+    <string name="home_open_picture">तस्वीर खोलें</string>
+    <string name="home_under_kb">KB के नीचे</string>
+    <string name="home_search_hint">टूल खोजें: छोटा, पासपोर्ट, लोकेशन…</string>
+    <string name="home_no_match">इससे कुछ मेल नहीं खाता. खोज खाली होने पर सभी टूल दिखते हैं.</string>
+    <string name="home_pick_up">जहां छोड़ा था, वहीं से शुरू करें</string>
+    <string name="home_recent_tools">हाल के टूल</string>
+    <string name="home_yours">आपके</string>
+    <string name="home_pinned">पिन किया हुआ</string>
+    <string name="home_pin_hint">किसी टूल को ऊपर पिन करने के लिए उसे दबाकर रखें.</string>
+    <string name="home_footer">मुफ़्त, ऑफ़लाइन, और %1$s की ओर से</string>
+    <string name="home_edited">संपादित</string>
+    <string name="home_remove_project">यह तस्वीर हटाएं</string>
+    <string name="home_remove_title">यह तस्वीर Studio से हटाएं?</string>
+    <string name="home_remove_body">इसकी निजी प्रति और इसके संपादन मिटा दिए जाएंगे. आपकी मूल तस्वीर और जो कुछ आपने सहेजा है, वह जहां है वहीं रहेगा.</string>
+
+    <!-- Intro -->
+    <string name="intro_skip">छोड़ें</string>
+    <string name="intro_next">आगे</string>
+    <string name="intro_start">शुरू करें</string>
+    <string name="intro_position">कार्ड %1$d / %2$d</string>
+    <string name="intro_offline_title">आपकी तस्वीरें इसी फ़ोन में रहती हैं</string>
+    <string name="intro_offline_body">Studio के पास इंटरनेट की अनुमति ही नहीं है, इसलिए यह तस्वीर कहीं भेज नहीं सकता, गलती से भी नहीं. आप इसे Play की सूची में जांच सकते हैं.</string>
+    <string name="intro_original_title">आपकी मूल तस्वीर कभी नहीं छुई जाती</string>
+    <string name="intro_original_body">हर संपादन एक निजी प्रति पर होता है. सहेजने पर आपकी चुनी जगह पर नई फ़ाइल बनती है. गैलरी की फ़ोटो वैसी ही रहती है जैसी थी.</string>
+    <string name="intro_free_title">हर टूल मुफ़्त है</string>
+    <string name="intro_free_body">बैच रीसाइज़, 50 KB के नीचे फ़ोटो, कर्व, बिना नुकसान मेटाडेटा हटाना: कुछ भी पेवॉल के पीछे नहीं, और कोई विज्ञापन नहीं.</string>
+
+    <!-- Editor -->
+    <string name="editor_canvas_description">तस्वीर. ज़ूम के लिए पिंच करें; मूल देखने के लिए दबाकर रखें.</string>
+    <string name="editor_showing_original">मूल</string>
+    <string name="editor_hold_to_compare">तुलना के लिए दबाकर रखें</string>
+    <string name="editor_undo">पूर्ववत</string>
+    <string name="editor_redo">फिर से करें</string>
+    <string name="editor_zoom_in">ज़ूम इन</string>
+    <string name="editor_zoom_out">ज़ूम आउट</string>
+    <string name="editor_reset_slider">%1$s रीसेट करने के लिए दो बार टैप करें</string>
+    <string name="editor_choose_colour">रंग चुनें</string>
+    <string name="editor_curve_description">टोन कर्व. बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें, हटाने के लिए किनारे से बाहर खींचें.</string>
+    <string name="editor_project_gone">वह तस्वीर अब Studio में नहीं है.</string>
+    <string name="editor_invalid_change">वह बदलाव एडिटर की सीमा से बाहर है.</string>
+    <string name="editor_preview_failed">पूर्वावलोकन नहीं बन सका. आपकी मूल तस्वीर सुरक्षित है.</string>
+    <string name="editor_save_failed">संपादन निजी प्रोजेक्ट में लिखा नहीं जा सका (%1$s). बंद करने से पहले एक प्रति निर्यात करें.</string>
+    <string name="editor_preset_saved">“%1$s” के रूप में सहेजा.</string>
+
+    <string name="panel_crop">क्रॉप</string>
+    <string name="panel_perspective">चौकोर</string>
+    <string name="panel_light">रोशनी</string>
+    <string name="panel_colour">रंग</string>
+    <string name="panel_curves">कर्व</string>
+    <string name="panel_looks">लुक</string>
+    <string name="panel_detail">बारीकी</string>
+    <string name="panel_markup">बनाएं</string>
+    <string name="panel_retouch">सुधारें</string>
+    <string name="panel_layers">परतें</string>
+    <string name="panel_frame">फ़्रेम</string>
+    <string name="panel_details">अंदर</string>
+    <string name="panel_export">निर्यात</string>
+
+    <!-- Crop -->
+    <string name="crop_free">मुक्त</string>
+    <string name="crop_original">मूल</string>
+    <string name="crop_hint">फ़्रेम का कोना या किनारा खींचें; हिलाने के लिए उसके अंदर खींचें. दो उंगलियों से ज़ूम.</string>
+    <string name="crop_straighten">सीधा करें</string>
+    <string name="crop_turn_left">बाएं घुमाएं</string>
+    <string name="crop_turn_right">दाएं घुमाएं</string>
+    <string name="crop_flip_h">आड़ा पलटें</string>
+    <string name="crop_flip_v">खड़ा पलटें</string>
+    <string name="crop_reset">क्रॉप, घुमाव और आकार रीसेट करें</string>
+    <string name="crop_size_heading">आउटपुट पिक्सेल</string>
+    <string name="crop_width">चौड़ाई</string>
+    <string name="crop_height">ऊंचाई</string>
+    <string name="crop_lock_aspect">आकार का अनुपात रखें</string>
+    <string name="crop_apply_size">ये पिक्सेल लगाएं</string>
+    <string name="crop_natural_size">स्वाभाविक आकार</string>
+    <string name="crop_size_hint">क्रॉप से %1$d × %2$d मिलता है. इससे बड़ा करने से बारीकी नहीं बढ़ती; यह फ़ोन %3$d मेगापिक्सेल तक निर्यात करता है.</string>
+
+    <!-- Perspective -->
+    <string name="perspective_hint">चारों कोनों को पन्ने, स्क्रीन या बोर्ड के कोनों पर खींचें. तस्वीर उनके बीच चौकोर खिंच जाती है.</string>
+    <string name="perspective_inset">कोनों से शुरू करें</string>
+    <string name="perspective_reset">रीसेट</string>
+    <string name="perspective_note">यह तस्वीर पर वैसे काम करता है जैसे कैमरे ने देखा, किसी क्रॉप या घुमाव से पहले. ज़्यादा सुधार दूर का किनारा खींचते हैं; बाद में क्रॉप करें.</string>
+
+    <!-- Light -->
+    <string name="light_auto">ऑटो</string>
+    <string name="light_reset">रीसेट</string>
+    <string name="light_exposure">एक्सपोज़र</string>
+    <string name="light_contrast">कंट्रास्ट</string>
+    <string name="light_highlights">हाइलाइट</string>
+    <string name="light_shadows">छाया</string>
+    <string name="light_whites">सफ़ेद</string>
+    <string name="light_blacks">काला</string>
+    <string name="light_hint">ऑटो हिस्टोग्राम से सफ़ेद, काला और एक्सपोज़र तय करता है और उन्हें स्लाइडर के रूप में छोड़ता है जिन्हें आप देख और पलट सकते हैं. हिस्टोग्राम के सिरों पर लाल निशान क्लिपिंग बताते हैं.</string>
+
+    <!-- Colour -->
+    <string name="colour_temperature">तापमान</string>
+    <string name="colour_tint">टिंट</string>
+    <string name="colour_vibrance">वाइब्रेंस</string>
+    <string name="colour_saturation">संतृप्ति</string>
+    <string name="colour_hue">ह्यू</string>
+    <string name="colour_mono">श्वेत-श्याम</string>
+
+    <!-- Curves -->
+    <string name="curves_master">सभी</string>
+    <string name="curves_red">लाल</string>
+    <string name="curves_green">हरा</string>
+    <string name="curves_blue">नीला</string>
+    <string name="curves_reset_channel">यह चैनल रीसेट करें</string>
+    <string name="curves_reset_all">सब रीसेट करें</string>
+    <string name="curves_hint">बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें, हटाने के लिए ऊपर या नीचे से बाहर खींचें. कर्व अपने बिंदुओं के बीच कभी उछलता नहीं.</string>
+
+    <!-- Looks -->
+    <string name="look_none">कोई नहीं</string>
+    <string name="look_mono">मोनो</string>
+    <string name="look_noir">नॉयर</string>
+    <string name="look_sepia">सीपिया</string>
+    <string name="look_warm">गर्म</string>
+    <string name="look_cool">ठंडा</string>
+    <string name="look_fade">फ़ेड</string>
+    <string name="look_matte">मैट</string>
+    <string name="look_vivid">चटख</string>
+    <string name="look_film">फ़िल्म</string>
+    <string name="look_chrome">क्रोम</string>
+    <string name="look_teal_orange">टील और नारंगी</string>
+    <string name="look_portrait">पोर्ट्रेट</string>
+    <string name="look_document">दस्तावेज़</string>
+    <string name="looks_strength">तीव्रता</string>
+    <string name="looks_moves">यह लुक बदलता है: %1$s. आपके अपने स्लाइडर इसके ऊपर लगते हैं.</string>
+    <string name="looks_presets">आपकी रेसिपी</string>
+    <string name="looks_no_presets">मौजूदा संपादन को रेसिपी के रूप में सहेजें और वह यहां दिखेगी, और पूरे बैच के लिए “रेसिपी लागू करें” में भी.</string>
+    <string name="looks_save_preset">रेसिपी के रूप में सहेजें</string>
+    <string name="looks_preset_default_name">मेरा लुक</string>
+    <string name="looks_preset_keeps">रेसिपी में रोशनी, रंग, कर्व, लुक, बारीकी और फ़्रेम रहते हैं. क्रॉप और इस तस्वीर पर बनाई परतें छोड़ दी जाती हैं.</string>
+    <string name="looks_remove_last">आख़िरी रेसिपी हटाएं</string>
+    <string name="looks_remove_last_confirm">हटाने के लिए फिर टैप करें</string>
+
+    <!-- Detail -->
+    <string name="detail_sharpness">तीखापन</string>
+    <string name="detail_clarity">स्पष्टता</string>
+    <string name="detail_dehaze">धुंध हटाएं</string>
+    <string name="detail_fade">फ़ेड</string>
+    <string name="detail_vignette">विग्नेट</string>
+    <string name="detail_grain">ग्रेन</string>
+    <string name="detail_hint">इनमें से हर एक तस्वीर के आकार के हिसाब से है, इसलिए निर्यात पूर्वावलोकन जैसा दिखता है, न ज़्यादा तीखा न नरम.</string>
+
+    <!-- Markup -->
+    <string name="mark_draw">रेखा</string>
+    <string name="mark_text">टेक्स्ट</string>
+    <string name="mark_arrow">तीर</string>
+    <string name="mark_box">डिब्बा</string>
+    <string name="mark_ellipse">गोला</string>
+    <string name="mark_size">आकार</string>
+    <string name="mark_text_size">टेक्स्ट का आकार</string>
+    <string name="mark_text_label">रखने के लिए टेक्स्ट</string>
+    <string name="mark_place_centre">बीच में रखें</string>
+    <string name="mark_text_hint">टेक्स्ट रखने के लिए तस्वीर पर टैप करें; रखे टेक्स्ट को हिलाने के लिए खींचें. शब्द और कोण परतों से बदलें.</string>
+    <string name="mark_hint">तस्वीर पर बनाएं. हर स्ट्रोक एक परत बनती है जिसे आप छिपा, हल्का, ऊपर-नीचे या मिटा सकते हैं.</string>
+
+    <!-- Retouch -->
+    <string name="retouch_blur">धुंधला</string>
+    <string name="retouch_pixelate">पिक्सेलेट</string>
+    <string name="retouch_cover">ढकें</string>
+    <string name="retouch_erase">मिटाएं</string>
+    <string name="retouch_clone">क्लोन</string>
+    <string name="retouch_pick_source">स्रोत चुनें</string>
+    <string name="retouch_change_source">स्रोत बदलें</string>
+    <string name="retouch_tap_source">तस्वीर पर वहां टैप करें जहां साफ़ हिस्सा है.</string>
+    <string name="retouch_clone_hint">दाग के ऊपर रंगें; वह स्रोत से भरता है, जो आपके स्ट्रोक के साथ चलता है.</string>
+    <string name="retouch_erase_hint">पिक्सेल मिटाकर पारदर्शी करें. इसे रखने के लिए PNG या WebP में निर्यात करें; JPEG इसे सफ़ेद भर देता है.</string>
+    <string name="retouch_cover_hint">आयत खींचें. ढकना अपारदर्शी है और नंबर या नाम के लिए सही चुनाव है; धुंधला और पिक्सेलेट सुरक्षित छिपाव नहीं हैं.</string>
+    <string name="retouch_blur_hint">हिस्से पर आयत खींचें. धुंधलापन तस्वीर के आकार के हिसाब से है, इसलिए निर्यात पूर्वावलोकन से मेल खाता है.</string>
+
+    <!-- Layers -->
+    <string name="layers_none">परत बनाने के लिए बनाएं, लिखें, धुंधला करें, मिटाएं या क्लोन करें.</string>
+    <string name="layers_hint">सबसे ऊपर की पंक्ति सबसे नई है. परतें हर रोशनी और रंग बदलाव के ऊपर रहती हैं.</string>
+    <string name="layers_edit">बदलें</string>
+    <string name="layers_edit_text">टेक्स्ट बदलें</string>
+    <string name="layers_angle">कोण</string>
+    <string name="layers_opacity">अपारदर्शिता</string>
+    <string name="layers_up">ऊपर</string>
+    <string name="layers_down">नीचे</string>
+    <string name="layers_full">इस तस्वीर में 400 परतें हो चुकी हैं.</string>
+
+    <!-- Frame -->
+    <string name="frame_pad_to">इस आकार तक पैड करें</string>
+    <string name="frame_padding">पैडिंग</string>
+    <string name="frame_border">किनारा</string>
+    <string name="frame_corners">गोल कोने</string>
+    <string name="frame_background">पृष्ठभूमि</string>
+    <string name="frame_border_colour">किनारे का रंग</string>
+    <string name="frame_white">सफ़ेद</string>
+    <string name="frame_black">काला</string>
+    <string name="frame_paper">कागज़</string>
+    <string name="frame_ink">स्याही</string>
+    <string name="frame_transparent">कोई नहीं</string>
+    <string name="frame_blurred">धुंधला</string>
+    <string name="frame_hint">बिना क्रॉप पोस्ट करने के लिए चौकोर या 4:5 तक पैड करें. पारदर्शी पृष्ठभूमि के लिए PNG या WebP चाहिए.</string>
+
+    <!-- Details -->
+    <string name="details_dimensions">पिक्सेल</string>
+    <string name="details_size">फ़ाइल का आकार</string>
+    <string name="details_type">प्रकार</string>
+    <string name="details_location">लोकेशन</string>
+    <string name="details_location_present">इस फ़ाइल में लोकेशन दर्ज है. यह कभी निर्यात में नहीं जाती.</string>
+    <string name="details_location_none">इस फ़ाइल में लोकेशन नहीं है.</string>
+    <string name="details_hidden">छिपा डेटा</string>
+    <string name="details_hidden_present">हां: कैमरा फ़ील्ड, थंबनेल या टिप्पणियां जो व्यूअर नहीं दिखाता.</string>
+    <string name="details_hidden_none">कुछ नहीं मिला.</string>
+    <string name="details_note">निर्यात यह सब हटा देता है, जब तक आप JPEG के लिए कैमरा फ़ील्ड रखना न चुनें. नीचे के टूल से मूल फ़ाइल की एक प्रति से भी हटाएं.</string>
+    <string name="details_strip_now">एक प्रति से छिपा डेटा हटाएं</string>
+
+    <!-- Export -->
+    <string name="format_jpeg">JPEG</string>
+    <string name="format_png">PNG</string>
+    <string name="format_webp">WebP</string>
+    <string name="format_webp_lossless">WebP लॉसलेस</string>
+    <string name="export_jpeg_note">फ़ोटो के लिए सबसे छोटा. हानिपूर्ण; पारदर्शिता सफ़ेद हो जाती है.</string>
+    <string name="export_png_note">बिना हानि, पारदर्शिता रखता है, बड़ा. स्क्रीनशॉट, ग्राफ़िक और मिटाई हुई चीज़ों के लिए सही.</string>
+    <string name="export_webp_note">समान गुणवत्ता पर JPEG से छोटा, पारदर्शिता रखता है. हानिपूर्ण.</string>
+    <string name="export_webp_lossless_note">बिना हानि और आमतौर पर PNG से एक-चौथाई छोटा. हर जगह खोलने के लिए Android 11 या नया चाहिए.</string>
+    <string name="export_quality">गुणवत्ता</string>
+    <string name="export_target">इसके नीचे रखें (वैकल्पिक)</string>
+    <string name="export_allow_shrink">ज़रूरत हो तो तस्वीर छोटी करें</string>
+    <string name="export_allow_shrink_detail">जब सबसे कम गुणवत्ता भी सीमा से ऊपर हो, तो कम पिक्सेल इस्तेमाल करें. बंद: इसके बजाय बता दें.</string>
+    <string name="export_keep_camera">कैमरा फ़ील्ड रखें</string>
+    <string name="export_keep_camera_detail">मेक, मॉडल, तारीख़ और एक्सपोज़र, एक-एक करके कॉपी किए हुए. लोकेशन, सीरियल नंबर और थंबनेल कभी नहीं.</string>
+    <string name="export_expected">अपेक्षित आकार: %1$d × %2$d पिक्सेल.</string>
+    <string name="export_prepare">निर्यात तैयार करें</string>
+    <string name="export_note">पहले फ़ाइल बनाई और मापी जाती है, और कुछ भी सहेजने से पहले आप उसका असली आकार और पिक्सेल देखते हैं.</string>
+    <string name="export_preparing">बना और माप रहे हैं…</string>
+    <string name="export_saving">सहेज रहे हैं…</string>
+    <string name="export_saved">%1$s सहेजी गई.</string>
+    <string name="export_failed">निर्यात नहीं बन सका. आपकी मूल तस्वीर सुरक्षित है.</string>
+    <string name="export_options_invalid">आकार की सीमा के लिए हानिपूर्ण फ़ॉर्मैट चाहिए: JPEG या WebP.</string>
+    <string name="export_ready">सहेजने के लिए तैयार</string>
+    <string name="export_preview_description">निर्यात की गई तस्वीर</string>
+    <string name="export_lossless_line">%1$s · बिना हानि</string>
+    <string name="export_quality_line">%1$s · गुणवत्ता %2$d</string>
+    <string name="export_original_line">मूल: %1$d × %2$d, %3$s.</string>
+    <string name="export_save_copy">प्रति सहेजें</string>
+    <string name="export_save_folder">मेरे फ़ोल्डर में</string>
+
+    <!-- Engine sentences -->
+    <string name="engine_encoder_failed">तस्वीर एन्कोड नहीं हो सकी.</string>
+    <string name="engine_options_invalid">ये निर्यात सेटिंग एक साथ नहीं चलतीं.</string>
+    <string name="engine_out_of_memory">इस आकार पर इस तस्वीर के लिए पर्याप्त मेमोरी नहीं है. छोटा आउटपुट आज़माएं.</string>
+    <string name="engine_unreadable">यह तस्वीर पढ़ी नहीं जा सकी.</string>
+    <string name="engine_encoding">एन्कोड हो रहा है…</string>
+    <string name="engine_target_unreachable_fixed">इन सटीक पिक्सेल पर %1$s के नीचे नहीं लाया जा सकता. छोटा करने दें या सीमा बढ़ाएं.</string>
+    <string name="engine_target_unreachable_any">सबसे छोटे उचित आकार पर भी %1$s के नीचे नहीं लाया जा सकता.</string>
+    <string name="engine_note_flattened">पारदर्शिता सफ़ेद हो गई.</string>
+    <string name="engine_note_lossy">हानिपूर्ण एन्कोडिंग.</string>
+    <string name="engine_note_lossless">संपादित पिक्सेल की बिना हानि एन्कोडिंग.</string>
+    <string name="engine_note_camera_kept">कैमरा और तारीख़ फ़ील्ड रखे गए; लोकेशन हटाई गई.</string>
+    <string name="engine_note_metadata_removed">सारा छिपा डेटा हटाया गया.</string>
+    <string name="engine_note_shrunk_for_target">सीमा में लाने के लिए %1$d × %2$d तक छोटा किया.</string>
+    <string name="engine_note_scaled_from_source">स्रोत इस फ़ोन की क्षमता से बड़ा था; निर्यात कार्य आकार पर है.</string>
+    <string name="engine_size_change">%1$s → %2$s</string>
+    <string name="engine_title_resize_exact">%1$d × %2$d पर आकार</string>
+    <string name="engine_title_resize_percent">%1$d%% पर आकार</string>
+    <string name="engine_title_resize_edge">सबसे लंबा किनारा %1$d px</string>
+    <string name="engine_resize_over_budget">वे पिक्सेल इस फ़ोन की %1$d MP कार्य सीमा से बाहर हैं.</string>
+    <string name="engine_resize_already">इस फ़ॉर्मैट में पहले से %1$s है.</string>
+    <string name="engine_resized_detail">%1$s → %2$s.</string>
+    <string name="engine_resize_enlarged">बड़ा किया गया: इससे बारीकी नहीं बढ़ती.</string>
+    <string name="engine_resize_capped">इस फ़ोन की कार्य सीमा पर रोका गया.</string>
+    <string name="engine_title_under">%1$s के नीचे</string>
+    <string name="engine_kb_too_small">2 KB या उससे अधिक की सीमा दर्ज करें.</string>
+    <string name="engine_already_under">पहले से %1$s है, %2$s के नीचे, और इसमें कुछ छिपा नहीं है. वैसी ही छोड़ी गई.</string>
+    <string name="engine_stripped_only">%1$s → %2$s, %3$s के नीचे. तस्वीर बाइट-दर-बाइट वही है; सिर्फ़ छिपा डेटा गया.</string>
+    <string name="engine_under_detail">%1$s → %2$s, %3$s के नीचे, %4$s.</string>
+    <string name="engine_made_smaller">समाने के लिए %1$s से छोटा किया.</string>
+    <string name="engine_passport_note">पासपोर्ट आकार, 300 dpi पर 35 × 45 मिमी.</string>
+    <string name="engine_now_jpeg">अब JPEG है.</string>
+    <string name="engine_title_convert">%1$s में बदलें</string>
+    <string name="engine_title_compress">गुणवत्ता %1$d पर संपीड़न</string>
+    <string name="engine_nothing_to_gain">पहले से %1$s है; संपीड़न इसे छोटा नहीं करता. वैसी ही छोड़ी गई.</string>
+    <string name="engine_title_strip">छिपा डेटा हटाएं</string>
+    <string name="engine_nothing_hidden">इसमें कुछ छिपा नहीं है. वैसी ही छोड़ी गई.</string>
+    <string name="engine_stripped_location">लोकेशन और कैमरा डेटा हटाया गया</string>
+    <string name="engine_stripped_camera">कैमरा डेटा हटाया गया</string>
+    <string name="engine_strip_lossless_detail">%1$s. तस्वीर खुद बाइट-दर-बाइट वही है: %2$s → %3$s.</string>
+    <string name="engine_strip_reencoded_detail">बिना हानि %1$s के रूप में दोबारा एन्कोड, कुछ छिपा नहीं, %2$s.</string>
+    <string name="engine_title_enhance">अपने आप निखारें</string>
+    <string name="engine_enhance_nothing">पहले से अच्छी तरह एक्सपोज़्ड है. वैसी ही छोड़ी गई.</string>
+    <string name="engine_enhance_detail">एक्सपोज़र %1$.2f, सफ़ेद %2$d, काला %3$d.</string>
+    <string name="engine_title_recipe">रेसिपी “%1$s”</string>
+    <string name="engine_title_watermark">वॉटरमार्क “%1$s”</string>
+    <string name="engine_title_collage">कोलाज, %1$s</string>
+    <string name="engine_collage_count">कोलाज में दो से %1$d तस्वीरें लगती हैं.</string>
+    <string name="engine_title_frame">फ़्रेम</string>
+
+    <!-- Collage layouts -->
+    <string name="collage_grid">ग्रिड</string>
+    <string name="collage_columns">कॉलम</string>
+    <string name="collage_feature">फ़ीचर</string>
+    <string name="collage_strip">पट्टी</string>
+    <string name="collage_polaroid">पोलरॉइड</string>
+    <string name="collage_hint">तस्वीरें अपने खाने भरती हैं और समाने के लिए कटती हैं. अधिकतम %1$d.</string>
+
+    <!-- Batch tool screens -->
+    <string name="tools_pictures">तस्वीरें</string>
+    <string name="tools_add_photos">फ़ोटो जोड़ें</string>
+    <string name="tools_browse_files">फ़ाइलें देखें</string>
+    <string name="tools_empty_hint">एक तस्वीर जोड़ें या सौ. हर एक पहले निजी तौर पर कॉपी होती है; आपकी मूल तस्वीरें कभी नहीं बदलतीं.</string>
+    <string name="tools_clear_all">सूची खाली करें</string>
+    <string name="tools_options">विकल्प</string>
+    <string name="tools_output">आउटपुट</string>
+    <string name="tools_run_note">इसी फ़ोन पर चलता है. नतीजे सहेजने या साझा करने से पहले जांचने के लिए यहां दिखते हैं.</string>
+    <string name="tools_progress">%1$d / %2$d · %3$s</string>
+    <string name="tools_cancelled">रद्द किया गया. उससे पहले बनी तस्वीरें रखी गई हैं.</string>
+    <string name="tools_count_done">%1$d हो गईं</string>
+    <string name="tools_count_skipped">%1$d वैसी ही छोड़ी गईं</string>
+    <string name="tools_count_failed">%1$d विफल</string>
+    <string name="tools_save_all">सब सहेजें</string>
+    <string name="tools_share_all">सब साझा करें</string>
+    <string name="tools_start_again">फिर से शुरू करें</string>
+    <string name="tools_edit_result">संपादित करें</string>
+    <string name="tools_saved_one">%1$s सहेजी गई.</string>
+    <string name="tools_saved_all">%1$d तस्वीरें सहेजी गईं.</string>
+    <string name="tools_saved_some">%1$d सहेजीं, फिर रुक गया: %2$s</string>
+    <string name="tools_too_many">पहली %1$d जोड़ी गईं; एक बैच में अधिकतम इतनी ही होती हैं.</string>
+    <string name="tools_add_first">पहले एक तस्वीर जोड़ें.</string>
+    <string name="tools_need_more">इस टूल को कम से कम %1$d तस्वीरें चाहिए.</string>
+    <string name="tools_busy">दूसरा काम अभी चल रहा है. उसका इंतज़ार करें या उसे रद्द करें.</string>
+    <string name="tools_need_dimensions">पिक्सेल में चौड़ाई और ऊंचाई दर्ज करें.</string>
+    <string name="tools_need_edge">16 और 8192 पिक्सेल के बीच सबसे लंबा किनारा दर्ज करें.</string>
+    <string name="tools_need_text">वॉटरमार्क का टेक्स्ट दर्ज करें.</string>
+    <string name="tools_pick_preset">पहले रेसिपी चुनें. एडिटर के लुक पैनल से एक सहेजें.</string>
+    <string name="tools_name_pattern">आउटपुट नाम का पैटर्न</string>
+    <string name="tools_name_pattern_hint">{name} मूल का नाम, {n} एक संख्या, {w}x{h} पिक्सेल, {date} आज की तारीख़.</string>
+    <string name="resize_long_edge">सबसे लंबा किनारा</string>
+    <string name="resize_long_edge_px">सबसे लंबा किनारा पिक्सेल में</string>
+    <string name="resize_percent">प्रतिशत</string>
+    <string name="resize_exact">सटीक पिक्सेल</string>
+    <string name="resize_exact_hint">सटीक पिक्सेल मूल से अलग होने पर आकार बदल देते हैं; तस्वीर बीच से समाने के लिए कटती है.</string>
+    <string name="kb_limit_label">सीमा KB में (1 KB = 1,000 बाइट)</string>
+    <string name="kb_keep_pixels">पिक्सेल रखें</string>
+    <string name="kb_passport">पासपोर्ट फ़ोटो</string>
+    <string name="kb_hint">पहले सबसे अच्छी गुणवत्ता जो समाए; तस्वीर तभी छोटी होती है जब सबसे कम गुणवत्ता भी ऊपर हो. सीमा के नीचे की JPEG दोबारा एन्कोड नहीं होती, सिर्फ़ छिपे डेटा से साफ़ होती है.</string>
+    <string name="compress_by_quality">गुणवत्ता से</string>
+    <string name="compress_by_size">तय आकार तक</string>
+    <string name="convert_hint">PNG को JPEG में बदलने पर उसकी पारदर्शिता सफ़ेद हो जाती है. लॉसलेस WebP वह सब रखता है जो PNG रखता है, छोटे आकार में.</string>
+    <string name="strip_hint">JPEG का हर पिक्सेल ठीक वैसा ही रहता है: सिर्फ़ छिपे खंड हटते हैं. बाकी फ़ॉर्मैट बिना हानि दोबारा एन्कोड होते हैं.</string>
+    <string name="enhance_hint">हर तस्वीर के अपने हिस्टोग्राम से लेवल और हल्का एक्सपोज़र. जो तस्वीरें पहले से ठीक हैं, वे वैसी ही रहती हैं और बता देती हैं.</string>
+    <string name="recipe_none">अभी कोई रेसिपी नहीं. एडिटर में लुक खोलें और “रेसिपी के रूप में सहेजें” टैप करें.</string>
+    <string name="watermark_text">वॉटरमार्क का टेक्स्ट</string>
+
+    <!-- Settings -->
+    <string name="settings_appearance">दिखावट</string>
+    <string name="settings_lively">चलते-फिरते टूल आइकन</string>
+    <string name="settings_lively_detail">आइकन बीच-बीच में हल्की हरकत करते हैं. बंद करने पर हर आइकन स्थिर रहता है; Android की अपनी एनिमेशन सेटिंग दोनों हाल में मानी जाती है.</string>
+    <string name="settings_histogram">रोशनी पैनल पर हिस्टोग्राम</string>
+    <string name="settings_histogram_detail">तस्वीर के मान ग्राफ़ के रूप में, सिरों पर क्लिपिंग के निशान के साथ.</string>
+    <string name="settings_haptics">स्लाइडर पर हल्का कंपन</string>
+    <string name="settings_haptics_detail">स्लाइडर के शून्य से गुज़रने पर हल्का कंपन.</string>
+    <string name="settings_language">भाषा</string>
+    <string name="settings_language_detail">Android की अपनी प्रति-ऐप भाषा सेटिंग में चुनी जाती है.</string>
+    <string name="settings_language_choose">चुनें</string>
+    <string name="settings_export">निर्यात</string>
+    <string name="settings_default_format">शुरुआती फ़ॉर्मैट</string>
+    <string name="settings_keep_camera">कैमरा फ़ील्ड डिफ़ॉल्ट रूप से रखें</string>
+    <string name="settings_keep_camera_detail">JPEG निर्यात में मेक, मॉडल, तारीख़ और एक्सपोज़र. लोकेशन कभी नहीं रखी जाती, यह चाहे जो कहे.</string>
+    <string name="settings_ask_save">हर बार पूछें कि कहां सहेजना है</string>
+    <string name="settings_ask_save_detail">बंद: नतीजे एक बार चुने फ़ोल्डर में जाते हैं, जिससे पचास तस्वीरें सहेजना एक टैप का काम हो जाता है.</string>
+    <string name="settings_space">जगह</string>
+    <string name="settings_results">सहेजे जाने के इंतज़ार में नतीजों में</string>
+    <string name="settings_results_detail">निर्यात और बैच के नतीजे यहां तब तक रहते हैं जब तक आप हटा न दें, ताकि आप लौटकर सहेज सकें. यहां कुछ भी बैकअप नहीं है.</string>
+    <plurals name="settings_project_count">
+        <item quantity="one">Studio में %1$d तस्वीर, %2$s</item>
+        <item quantity="other">Studio में %1$d तस्वीरें, %2$s</item>
+    </plurals>
+    <string name="settings_projects_detail">निजी प्रतियां और उनके संपादन. इन्हें हटाने से आपकी मूल तस्वीरें नहीं छुई जातीं.</string>
+    <string name="settings_budget">यह फ़ोन %2$d MB ऐप हीप से एक बार में %1$d मेगापिक्सेल तक संपादित करता है. बड़ी तस्वीरें उसी आकार पर काम करती हैं और निर्यात यह बता देता है.</string>
+    <string name="settings_crash_log">क्रैश लॉग</string>
+    <string name="settings_crash_none">कोई क्रैश दर्ज नहीं</string>
+    <plurals name="settings_crash_count">
+        <item quantity="one">%d क्रैश दर्ज</item>
+        <item quantity="other">%d क्रैश दर्ज</item>
+    </plurals>
+    <string name="settings_crash_detail">सिर्फ़ इसी फ़ोन पर लिखा जाता है. इसमें ऐप का अपना कोड और फ़ोन का मॉडल होता है, कभी कोई तस्वीर नहीं. जब तक आप न भेजें, कुछ नहीं भेजा जाता.</string>
+    <string name="settings_crash_send">सबसे नया भेजें</string>
+    <string name="settings_crash_chooser">क्रैश लॉग इससे भेजें</string>
+    <string name="settings_cannot">यह ऐप क्या नहीं कर सकता</string>
+    <string name="settings_cannot_detail">इसके पास इंटरनेट की अनुमति नहीं है, इसलिए यह अपलोड, सिंक, ट्रैक या विज्ञापन नहीं कर सकता, भविष्य का कोई अपडेट चाहे जो चाहे. यह Android लागू करता है, कोई नीति वादा नहीं करती.</string>
+
+    <!-- About -->
+    <string name="about_title">Studio के बारे में</string>
+    <string name="about_version">संस्करण %1$s</string>
+    <string name="about_offline_title">फ़ोन से बाहर कुछ नहीं जाता</string>
+    <string name="about_offline_body">Studio INTERNET अनुमति घोषित नहीं करता, इसलिए प्रक्रिया कोई सॉकेट खोल ही नहीं सकती. कोई लाइब्रेरी भेजना भी चाहे तो आपकी तस्वीरें डिवाइस से बाहर नहीं जा सकतीं. किसी की बात माने बिना इसे Play की सूची में जांचें.</string>
+    <string name="about_honest_title">यह बताता है कि इसने क्या किया</string>
+    <string name="about_honest_body">हर निर्यात बनने के बाद मापा जाता है, इसलिए जो आकार और पिक्सेल आप देखते हैं वे फ़ाइल के अपने हैं. लुक बताते हैं कि वे कौन-से स्लाइडर बदलते हैं. जिस तस्वीर को बदलाव की ज़रूरत न हो, वह दिखावा करने के बजाय यही कह देती है.</string>
+    <string name="about_feedback_title">बताएं क्या कमी है</string>
+    <string name="about_feedback_body">कोई टूल जिसकी आपको उम्मीद थी, कोई तस्वीर जो गलत निकली, गलत भाषा में कोई शब्द: संदेश एक इंसान तक पहुंचता है.</string>
+    <string name="about_email">ईमेल</string>
+    <string name="about_free_title">मुफ़्त, और मुफ़्त ही रहेगा</string>
+    <string name="about_free_body">कोई सदस्यता नहीं, दूसरे टूल पर कोई पेवॉल नहीं, कोई विज्ञापन नहीं. अगर Studio ने आपको किसी अनजान सर्वर पर अपलोड से बचाया, तो एक कॉफ़ी धन्यवाद कह देती है.</string>
+    <string name="about_coffee">एक कॉफ़ी पिलाएं</string>
+    <string name="about_rate">Google Play पर रेट करें</string>
+    <string name="about_privacy">निजता नीति</string>
+    <string name="about_made_by">%1$s द्वारा निर्मित · %2$s</string>
+    <string name="about_licences">Kotlin और AndroidX Apache-2.0 के तहत हैं. Space Grotesk SIL Open Font Licence के तहत है. कोई और तृतीय-पक्ष कोड शामिल नहीं है.</string>
+</resources>

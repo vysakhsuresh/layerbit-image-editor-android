@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="app_name">Layerbit Studio</string>
+    <string name="app_name_short">Studio</string>
+    <string name="app_tagline">Every picture tool. Nothing leaves your phone.</string>
+    <string name="app_settings">Settings</string>
+    <string name="app_about">About</string>
+    <string name="app_back">Back</string>
+    <string name="app_clear">Clear</string>
+    <string name="app_delete">Delete</string>
+    <string name="app_cancel">Cancel</string>
+    <string name="app_close">Close</string>
+    <string name="app_ok">OK</string>
+    <string name="app_save">Save</string>
+    <string name="app_share">Share</string>
+    <string name="app_pill_free">All tools free</string>
+    <string name="app_pill_no_internet">No internet</string>
+    <string name="app_pill_no_account">No account</string>
+    <string name="app_pill_no_tracking">No tracking</string>
+    <string name="app_theme_system">Match phone</string>
+    <string name="app_theme_light">Light</string>
+    <string name="app_theme_dark">Dark</string>
+    <string name="app_job_stopped">The job stopped unexpectedly. Finished pictures were kept.</string>
+    <plurals name="app_tool_count">
+        <item quantity="one">%d tool</item>
+        <item quantity="other">%d tools</item>
+    </plurals>
+
+    <!-- Errors around files -->
+    <string name="app_error_open_revoked">%1$s could not be read. The app that holds it may have withdrawn access; pick it again.</string>
+    <string name="app_error_empty">%1$s is empty.</string>
+    <string name="app_error_too_large">%1$s is larger than 100 MB, which is more than a phone can edit.</string>
+    <string name="app_error_not_image">%1$s is not a still picture this phone can decode.</string>
+    <string name="app_error_write_location">That place cannot be written to.</string>
+    <string name="app_error_write_removed_replaced">%1$s could not be written. The half-written file was removed; the document you chose to replace is gone with it, and the picture is still here to save again.</string>
+    <string name="app_error_write_removed">%1$s could not be written. The half-written file was removed; the picture is still here to save again.</string>
+    <string name="app_error_write_incomplete">%1$s could not be written and the file that was there is now incomplete. Save over it again.</string>
+    <string name="app_error_write_left_behind">%1$s could not be written. An incomplete file was left where you chose; delete it and save again.</string>
+    <string name="app_error_with_reason">%1$s %2$s</string>
+    <string name="app_error_permission_withdrawn">Permission to that place was withdrawn.</string>
+    <string name="app_error_no_space">The storage is full.</string>
+    <string name="app_error_read_only">That storage is read-only.</string>
+    <string name="app_error_folder_gone">The folder you chose is no longer available. Choose another.</string>
+    <string name="app_error_folder_denied">The folder you chose does not allow writing. Choose another.</string>
+    <string name="app_error_create_failed">%1$s could not be created in that folder.</string>
+
+    <!-- Shortcuts -->
+    <string name="shortcut_edit_short">Edit</string>
+    <string name="shortcut_edit_long">Edit a picture</string>
+    <string name="shortcut_resize_short">Under KB</string>
+    <string name="shortcut_resize_long">Photo under a size</string>
+    <string name="shortcut_strip_short">Remove data</string>
+    <string name="shortcut_strip_long">Remove hidden data</string>
+
+    <!-- Groups -->
+    <string name="group_edit">Edit a picture</string>
+    <string name="group_mark">Mark and dress</string>
+    <string name="group_size">Size and format</string>
+    <string name="group_privacy">Privacy</string>
+    <string name="group_batch">Many at once</string>
+
+    <!-- Tools -->
+    <string name="tool_edit_title">Edit</string>
+    <string name="tool_edit_summary">Crop, light, colour, curves, looks, layers and export in one place</string>
+    <string name="tool_edit_action">Open the editor</string>
+    <string name="tool_crop_title">Crop and straighten</string>
+    <string name="tool_crop_summary">Drag the corners, level the horizon, turn and flip, set the exact pixels</string>
+    <string name="tool_crop_action">Crop it</string>
+    <string name="tool_perspective_title">Straighten a document</string>
+    <string name="tool_perspective_summary">Drag four corners onto a page, a screen or a sign and it squares up</string>
+    <string name="tool_perspective_action">Square it up</string>
+    <string name="tool_light_title">Light</string>
+    <string name="tool_light_summary">Exposure, contrast, highlights, shadows, whites and blacks, with a one-tap Auto</string>
+    <string name="tool_light_action">Adjust light</string>
+    <string name="tool_colour_title">Colour</string>
+    <string name="tool_colour_summary">Temperature, tint, vibrance, saturation and hue</string>
+    <string name="tool_colour_action">Adjust colour</string>
+    <string name="tool_curves_title">Curves</string>
+    <string name="tool_curves_summary">A tone curve you drag, for all channels or each one</string>
+    <string name="tool_curves_action">Open curves</string>
+    <string name="tool_looks_title">Looks and recipes</string>
+    <string name="tool_looks_summary">Fourteen looks that show which sliders they move, and your own saved recipes</string>
+    <string name="tool_looks_action">Choose a look</string>
+    <string name="tool_detail_title">Detail and texture</string>
+    <string name="tool_detail_summary">Sharpness, clarity, dehaze, fade, vignette and grain</string>
+    <string name="tool_detail_action">Adjust detail</string>
+    <string name="tool_markup_title">Draw and write</string>
+    <string name="tool_markup_summary">Freehand, arrows, boxes, circles and text you can move afterwards</string>
+    <string name="tool_markup_action">Mark it up</string>
+    <string name="tool_retouch_title">Hide and retouch</string>
+    <string name="tool_retouch_summary">Blur, pixelate or cover a detail, erase to transparent, clone over a blemish</string>
+    <string name="tool_retouch_action">Retouch</string>
+    <string name="tool_frame_title">Frame and pad</string>
+    <string name="tool_frame_summary">Pad to a square or a story, add a border, round the corners, blur the fill</string>
+    <string name="tool_frame_action">Frame it</string>
+    <string name="tool_watermark_title">Watermark</string>
+    <string name="tool_watermark_summary">Your name or © across every picture, at an angle, faint or bold</string>
+    <string name="tool_watermark_action">Watermark them</string>
+    <string name="tool_resize_title">Resize</string>
+    <string name="tool_resize_summary">A longest edge, a percentage or exact pixels, for one picture or fifty</string>
+    <string name="tool_resize_action">Resize them</string>
+    <string name="tool_resize_kb_title">Photo under a size</string>
+    <string name="tool_resize_kb_summary">Under 20 KB, 50 KB or whatever a form asks, as a passport photo or exact pixels</string>
+    <string name="tool_resize_kb_action">Get it under</string>
+    <string name="tool_compress_title">Compress</string>
+    <string name="tool_compress_summary">A quality you choose or a size to get under, measured on the real file</string>
+    <string name="tool_compress_action">Compress them</string>
+    <string name="tool_convert_title">Convert</string>
+    <string name="tool_convert_summary">JPEG, PNG, WebP and lossless WebP, from anything the phone can open</string>
+    <string name="tool_convert_action">Convert them</string>
+    <string name="tool_strip_title">Remove hidden data</string>
+    <string name="tool_strip_summary">Location, camera and everything else hidden in a photo, without re-encoding a JPEG</string>
+    <string name="tool_strip_action">Remove it</string>
+    <string name="tool_details_title">What is inside</string>
+    <string name="tool_details_summary">Dimensions, camera fields and whether a location is hidden in the file</string>
+    <string name="tool_details_action">Look inside</string>
+    <string name="tool_enhance_title">Enhance automatically</string>
+    <string name="tool_enhance_summary">Levels and exposure from each picture\'s own histogram, no model involved</string>
+    <string name="tool_enhance_action">Enhance them</string>
+    <string name="tool_recipe_title">Apply a recipe</string>
+    <string name="tool_recipe_summary">An edit you saved, run over as many pictures as you like</string>
+    <string name="tool_recipe_action">Apply it</string>
+    <string name="tool_collage_title">Collage</string>
+    <string name="tool_collage_summary">Two to twelve pictures on one canvas: grid, columns, feature, strip or polaroid</string>
+    <string name="tool_collage_action">Make the collage</string>
+    <string name="tool_export">Export</string>
+
+    <!-- Home -->
+    <string name="home_open_picture">Open a picture</string>
+    <string name="home_under_kb">Under KB</string>
+    <string name="home_search_hint">Search tools: shrink, passport, location…</string>
+    <string name="home_no_match">Nothing matches that. Every tool is listed when the search is empty.</string>
+    <string name="home_pick_up">Pick up where you left off</string>
+    <string name="home_recent_tools">Your recent tools</string>
+    <string name="home_yours">Yours</string>
+    <string name="home_pinned">Pinned</string>
+    <string name="home_pin_hint">Long-press a tool to pin it to the top.</string>
+    <string name="home_footer">Free, offline, and from %1$s</string>
+    <string name="home_edited">edited</string>
+    <string name="home_remove_project">Remove this picture</string>
+    <string name="home_remove_title">Remove this picture from Studio?</string>
+    <string name="home_remove_body">Its private copy and its edits are deleted. Your original and anything you saved stay where they are.</string>
+
+    <!-- Intro -->
+    <string name="intro_skip">Skip</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_start">Start</string>
+    <string name="intro_position">Card %1$d of %2$d</string>
+    <string name="intro_offline_title">Your pictures stay on this phone</string>
+    <string name="intro_offline_body">Studio has no internet permission, so it cannot send a picture anywhere, even by accident. You can check that on the Play listing.</string>
+    <string name="intro_original_title">Your originals are never touched</string>
+    <string name="intro_original_body">Every edit works on a private copy. Saving makes a new file where you choose. The photo in your gallery is exactly as it was.</string>
+    <string name="intro_free_title">Every tool is free</string>
+    <string name="intro_free_body">Batch resize, photo under 50 KB, curves, lossless metadata removal: nothing is behind a paywall, and there are no ads.</string>
+
+    <!-- Editor -->
+    <string name="editor_canvas_description">Picture. Pinch to zoom; press and hold to see the original.</string>
+    <string name="editor_showing_original">Original</string>
+    <string name="editor_hold_to_compare">Hold to compare</string>
+    <string name="editor_undo">Undo</string>
+    <string name="editor_redo">Redo</string>
+    <string name="editor_zoom_in">Zoom in</string>
+    <string name="editor_zoom_out">Zoom out</string>
+    <string name="editor_reset_slider">Double-tap to reset %1$s</string>
+    <string name="editor_choose_colour">Choose colour</string>
+    <string name="editor_curve_description">Tone curve. Tap to add a point, drag to move it, drag off the edge to remove it.</string>
+    <string name="editor_project_gone">That picture is no longer in Studio.</string>
+    <string name="editor_invalid_change">That change goes outside what the editor allows.</string>
+    <string name="editor_preview_failed">The preview could not be drawn. Your original is safe.</string>
+    <string name="editor_save_failed">The edit could not be written to the private project (%1$s). Export a copy before closing.</string>
+    <string name="editor_preset_saved">Saved as “%1$s”.</string>
+
+    <string name="panel_crop">Crop</string>
+    <string name="panel_perspective">Square</string>
+    <string name="panel_light">Light</string>
+    <string name="panel_colour">Colour</string>
+    <string name="panel_curves">Curves</string>
+    <string name="panel_looks">Looks</string>
+    <string name="panel_detail">Detail</string>
+    <string name="panel_markup">Draw</string>
+    <string name="panel_retouch">Retouch</string>
+    <string name="panel_layers">Layers</string>
+    <string name="panel_frame">Frame</string>
+    <string name="panel_details">Inside</string>
+    <string name="panel_export">Export</string>
+
+    <!-- Crop -->
+    <string name="crop_free">Free</string>
+    <string name="crop_original">Original</string>
+    <string name="crop_hint">Drag a corner or an edge of the frame; drag inside it to move it. Two fingers zoom.</string>
+    <string name="crop_straighten">Straighten</string>
+    <string name="crop_turn_left">Turn left</string>
+    <string name="crop_turn_right">Turn right</string>
+    <string name="crop_flip_h">Flip across</string>
+    <string name="crop_flip_v">Flip down</string>
+    <string name="crop_reset">Reset crop, turn and size</string>
+    <string name="crop_size_heading">Output pixels</string>
+    <string name="crop_width">Width</string>
+    <string name="crop_height">Height</string>
+    <string name="crop_lock_aspect">Keep the shape</string>
+    <string name="crop_apply_size">Use these pixels</string>
+    <string name="crop_natural_size">Natural size</string>
+    <string name="crop_size_hint">The crop gives %1$d × %2$d. Larger than that adds no detail; this phone exports up to %3$d megapixels.</string>
+
+    <!-- Perspective -->
+    <string name="perspective_hint">Drag the four corners onto the corners of the page, screen or sign. The picture is pulled square between them.</string>
+    <string name="perspective_inset">Start from the corners</string>
+    <string name="perspective_reset">Reset</string>
+    <string name="perspective_note">Works on the picture as the camera saw it, before any crop or turn. Strong corrections stretch the far edge; crop after.</string>
+
+    <!-- Light -->
+    <string name="light_auto">Auto</string>
+    <string name="light_reset">Reset</string>
+    <string name="light_exposure">Exposure</string>
+    <string name="light_contrast">Contrast</string>
+    <string name="light_highlights">Highlights</string>
+    <string name="light_shadows">Shadows</string>
+    <string name="light_whites">Whites</string>
+    <string name="light_blacks">Blacks</string>
+    <string name="light_hint">Auto sets whites, blacks and exposure from the histogram and leaves them as sliders you can see and undo. Red marks at the histogram\'s ends mean clipping.</string>
+
+    <!-- Colour -->
+    <string name="colour_temperature">Temperature</string>
+    <string name="colour_tint">Tint</string>
+    <string name="colour_vibrance">Vibrance</string>
+    <string name="colour_saturation">Saturation</string>
+    <string name="colour_hue">Hue</string>
+    <string name="colour_mono">Black and white</string>
+
+    <!-- Curves -->
+    <string name="curves_master">All</string>
+    <string name="curves_red">Red</string>
+    <string name="curves_green">Green</string>
+    <string name="curves_blue">Blue</string>
+    <string name="curves_reset_channel">Reset this channel</string>
+    <string name="curves_reset_all">Reset all</string>
+    <string name="curves_hint">Tap to add a point, drag to move it, drag off the top or bottom to remove it. The curve never overshoots between its points.</string>
+
+    <!-- Looks -->
+    <string name="look_none">None</string>
+    <string name="look_mono">Mono</string>
+    <string name="look_noir">Noir</string>
+    <string name="look_sepia">Sepia</string>
+    <string name="look_warm">Warm</string>
+    <string name="look_cool">Cool</string>
+    <string name="look_fade">Fade</string>
+    <string name="look_matte">Matte</string>
+    <string name="look_vivid">Vivid</string>
+    <string name="look_film">Film</string>
+    <string name="look_chrome">Chrome</string>
+    <string name="look_teal_orange">Teal and orange</string>
+    <string name="look_portrait">Portrait</string>
+    <string name="look_document">Document</string>
+    <string name="looks_strength">Strength</string>
+    <string name="looks_moves">This look moves: %1$s. Your own sliders apply on top.</string>
+    <string name="looks_presets">Your recipes</string>
+    <string name="looks_no_presets">Save the edit you have as a recipe and it appears here, and in Apply a recipe for a whole batch.</string>
+    <string name="looks_save_preset">Save as recipe</string>
+    <string name="looks_preset_default_name">My look</string>
+    <string name="looks_preset_keeps">A recipe keeps light, colour, curves, look, detail and frame. The crop and the layers drawn on this picture are left out.</string>
+    <string name="looks_remove_last">Remove last recipe</string>
+    <string name="looks_remove_last_confirm">Tap again to remove</string>
+
+    <!-- Detail -->
+    <string name="detail_sharpness">Sharpness</string>
+    <string name="detail_clarity">Clarity</string>
+    <string name="detail_dehaze">Dehaze</string>
+    <string name="detail_fade">Fade</string>
+    <string name="detail_vignette">Vignette</string>
+    <string name="detail_grain">Grain</string>
+    <string name="detail_hint">Each of these is sized to the picture, so the export looks like the preview rather than sharper or softer.</string>
+
+    <!-- Markup -->
+    <string name="mark_draw">Draw</string>
+    <string name="mark_text">Text</string>
+    <string name="mark_arrow">Arrow</string>
+    <string name="mark_box">Box</string>
+    <string name="mark_ellipse">Circle</string>
+    <string name="mark_size">Size</string>
+    <string name="mark_text_size">Text size</string>
+    <string name="mark_text_label">Text to place</string>
+    <string name="mark_place_centre">Place in the centre</string>
+    <string name="mark_text_hint">Tap the picture to place the text; drag placed text to move it. Edit its words and angle from Layers.</string>
+    <string name="mark_hint">Draw on the picture. Each stroke becomes a layer you can hide, fade, reorder or delete.</string>
+
+    <!-- Retouch -->
+    <string name="retouch_blur">Blur</string>
+    <string name="retouch_pixelate">Pixelate</string>
+    <string name="retouch_cover">Cover</string>
+    <string name="retouch_erase">Erase</string>
+    <string name="retouch_clone">Clone</string>
+    <string name="retouch_pick_source">Pick the source</string>
+    <string name="retouch_change_source">Change the source</string>
+    <string name="retouch_tap_source">Tap the picture where the clean area is.</string>
+    <string name="retouch_clone_hint">Paint over the blemish; it is filled from the source, which moves with your stroke.</string>
+    <string name="retouch_erase_hint">Paint away pixels to transparency. Export as PNG or WebP to keep it; JPEG fills it white.</string>
+    <string name="retouch_cover_hint">Drag a rectangle. Cover is opaque and is the right choice for a number or a name; blur and pixelation are not secure redaction.</string>
+    <string name="retouch_blur_hint">Drag a rectangle over the area. The blur is sized to the picture, so the export matches the preview.</string>
+
+    <!-- Layers -->
+    <string name="layers_none">Draw, write, blur, erase or clone to make a layer.</string>
+    <string name="layers_hint">Top row is the latest. Layers sit above every light and colour change.</string>
+    <string name="layers_edit">Edit</string>
+    <string name="layers_edit_text">Edit text</string>
+    <string name="layers_angle">Angle</string>
+    <string name="layers_opacity">Opacity</string>
+    <string name="layers_up">Up</string>
+    <string name="layers_down">Down</string>
+    <string name="layers_full">This picture has reached 400 layers.</string>
+
+    <!-- Frame -->
+    <string name="frame_pad_to">Pad to</string>
+    <string name="frame_padding">Padding</string>
+    <string name="frame_border">Border</string>
+    <string name="frame_corners">Rounded corners</string>
+    <string name="frame_background">Background</string>
+    <string name="frame_border_colour">Border colour</string>
+    <string name="frame_white">White</string>
+    <string name="frame_black">Black</string>
+    <string name="frame_paper">Paper</string>
+    <string name="frame_ink">Ink</string>
+    <string name="frame_transparent">None</string>
+    <string name="frame_blurred">Blurred</string>
+    <string name="frame_hint">Pad to a square or 4:5 to post without cropping. A transparent background needs PNG or WebP.</string>
+
+    <!-- Details -->
+    <string name="details_dimensions">Pixels</string>
+    <string name="details_size">File size</string>
+    <string name="details_type">Type</string>
+    <string name="details_location">Location</string>
+    <string name="details_location_present">A location is stored in this file. It is never copied to an export.</string>
+    <string name="details_location_none">No location in this file.</string>
+    <string name="details_hidden">Hidden data</string>
+    <string name="details_hidden_present">Yes: camera fields, thumbnails or comments a viewer does not show.</string>
+    <string name="details_hidden_none">None found.</string>
+    <string name="details_note">Exports remove all of this unless you choose to keep the camera fields for a JPEG. Remove it from the original file itself with the tool below.</string>
+    <string name="details_strip_now">Remove hidden data from a copy</string>
+
+    <!-- Export -->
+    <string name="format_jpeg">JPEG</string>
+    <string name="format_png">PNG</string>
+    <string name="format_webp">WebP</string>
+    <string name="format_webp_lossless">WebP lossless</string>
+    <string name="export_jpeg_note">Smallest for photos. Lossy; transparency becomes white.</string>
+    <string name="export_png_note">Lossless, keeps transparency, larger. Right for screenshots, graphics and anything erased.</string>
+    <string name="export_webp_note">Smaller than JPEG at the same quality, keeps transparency. Lossy.</string>
+    <string name="export_webp_lossless_note">Lossless and usually a quarter smaller than PNG. Needs Android 11 or newer to open everywhere.</string>
+    <string name="export_quality">Quality</string>
+    <string name="export_target">Keep under (optional)</string>
+    <string name="export_allow_shrink">Shrink the picture if it must</string>
+    <string name="export_allow_shrink_detail">When even the lowest quality is over the limit, use fewer pixels. Off: say so instead.</string>
+    <string name="export_keep_camera">Keep camera fields</string>
+    <string name="export_keep_camera_detail">Make, model, date and exposure, copied one by one. Location, serial numbers and thumbnails never.</string>
+    <string name="export_expected">Expected size: %1$d × %2$d pixels.</string>
+    <string name="export_prepare">Prepare the export</string>
+    <string name="export_note">The file is made first and measured, and you see its real size and pixels before anything is saved.</string>
+    <string name="export_preparing">Rendering and measuring…</string>
+    <string name="export_saving">Saving…</string>
+    <string name="export_saved">Saved %1$s.</string>
+    <string name="export_failed">The export could not be made. Your original is safe.</string>
+    <string name="export_options_invalid">A size limit needs a lossy format: JPEG or WebP.</string>
+    <string name="export_ready">Ready to save</string>
+    <string name="export_preview_description">The exported picture</string>
+    <string name="export_lossless_line">%1$s · lossless</string>
+    <string name="export_quality_line">%1$s · quality %2$d</string>
+    <string name="export_original_line">Original: %1$d × %2$d, %3$s.</string>
+    <string name="export_save_copy">Save a copy</string>
+    <string name="export_save_folder">Into my folder</string>
+
+    <!-- Engine sentences -->
+    <string name="engine_encoder_failed">The picture could not be encoded.</string>
+    <string name="engine_options_invalid">Those export settings do not go together.</string>
+    <string name="engine_out_of_memory">Not enough memory for this picture at this size. Try a smaller output.</string>
+    <string name="engine_unreadable">This picture could not be read.</string>
+    <string name="engine_encoding">Encoding…</string>
+    <string name="engine_target_unreachable_fixed">Cannot get under %1$s at these exact pixels. Allow shrinking or raise the limit.</string>
+    <string name="engine_target_unreachable_any">Cannot get under %1$s even at the smallest sensible size.</string>
+    <string name="engine_note_flattened">Transparency became white.</string>
+    <string name="engine_note_lossy">Lossy encoding.</string>
+    <string name="engine_note_lossless">Lossless encoding of the edited pixels.</string>
+    <string name="engine_note_camera_kept">Camera and date fields kept; location removed.</string>
+    <string name="engine_note_metadata_removed">All hidden data removed.</string>
+    <string name="engine_note_shrunk_for_target">Shrunk to %1$d × %2$d to meet the limit.</string>
+    <string name="engine_note_scaled_from_source">The source was larger than this phone can hold; the export is at the working size.</string>
+    <string name="engine_size_change">%1$s → %2$s</string>
+    <string name="engine_title_resize_exact">Resize to %1$d × %2$d</string>
+    <string name="engine_title_resize_percent">Resize to %1$d%%</string>
+    <string name="engine_title_resize_edge">Longest edge %1$d px</string>
+    <string name="engine_resize_over_budget">Those pixels are beyond this phone\'s %1$d MP working limit.</string>
+    <string name="engine_resize_already">Already %1$s in this format.</string>
+    <string name="engine_resized_detail">%1$s → %2$s.</string>
+    <string name="engine_resize_enlarged">Enlarged: that adds no detail.</string>
+    <string name="engine_resize_capped">Capped at this phone\'s working limit.</string>
+    <string name="engine_title_under">Under %1$s</string>
+    <string name="engine_kb_too_small">Enter a limit of 2 KB or more.</string>
+    <string name="engine_already_under">Already %1$s, under %2$s, with nothing hidden in it. Left as it is.</string>
+    <string name="engine_stripped_only">%1$s → %2$s, under %3$s. The picture is byte for byte the same; only hidden data went.</string>
+    <string name="engine_under_detail">%1$s → %2$s, under %3$s, %4$s.</string>
+    <string name="engine_made_smaller">Made smaller than %1$s to fit.</string>
+    <string name="engine_passport_note">Passport shape, 35 × 45 mm at 300 dpi.</string>
+    <string name="engine_now_jpeg">Now a JPEG.</string>
+    <string name="engine_title_convert">Convert to %1$s</string>
+    <string name="engine_title_compress">Compress at quality %1$d</string>
+    <string name="engine_nothing_to_gain">Already %1$s; compressing would not make it smaller. Left as it is.</string>
+    <string name="engine_title_strip">Remove hidden data</string>
+    <string name="engine_nothing_hidden">Nothing hidden in it. Left as it is.</string>
+    <string name="engine_stripped_location">A location and camera data were removed</string>
+    <string name="engine_stripped_camera">Camera data was removed</string>
+    <string name="engine_strip_lossless_detail">%1$s. The picture itself is byte for byte the same: %2$s → %3$s.</string>
+    <string name="engine_strip_reencoded_detail">Re-encoded losslessly as %1$s with nothing hidden, %2$s.</string>
+    <string name="engine_title_enhance">Enhance automatically</string>
+    <string name="engine_enhance_nothing">Already well exposed. Left as it is.</string>
+    <string name="engine_enhance_detail">Exposure %1$.2f, whites %2$d, blacks %3$d.</string>
+    <string name="engine_title_recipe">Recipe “%1$s”</string>
+    <string name="engine_title_watermark">Watermark “%1$s”</string>
+    <string name="engine_title_collage">Collage, %1$s</string>
+    <string name="engine_collage_count">A collage takes two to %1$d pictures.</string>
+    <string name="engine_title_frame">Frame</string>
+
+    <!-- Collage layouts -->
+    <string name="collage_grid">Grid</string>
+    <string name="collage_columns">Columns</string>
+    <string name="collage_feature">Feature</string>
+    <string name="collage_strip">Strip</string>
+    <string name="collage_polaroid">Polaroid</string>
+    <string name="collage_hint">Pictures fill their cells and are cropped to fit. Up to %1$d.</string>
+
+    <!-- Batch tool screens -->
+    <string name="tools_pictures">Pictures</string>
+    <string name="tools_add_photos">Add photos</string>
+    <string name="tools_browse_files">Browse files</string>
+    <string name="tools_empty_hint">Add one picture or a hundred. Each is copied privately first; your originals are never changed.</string>
+    <string name="tools_clear_all">Clear the list</string>
+    <string name="tools_options">Options</string>
+    <string name="tools_output">Output</string>
+    <string name="tools_run_note">Runs on this phone. Results appear here to check before you save or share them.</string>
+    <string name="tools_progress">%1$d of %2$d · %3$s</string>
+    <string name="tools_cancelled">Cancelled. Pictures finished before that were kept.</string>
+    <string name="tools_count_done">%1$d done</string>
+    <string name="tools_count_skipped">%1$d left as they were</string>
+    <string name="tools_count_failed">%1$d failed</string>
+    <string name="tools_save_all">Save all</string>
+    <string name="tools_share_all">Share all</string>
+    <string name="tools_start_again">Start again</string>
+    <string name="tools_edit_result">Edit</string>
+    <string name="tools_saved_one">Saved %1$s.</string>
+    <string name="tools_saved_all">Saved %1$d pictures.</string>
+    <string name="tools_saved_some">Saved %1$d, then stopped: %2$s</string>
+    <string name="tools_too_many">The first %1$d were added; a batch is at most that many.</string>
+    <string name="tools_add_first">Add a picture first.</string>
+    <string name="tools_need_more">This tool needs at least %1$d pictures.</string>
+    <string name="tools_busy">Another job is still running. Wait for it or cancel it.</string>
+    <string name="tools_need_dimensions">Enter a width and a height in pixels.</string>
+    <string name="tools_need_edge">Enter a longest edge between 16 and 8192 pixels.</string>
+    <string name="tools_need_text">Enter the watermark text.</string>
+    <string name="tools_pick_preset">Choose a recipe first. Save one from the editor\'s Looks panel.</string>
+    <string name="tools_name_pattern">Output name pattern</string>
+    <string name="tools_name_pattern_hint">{name} the original\'s name, {n} a number, {w}x{h} the pixels, {date} today.</string>
+    <string name="resize_long_edge">Longest edge</string>
+    <string name="resize_long_edge_px">Longest edge in pixels</string>
+    <string name="resize_percent">Percent</string>
+    <string name="resize_exact">Exact pixels</string>
+    <string name="resize_exact_hint">Exact pixels change the shape when they differ from the original\'s; the picture is cut to fit from the middle.</string>
+    <string name="kb_limit_label">Limit in KB (1 KB = 1,000 bytes)</string>
+    <string name="kb_keep_pixels">Keep the pixels</string>
+    <string name="kb_passport">Passport photo</string>
+    <string name="kb_hint">The best quality that fits comes first; the picture only shrinks if even the lowest quality is over. A JPEG already under the limit is not re-encoded, only cleaned of hidden data.</string>
+    <string name="compress_by_quality">By quality</string>
+    <string name="compress_by_size">To a size</string>
+    <string name="convert_hint">A PNG converted to JPEG loses its transparency to white. Lossless WebP keeps everything PNG keeps, smaller.</string>
+    <string name="strip_hint">JPEGs keep every pixel exactly as it was: only the hidden segments are removed. Other formats are re-encoded losslessly.</string>
+    <string name="enhance_hint">Levels and a gentle exposure from each picture\'s own histogram. Pictures that are already well exposed are left alone and say so.</string>
+    <string name="recipe_none">No recipes yet. In the editor, open Looks and tap Save as recipe.</string>
+    <string name="watermark_text">Watermark text</string>
+
+    <!-- Settings -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_lively">Lively tool icons</string>
+    <string name="settings_lively_detail">Icons make their small movement now and then. Off keeps every icon still; Android\'s own animation setting is respected either way.</string>
+    <string name="settings_histogram">Histogram on the Light panel</string>
+    <string name="settings_histogram_detail">The picture\'s values as a graph, with clipping marks at the ends.</string>
+    <string name="settings_haptics">Ticks on the sliders</string>
+    <string name="settings_haptics_detail">A small tick as a slider passes zero.</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_detail">Chosen in Android\'s own per-app language setting.</string>
+    <string name="settings_language_choose">Choose</string>
+    <string name="settings_export">Exports</string>
+    <string name="settings_default_format">Format to start from</string>
+    <string name="settings_keep_camera">Keep camera fields by default</string>
+    <string name="settings_keep_camera_detail">Make, model, date and exposure in JPEG exports. Location is never kept, whatever this says.</string>
+    <string name="settings_ask_save">Ask where to save each time</string>
+    <string name="settings_ask_save_detail">Off: results go to a folder you choose once, which makes saving fifty pictures one tap.</string>
+    <string name="settings_space">Space</string>
+    <string name="settings_results">in results waiting to be saved</string>
+    <string name="settings_results_detail">Exports and batch results are kept here until you clear them, so you can come back and save them. Nothing here is a backup.</string>
+    <plurals name="settings_project_count">
+        <item quantity="one">%1$d picture in Studio, %2$s</item>
+        <item quantity="other">%1$d pictures in Studio, %2$s</item>
+    </plurals>
+    <string name="settings_projects_detail">Private copies and their edits. Removing them does not touch your originals.</string>
+    <string name="settings_budget">This phone edits up to %1$d megapixels at once, from a %2$d MB app heap. Larger pictures work at that size and the export says so.</string>
+    <string name="settings_crash_log">Crash log</string>
+    <string name="settings_crash_none">No crashes recorded</string>
+    <plurals name="settings_crash_count">
+        <item quantity="one">%d crash recorded</item>
+        <item quantity="other">%d crashes recorded</item>
+    </plurals>
+    <string name="settings_crash_detail">Written on this phone only. It names the app\'s own code and the phone model, never a picture. Nothing is sent unless you send it.</string>
+    <string name="settings_crash_send">Send the latest</string>
+    <string name="settings_crash_chooser">Send crash log with</string>
+    <string name="settings_cannot">What this app cannot do</string>
+    <string name="settings_cannot_detail">It has no internet permission, so it cannot upload, sync, track or show ads, whatever a future update might want. That is enforced by Android, not promised by a policy.</string>
+
+    <!-- About -->
+    <string name="about_title">About Studio</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_offline_title">Nothing leaves the phone</string>
+    <string name="about_offline_body">Studio does not declare the INTERNET permission, so the process cannot open a socket. Your pictures cannot leave the device even if a library tried to send them. Check it on the Play listing without taking anyone\'s word for it.</string>
+    <string name="about_honest_title">It says what it did</string>
+    <string name="about_honest_body">Every export is measured after it is made, so the size and pixels you see are the file\'s own. Looks show the sliders they move. A picture that needed no change says so instead of pretending.</string>
+    <string name="about_feedback_title">Tell us what is missing</string>
+    <string name="about_feedback_body">A tool you expected, a picture that came out wrong, a word in the wrong language: a message reaches a person.</string>
+    <string name="about_email">Email</string>
+    <string name="about_free_title">Free, and staying free</string>
+    <string name="about_free_body">No subscription, no paywall on the second tool, no ads. If Studio saved you an upload to a stranger\'s server, a coffee says thanks.</string>
+    <string name="about_coffee">Buy a coffee</string>
+    <string name="about_rate">Rate on Google Play</string>
+    <string name="about_privacy">Privacy policy</string>
+    <string name="about_made_by">Made by %1$s · %2$s</string>
+    <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk is under the SIL Open Font Licence. No other third-party code is bundled.</string>
+</resources>

@@ -20,6 +20,6 @@
         <path android:pathData="M88,68 V84 H72" android:fillColor="#00000000" android:strokeColor="#FFF7F5EF" android:strokeWidth="4.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
         <!-- The band -->
         <path android:pathData="M41.25,66 H66.75 A5.5,5.5 0 0 1 72.25,71.5 A5.5,5.5 0 0 1 66.75,77 H41.25 A5.5,5.5 0 0 1 35.75,71.5 A5.5,5.5 0 0 1 41.25,66 Z"
-            android:fillColor="#FFE0257A" />
+            android:fillColor="#FFF2A531" />
     </group>
 </vector>

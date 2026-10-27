@@ -1,33 +1,27 @@
 # Validation and release gates
 
-## Automated checks
+## What is checked automatically
 
-The Android workflow builds the debug APK, runs JVM/Robolectric image tests and Android lint, checks the merged application manifest, and runs an Android API 35 emulator flow. Each workflow artifact belongs to its commit; use the latest successful run for that exact revision. A green build alone is not production certification.
+1. **Engine, without an Android SDK.** `tools/jvm-check.sh` compiles `engine/` with the standalone Kotlin compiler, fails if anything there imports `android.*`, and runs its JUnit tests: tone identity and each slider's shape, saturation and vibrance, hue, levels, curves, every look, blur and unsharp behaviour, preview-versus-export agreement at two sizes, vignette and grain, crop and aspect arithmetic after turns, recipe round trips and tolerant reading including the 0.1 format, JPEG segment walking and stripping, size fitting, names and collage plans.
+2. **Android pipeline, on the JVM.** Robolectric with native graphics: export leaves the source byte for byte, EXIF orientation applied once and location never copied, preview predicts export through the real renderer, erase to PNG transparency, a target size measured after metadata, no partial file on failure or cancellation, lossless strip with identical decoded pixels, perspective and straighten sizes within budget, layers at two sizes, and the batch ops end to end through the store and workspace.
+3. **Lint, debug APK, release bundle**, then `tools/verify_manifest.py` against every merged manifest.
+4. **Emulator, API 35.** The real activity: a picture imported through the store appears on the home board, opens in the editor, exports with the measured dimensions, the source is unchanged, downloadable emoji fonts stay off. Screenshots of home, editor and export are uploaded with the run.
 
-The pipeline suite covers crop/rotate/resize dimensions, unchanged source hashes, EXIF orientation and GPS stripping, transparent PNG masks, actual target-size bounds, cancellation cleanup, corrupt inputs, sampled large-image decode, diagonal panorama allocation, real clone/blur pixels, recipe serialization and oversized resize rejection. Geometry tests cover size bounds, aspect presets and safe names.
+A green run is evidence that these things hold on that revision. It is not a release.
 
-The emulator flow imports a generated fixture through the real ViewModel/store, recreates the Activity, changes theme/motion preferences, reopens the project, prepares a measured export and confirms source bytes are unchanged. It captures actual Home/editor/export screens for review. It does not claim end-to-end automation of every external document provider or share target.
+## Evidence for this revision
 
-## Milestone record
-
-| Milestone | Implementation | Remaining qualification |
-| --- | --- | --- |
-| Audit/architecture | Empty destination and Sheaf inspected; original implementation and dependency policy recorded | Owner selects source redistribution license |
-| Foundation | Compose app, scoped imports/exports, private projects, bounded image pipeline, semantic motion | Broader OS/device matrix |
-| Core tools | Editing panels, target-size encoding, presets and sequential batches implemented | Hands-on quality review of every tool and SAF provider |
-| Advanced stage | Manual overlay layers, masks, clone, local blur/pixelation and grid collage | Neural tools and richer compositing deferred; no unfinished UI |
-| Release preparation | Build workflow, fixture tests, privacy check, README and unpublished launch kit | Physical-device accessibility/performance checks, release signing and owner review |
+The engine suite passed locally during the rebuild (59 tests) with no Android SDK present. The Gradle, Robolectric and emulator stages run in GitHub Actions; the run for the commit under review is the evidence for them, and this file is updated with its link and counts once it is green.
 
 ## Required before a public release
 
-1. Run the exact release revision on API 26 and a current physical Android phone, including a low-memory device. Record device/RAM/OS, cold import time, preview latency, export time, peak memory, battery/thermal behavior and actual output dimensions.
-2. Exercise each visible control, undo/redo after geometry and layer operations, batch partial failures, cancellation, process interruption and reopening projects. Verify saved copies with independent viewers.
-3. Test Photo Picker and document providers, both single-file and folder export, denied/cancelled choices, low storage and sharing to common targets. Confirm source hashes remain unchanged.
-4. Use small and high-resolution photos, very thin panoramas, all eight EXIF orientations, transparent PNG/WebP, wide-gamut/HDR sources, corrupt inputs and unusually long filenames. Record expected sRGB/SDR conversion and dimension reductions.
-5. Test TalkBack traversal and announced slider values, 200% font scaling, landscape/tablet layouts, touch targets, both themes, Android Remove animations and the in-app motion switch. Brush gestures still need spatial touch input.
-6. Compare matched edits and outputs against established editors on the same fixture set: edge quality, transparency halos, colour differences, encoded bytes, timings and memory. Publish measurements and limitations before making benchmark claims.
-7. Recheck runtime dependency licenses and the merged **release** manifest; select the source license, configure an owner-held signing key, verify the signed build and review final store assets. No release has been published.
-
-## Evidence status
-
-The [initial passing run](https://github.com/vysakhsuresh/layerbit-image-editor-android/actions/runs/40437573713), revision `5a2c26d`, passed 15 JVM/Robolectric tests, Android lint (zero errors, 23 warnings), the debug APK build, the merged debug privacy check and one API 35 emulator import/reopen/export test. Lint warnings included explicit removal declarations, newer available versions, Kotlin-style suggestions and backup rules. Backup-rule hardening, additional labels and a crop-boundary regression test are in the subsequent revision; its checks must also pass before using that build. Screenshot extraction is being corrected because Gradle removed the test installation before collection.
+1. Run the exact release revision on API 26 and on a current phone, including one with a 256 MB app heap. Record cold start, preview latency per slider tick on a 12 MP source, export time at the full budget, peak memory from `dumpsys meminfo`, and whether `Budget.exportPixels` at a twentieth of the heap survives a 24 MP export with the frame and layers on. Lower the divisor if it does not; the number in `Budget.kt` changes only with this measurement.
+2. Exercise every panel: drag-handle crop with each aspect, straighten while the crop stays put, perspective on a photographed page, Auto on dark and bright pictures, curves on each channel, every look, text placed, moved and edited, clone, erase exported as PNG and WebP, frame with blurred fill, undo and redo across geometry and layers.
+3. Batch: fifty mixed JPEG and PNG inputs through resize, under-50-KB, convert, strip and collage; cancel midway and confirm finished outputs survive; rotate the phone midway.
+4. Share in from the gallery and from a camera app, "edit in" from a file manager, the three launcher shortcuts, a share of several pictures landing on Resize.
+5. Photo picker and document providers, single-file save and folder save with the folder remembered, denied and cancelled choices, a full card, sharing to common targets. Confirm source hashes unchanged.
+6. Inputs: eight EXIF orientations, transparent PNG and WebP, HEIC, wide-gamut and HDR photos, a 50 MP photo, a 10000×10 panorama, corrupt files, long names.
+7. TalkBack through the home board, the panel strip and every slider, 200% font scale, landscape and a tablet, both themes, animations off; brush tools need touch and the alternatives in Markup must each work.
+8. Compare matched exports against two established editors on the same fixtures: edge quality, halos, colour, bytes, time. Publish the measurements before any comparison claim.
+9. Run the baseline profile generator and the startup benchmark; record the two medians.
+10. Select the source licence, configure the owner's signing key, verify the signed bundle, review the store assets.

@@ -1,37 +1,54 @@
-# Architecture and reference audit
+# Architecture
 
-## Repository and reference
+One Gradle module of app code, boundaries by package, enforced where it matters by a script.
 
-The destination was an empty public repository with no license, build files, instructions or dependency policy. Sheaf was inspected at tree `01134fcf70d82dc6b1579e1cde833963b9a10749`. Its `CLAUDE.md` applies to Sheaf; this project has its own review branch. Sheaf and IPO-RADAR are not modified.
+```
+com.layerbit.studio
+  engine/     pure Kotlin, no android.* import, compiled by tools/jvm-check.sh
+              Recipe, Json, RecipeJson, ColorMath (TonePipeline, CurveMath, Looks),
+              Spatial, Histogram/AutoEnhance, Geometry2D, JpegSegments, FitSize, Names, Collage
+  image/      the Android renderer: Renderer (decode, geometry, finish), Codecs (encode,
+              target size, selective EXIF, lossless strip), Budget
+  files/      StudioFile, ImageStore (the only way a picture enters), Exporter (the only
+              thing that writes a Uri), Workspace, Handoff, CrashLog
+  ops/        ToolId, Op, the batch operations
+  jobs/       JobRunner and JobState, app-scoped
+  prefs/      StudioSettings, Prompts
+  ui/         theme, components, icons (Glyphs), home, editor, tools, intro, settings, about
+```
 
-Sheaf uses Kotlin/Compose, private input copies, Android's scoped file pickers, explicit removal of networking permissions, and a shared drawing clock for semantic animated icons. Its visual language uses navy and paper surfaces, restrained accents, and readable tool groups. No license file was present, so no Sheaf code, font, icon or other asset was copied. Studio uses original code, system typography, a mint/coral palette and original Canvas drawings.
+## A recipe, not pixels
 
-## Components
+The editor never changes pixels in place. The user's work is a `Recipe`: geometry (perspective quad, quarter turns, flips, straighten, crop, size), tone, curves, a look and its strength, layers, a frame. The renderer reads the source copy and the recipe and produces pixels. That is what makes undo a stack of recipes, a preset a recipe without its crop and layers, a batch the same recipe over more inputs, and the preview the same arithmetic as the export.
 
-- `ProjectStore`: copies provider input into private files with a 100 MB input limit; validates image headers; persists projects and recipes; writes only user-created destinations. A FileProvider exposes only encoded exports.
-- `Recipe`: normalized crop, transforms, explicit output dimensions, tone controls, filter and ordered markup/mask layers. Source bytes never change. Coordinates belong to the canvas after geometry; geometry changes affect the image beneath overlays.
-- `ImageEngine`: sampled decode, EXIF orientation, crop/transform, resize, 8-bit sRGB colour, overlays, encoding. It checks cancellation between stages, rows and compression attempts.
-- `StudioViewModel`: session undo/redo, asynchronous preview, serialized project persistence, sequential batch queue and explicit export preparation.
-- Compose UI: Home, editor, export preview, batch sheet and settings. Native Android contracts handle import/save/share.
+Recipes are JSON written and read by hand, with a default for every missing field, so versions stay mutually readable. The 0.1 preview's format is read and translated.
 
-## Image budget
+## Two render stages
 
-The working budget is `maxHeap / 48`, clamped to 1–8 million pixels, plus an 8192-pixel edge limit. Previews use at most 900,000 pixels. Decoding reserves additional area for diagonal rotation; the actual rotated bounding box is checked before allocation, including thin panoramas. Explicit oversized resize requests fail with a useful message. Natural-size renders may be sampled; the encoded preview displays actual dimensions and original dimensions before Save. This is a bounded raster implementation, not a tiled full-resolution engine. It is not a full-fidelity RAW/HDR editor. Wide-gamut input is converted to 8-bit sRGB. Standard resize interpolation does not recover missing detail.
+`Renderer.geometry` decodes within the budget, turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
 
-## Export semantics
+`Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables, across the cores by rows), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas and the frame. Every pure step is the same at any size, which `RendererTest.previewPredictsExport` measures.
 
-JPEG flattens transparency onto white; PNG keeps transparency and encodes the edited pixels losslessly; WebP uses lossy encoding with alpha. Target sizes apply to JPEG/WebP. The quality search checks the actual file after optional metadata insertion. If the target is unattainable, the operation fails unless the user opted into dimension reduction. The preview reports the final size and dimensions. Input EXIF is not copied wholesale. Optional JPEG metadata is restricted to camera/date/exposure fields; GPS is always omitted.
+## Order of geometry, and why the crop is where it is
 
-## State and background behavior
+Perspective works on the upright source. Turns and flips follow. Straightening rotates into a bounding box. The crop is measured as fractions of that box, so turning the straighten dial moves the picture under a crop that stays where the user put it, and an aspect preset chosen after a quarter turn means what it says. The 0.1 preview measured the crop on the source, which is why 16:9 after a turn came out 9:16; `Geometry2D.rotateCrop` translates those recipes.
 
-The latest committed recipe is persisted in private storage. Undo/redo is a 60-step session history. Batch work survives Activity recreation through the ViewModel but is not a foreground service: keep the app open. Process death can interrupt a batch. Already prepared output files and imported projects stay private on disk; the latest 50 valid outputs are recovered on launch. Projects can be reopened. Prepared exports are not a backup; Save copies to a chosen destination.
+## The budget
 
-## Staged advanced features
+`Budget.exportPixels` is a twentieth of the heap in pixels, between 2 and 24 MP, with an 8192-pixel edge. The working bitmap is 4 bytes a pixel and the finish stage holds one `IntArray` copy, so the peak is about 8 bytes a pixel plus the encoder. Computed, not measured; `VALIDATION.md` names the device run that confirms or lowers it.
 
-Implemented: ordered overlay layers, opacity/visibility/reordering, reversible erase masks, sampled clone strokes, rectangular local blur and pixelation, opaque Cover, and 2–9-image fit collages. These are manual tools and do not claim semantic AI selection.
+## Metadata
 
-Deferred and hidden: neural subject segmentation, generative object erasing, healing/inpainting, learned upscaling, advanced image-layer compositing and arbitrary local colour masks. No model was bundled because accuracy, redistribution license, peak memory, size, latency and low-end-device performance have not been demonstrated. The next milestone should evaluate candidates on a fixed representative corpus before selecting one. No cloud fallback is permitted.
+An export copies nothing from the source's EXIF block. If the user chooses to keep camera fields, eight named tags are copied one at a time; the location, serial numbers and the embedded thumbnail are never on the list. "Remove hidden data" on a JPEG walks the marker segments and keeps JFIF, the ICC profile and Adobe's colour marker, dropping APP1 and the rest, so the entropy-coded picture is byte for byte what it was. Other formats are re-encoded losslessly.
 
-## Motion and accessibility
+## Jobs
 
-All tool cards use distinct Canvas drawings. One shared 1.1-second preview plays on entering the app/editor and changing tools, then rests. The clock is read during drawing rather than recomposing the whole list. The lifecycle and Android animator scale gate the clock; a user setting also disables it. System typography, TalkBack labels and 48 dp controls cover standard controls. Freehand work still requires spatial touch interaction; text has a centre-placement alternative. Full screen-reader parity for brush-based editing remains a device usability task.
+`JobRunner` runs one op at a time on the application scope and publishes `JobState`. A batch survives the screen that started it and a rotation; it does not survive the process. Sheaf runs its jobs as a foreground-service Worker; this app does not yet, because an image batch is seconds to a minute and a notification permission ask on the first export is a poor first impression. The change is contained in `jobs/` if the trade-off turns out wrong.
+
+## Motion
+
+`ProvideLivelyClock` is one slow infinite transition at the root. Glyphs read it in their draw lambda only, so the clock ticking redraws pictures and never recomposes a card. Off in Settings or when Android's animator scale is zero; every glyph then shows a rest frame.
+
+## Not here, on purpose
+
+No neural segmentation, inpainting or upscaling. A model would arrive with its licence, size, peak memory, latency and accuracy measured on a fixed corpus, and would run only on the device. No image-loading library. No PDF, RAW or HDR engine.

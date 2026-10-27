@@ -1,31 +1,24 @@
-# Source and dependency policy
+# Dependencies and licences
 
-The owner has not selected a redistribution license for the original app source. Public visibility is not an open-source license. No Sheaf implementation/assets were copied. Do not advertise this repository as open source until the owner chooses a license.
+The owner has not selected a redistribution licence for the app's own source. Public visibility is not an open-source licence.
 
-Runtime dependencies are deliberately small:
+Runtime dependencies are deliberately few:
 
-| Component | Purpose | License |
+| Component | Purpose | Licence |
 |---|---|---|
-| Kotlin standard library / coroutines (via AndroidX) | Language, background work | Apache-2.0 |
-| AndroidX Core and Activity | Android integration, scoped picker, file sharing | Apache-2.0 |
-| AndroidX Lifecycle | ViewModel and lifecycle | Apache-2.0 |
-| AndroidX Compose UI/Foundation/Material3 | Native UI, drawing, controls | Apache-2.0 |
-| AndroidX ExifInterface | Orientation and selective metadata | Apache-2.0 |
-| AndroidX DocumentFile | User-selected destination directories | Apache-2.0 |
+| Kotlin standard library, coroutines | Language, background work | Apache-2.0 |
+| AndroidX Core, Activity, Lifecycle | Android integration, photo picker, ViewModel | Apache-2.0 |
+| AndroidX Compose UI, Foundation, Material3, material-icons-core | Native UI | Apache-2.0 |
+| AndroidX Navigation Compose | Routes | Apache-2.0 |
+| AndroidX ExifInterface | Orientation; the eight camera fields a user may keep | Apache-2.0 |
+| AndroidX DocumentFile | Display names; folder writes through a granted tree | Apache-2.0 |
+| AndroidX ProfileInstaller | Installs the baseline profile below API 31 | Apache-2.0 |
+| Space Grotesk (four weights) | The family typeface | SIL Open Font Licence 1.1 |
 
-Build/test only: Gradle and AGP (Apache-2.0); JUnit 4 (EPL-1.0), Hamcrest (BSD-3-Clause), Robolectric (MIT), AndroidX Test (Apache-2.0). GitHub Actions are build infrastructure and are not bundled in the APK. Transitive versions are visible with `./gradlew :app:dependencies`.
+Build and test only: Gradle and AGP (Apache-2.0), JUnit 4 (EPL-1.0), Hamcrest (BSD-3), Robolectric (MIT), AndroidX Test, UI Automator and Macrobenchmark (Apache-2.0). `tools/jvm-check.sh` fetches the Kotlin compiler and JUnit from Maven Central for the engine check; none of that reaches the APK.
 
-Apache-2.0 license text is included in the app assets and available in Settings. No custom fonts, stock images, external icon packs, additional image-processing SDKs or ML models are bundled. Encoding uses Android platform codecs; AndroidX may include native graphics helpers. The launcher art and tool animations are original vector/Canvas code.
+Compose brings Emoji2, whose initializer can ask an external font provider for downloads. The manifest removes `EmojiCompatInitializer`; it is never initialised by hand; `tools/verify_manifest.py` and the instrumented test enforce it.
 
-Before adding a dependency: inspect its license, transitive dependencies, merged permissions, reflection/native code, telemetry and model-download behavior. Pin a reviewed version. Reject network, tracking or server requirements. Do not silently substitute an unbundled model.
+No image-loading library, no processing SDK, no ML model, no network client, no analytics, no ads.
 
-Official implementation references:
-- https://developer.android.com/build/releases/agp-8-13-0-release-notes
-- https://developer.android.com/reference/android/graphics/BitmapFactory.Options
-- https://developer.android.com/reference/androidx/exifinterface/media/ExifInterface
-- https://developer.android.com/training/data-storage/shared/photopicker
-- https://developer.android.com/training/secure-file-sharing/setup-sharing
-
-Private data is explicitly excluded from cloud backups and device transfers using the [Android backup rules](https://developer.android.com/identity/data/autobackup), alongside `allowBackup=false`. CI records the resolved release runtime dependencies and checks the debug/release merged manifests.
-
-Compose's transitive Emoji2 dependency adds an automatic initializer capable of requesting a downloadable font from an external provider. The app removes `EmojiCompatInitializer` during manifest merging and never initializes it manually. Text uses the device's existing fonts; newer emoji may be unavailable on older devices. The manifest check and emulator test enforce this choice. See [Android's Emoji2 configuration](https://developer.android.com/develop/ui/views/text-and-emoji/emoji2). No downloadable-font, model-fetching, analytics, advertising or HTTP-client SDK is configured.
+Before adding a dependency: read its licence and its transitive dependencies, build and inspect the merged manifest for permissions, look for reflection, native code, telemetry and download behaviour, and pin a reviewed version. Reject anything that needs the network.

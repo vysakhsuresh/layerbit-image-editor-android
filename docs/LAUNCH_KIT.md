@@ -1,70 +1,46 @@
 # Layerbit Studio launch kit — draft, unpublished
 
-Working name: Layerbit Studio. Check name availability and final branding before release.
-
 ## Store listing draft
 
-**Title:** Layerbit Studio: Image Editor
+**Title:** Layerbit Studio: Photo Editor
 
-**Short description:** Edit, compress and batch-export images privately, on your phone.
+**Short description:** Every picture tool, free, and nothing leaves your phone.
 
 **Description:**
-Make room for your next idea. Layerbit Studio brings useful image tools into one calm workspace. Crop and straighten. Adjust light and colour. Add text, arrows and drawings. Resize for exact dimensions, or prepare JPEG/WebP images below a chosen file-size limit.
+Crop and straighten with real handles. Fix the light and colour, or tap Auto and see which sliders it moved. Curves, fourteen looks, draw and write, blur or cover a detail, clone over a blemish, frame it for a post.
 
-Keep your favourite looks as reusable recipes. Process several pictures together, create a collage, or refine a picture with layers, manual erase masks and clone strokes. Check the encoded result before saving a new copy.
+Get a photo under 50 KB for a form, as a passport photo if you need one. Resize fifty pictures at once. Convert to JPEG, PNG or WebP. Remove the location and camera data from a photo without touching a single pixel of the picture. Make a collage.
 
-All included editing tools are free. No account, ads or subscriptions. The app has no internet permission. It works with private copies and leaves your originals alone. Save and Share are explicit actions you control.
+Studio has no internet permission. Your pictures cannot leave the phone. Every edit works on a private copy; saving makes a new file where you choose. No account, no ads, no subscription, no paywall on the second tool.
 
-The app edits still images in 8-bit sRGB. Large sources may use a smaller working image; actual output dimensions appear before saving. It does not currently include neural object removal, AI upscaling or RAW development. Batch processing should remain open until completion.
+Every export is measured before you save it, so the size and pixels you see are real.
 
 ## Screenshot plan
 
-Use original, consented sample images, never customer documents. Capture real app screens after device QA; do not add controls that are absent.
+Real screens after device QA, original consented pictures, never customer documents.
 
-1. Home: “Your next edit starts here.” Import action and recent projects.
-2. Crop/straighten: a landscape with a clear horizon; visible source and result.
-3. Colour: a before/after comparison with subtle adjustments.
-4. Target size: real export preview with measured bytes and dimensions.
-5. Markup/layers: text, arrow and mask layers with clear labels.
-6. Batch/collage: selected inputs, finished results and an actual collage.
-7. Privacy/settings: offline explanation, theme and motion controls.
+1. Home: the board of tools, "Every picture tool. Nothing leaves your phone."
+2. Crop: handles on a landscape, thirds visible mid-drag.
+3. Light: histogram, Auto pressed, the sliders it moved.
+4. Under a size: "4.2 MB → 48 KB, under 50 KB" on the result row.
+5. Retouch: a blurred number plate, the Cover hint.
+6. Remove hidden data: "A location and camera data were removed. The picture itself is byte for byte the same."
+7. Collage: four pictures in the feature layout.
+8. Settings: the "what this app cannot do" panel.
 
-Produce phone portrait and tablet landscape variants with legible text. Review text scaling and cropping on each store image.
+## 25-second demo
 
-## 25-second demo script
-
-0–4s: Open an image. Caption: “A new copy. A fresh idea.”
-4–9s: Crop and adjust warmth. Show tool animations briefly.
-9–14s: Add text, then undo and redo.
-14–19s: Set a maximum file size; show the actual encoded preview.
-19–25s: Save a new copy. Caption: “Free tools. On your phone.”
-
-Use a real screen recording. Avoid “best,” “unmatched,” or AI claims that have not been measured.
+0–4s open a photo from the share sheet. 4–9s drag a crop handle, straighten. 9–14s Auto, then nudge warmth. 14–19s Under 50 KB on a batch of five, results appear with sizes. 19–25s Remove hidden data, save a copy. Caption: "Free. Offline. Measured."
 
 ## FAQ
 
-**Are tools paid?** All included editing tools are free; there is no subscription or paywall.
+**Is anything paid?** No. Every tool is free; there is no subscription.
+**Are pictures uploaded?** The app has no internet permission, so it cannot upload. Sharing hands a copy to an app you choose.
+**Are originals changed?** Never. Edits work on a private copy; saving makes a new file.
+**Why did the size or pixels change?** The export sheet shows the real numbers before you save; a target size or the phone's working limit may use fewer pixels, and it says so.
+**Is "remove hidden data" lossless?** For JPEG, yes: only the hidden segments go. Other formats are re-encoded losslessly.
+**Can I batch?** Resize, under-a-size, compress, convert, strip, enhance, watermark, frame and recipes all take as many pictures as you give them.
 
-**Are pictures uploaded?** The app does not have network permission. Sharing hands a chosen export to another app, whose behavior is controlled by that app.
+## Organic discovery
 
-**Are originals changed?** Imports become private working copies. Export creates a new document in a destination you choose.
-
-**Why did dimensions change?** The device working limit or an explicitly enabled target-size reduction may use fewer pixels. The encoded preview shows actual dimensions before you save.
-
-**Is compression lossless?** JPEG/WebP encoding here is lossy. PNG encoding is lossless for the edited pixels; resizing or other edits can still change those pixels.
-
-**Does it support AI erase or upscaling?** Neural tools are not included in this release.
-
-**Can I batch in the background?** Keep the app open. Activity rotation is handled, but process termination can interrupt a batch.
-
-**Where are private copies?** In app-private storage. Remove a project to delete its private source and recipe. Uninstalling removes private projects and prepared exports; save important results to a chosen destination.
-
-## Organic discovery plan
-
-Start with task-specific demonstrations: “resize to exact pixels,” “compress for an upload limit,” “remove photo location metadata,” and “batch convert images.” Explain limitations truthfully. Prepare a small static help site with accessible guides and the official store link after launch. Create a weekly demonstration from a reusable template; draft posts for owner review. Offer voluntary sharing of exported results without injected watermarks, referral tracking or forced promotion. Publish useful change logs. Invite feedback through an email intent that the user sends themselves.
-
-No unsolicited messaging, purchased reviews, automated spam, or guaranteed-download/earnings claims. Store keywords and competitor comparisons require current research before publication.
-
-## Business tradeoff
-
-This brief excludes ads, tracking, subscriptions and network services, and keeps tools free. It therefore has no direct revenue from those mechanisms. Later options for owner review include optional support via the Layerbit website, transparent sponsorship of development, paid organizational support, or separately licensed custom development. Each needs its own business and privacy review. No payment or sponsor integration is implemented, and no earnings are guaranteed.
+Task demonstrations: "photo under 50 KB for a form", "passport photo on the phone", "remove location from a photo without losing quality", "resize fifty pictures at once", "straighten a photographed document". Explain limits truthfully. A small help site with the store link after launch. No purchased reviews, no spam, no claims that have not been measured.
