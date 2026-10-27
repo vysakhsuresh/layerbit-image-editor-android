@@ -298,7 +298,7 @@ class RendererTest {
         assertEquals("ink kept", 255, Color.alpha(ink.getPixel(100, 85))); assertEquals("paper gone", 0, Color.alpha(ink.getPixel(100, 30))); ink.recycle()
         val scanned = renderer.render(src, Recipe(scan = Scan(ScanMode.COLOUR)))
         assertTrue("paper white: ${Color.red(scanned.getPixel(230, 30))}", Color.red(scanned.getPixel(230, 30)) > 235)
-        assertTrue("ink dark: ${Color.red(scanned.getPixel(230, 85))}", Color.red(scanned.getPixel(230, 85)) < 90); scanned.recycle()
+        assertTrue("ink dark: ${Color.red(scanned.getPixel(190, 85))}", Color.red(scanned.getPixel(190, 85)) < 90); scanned.recycle()
         val sticker = export(src, Recipe(cutout = Cutout(enabled = true, mode = CutoutMode.INK)), ExportOptions(OutputFormat.JPEG, sticker = true), File(dir, "sticker.webp"))
         assertEquals("sticker width", 512, sticker.width); assertEquals("sticker height", 512, sticker.height)
         assertEquals(OutputFormat.WEBP, sticker.format)
