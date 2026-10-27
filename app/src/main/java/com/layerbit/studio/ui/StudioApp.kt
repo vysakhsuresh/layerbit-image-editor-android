@@ -189,6 +189,7 @@ import kotlin.math.*
             items(Tool.entries.filter { it !in listOf(Tool.BATCH,Tool.COLLAGE) }) { t -> ToolCard(t,tool==t) {vm.commit();pick(t)} }
         }
         BoxWithConstraints(Modifier.weight(1f)) {
+            val panelHeight=(maxHeight*.52f).coerceAtMost(300.dp)
             @Composable fun preview(modifier:Modifier) {
                 Column(modifier) {
                     EditorCanvas(if(compare)vm.state.original else vm.state.preview,draw,activeKind,brush,ink,text,sample,chooseSample,
@@ -271,7 +272,7 @@ import kotlin.math.*
                 }
             }
             if(maxWidth>650.dp) Row(Modifier.fillMaxSize()) { preview(Modifier.weight(1.2f).fillMaxHeight());controls(Modifier.weight(1f).fillMaxHeight()) }
-            else Column(Modifier.fillMaxSize()) { preview(Modifier.weight(1f).fillMaxWidth()); controls(Modifier.fillMaxWidth().heightIn(max=(maxHeight*.52f).coerceAtMost(300.dp))) }
+            else Column(Modifier.fillMaxSize()) { preview(Modifier.weight(1f).fillMaxWidth()); controls(Modifier.fillMaxWidth().heightIn(max=panelHeight)) }
         }
     }
 }
