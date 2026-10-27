@@ -656,4 +656,44 @@
     <string name="home_quick_sticker">Make a sticker</string>
     <string name="home_quick_watermark">Watermark</string>
     <string name="home_quick_collage">Collage</string>
+
+    <!-- Pages: tools, guide, contact -->
+    <string name="home_door_tools">Every tool</string>
+    <string name="home_door_tools_body">The whole set, by what it is for, each with what it does</string>
+    <string name="tools_page_title">Tools</string>
+    <string name="tools_page_subtitle">Everything Still does, and where</string>
+    <string name="tools_page_intro">Tap a tool to use it. One-picture tools ask for the picture first; batch tools open the steps with theirs switched on.</string>
+    <string name="tools_page_one">One picture</string>
+    <string name="tools_page_many">Many</string>
+    <string name="guide_title">Guide</string>
+    <string name="guide_intro">How Still works, in the order a first day goes. Nothing here needs an account, a login or a connection.</string>
+    <string name="guide_open_title">Open pictures</string>
+    <string name="guide_open_body">The big field on the home screen is the whole front door. Pick one picture and it opens in the editor; pick several and they go to the batch screen. Sharing from another app, or choosing Still from “edit in” or “open with”, lands in the same places. Every picture is copied privately first, so your original is never written to.</string>
+    <string name="guide_edit_title">Edit one picture</string>
+    <string name="guide_edit_body">The strip under the picture is every panel: crop, square up, light, colour, curves, looks, detail, cut out, scan, draw, retouch, layers, frame, what is inside the file, and export. Hold the picture to see the original. Undo and redo keep a hundred steps. Auto on the Light panel reads the histogram and tells you which sliders it moved; a look is a set of slider moves you can see and change.</string>
+    <string name="guide_batch_title">Process many</string>
+    <string name="guide_batch_body">Add pictures, switch on steps, run. Resize, keep under a size, convert, enhance, a look or a saved recipe, watermark, frame, cut out, scan. The steps combine into one pass per picture. Hidden data is always removed; when that is the only step, a JPEG is cleaned byte for byte with nothing re-encoded, and its orientation is kept.</string>
+    <string name="guide_cutout_title">Cut out the background</string>
+    <string name="guide_cutout_body">The red wash shows what will go before anything goes. Paint Keep over anything wrongly red and Remove over anything wrongly kept; the edge follows the picture’s own edges, so a short stroke usually does. Behind it: transparent, a colour, or a blur of the picture. Ink mode lifts a signature or a stamp off a photographed page. Export as PNG or WebP to keep transparency, or as a 512 × 512 sticker.</string>
+    <string name="guide_scan_title">Scan a page</string>
+    <string name="guide_scan_body">Square the page first on the Square panel. Scan then measures the light across the page and divides it out, so the paper goes white evenly and the ink keeps its weight. Colour keeps a stamp or a heading; black and white gives the smallest, clearest file.</string>
+    <string name="guide_size_title">A photo under a size</string>
+    <string name="guide_size_body">Forms ask for a photo under 50 KB or 100 KB, sometimes at passport shape. Still finds the best quality that fits and only shrinks the picture if even the lowest quality is over, and tells you which it did. The number shown is measured on the file that was written.</string>
+    <string name="guide_save_title">Saving and sharing</string>
+    <string name="guide_save_body">Export prepares the file and shows its real size and pixels before anything is written. Save a copy makes a new file where you choose; the original stays exactly as it was. Share hands the file to another app. Settings can remember a folder so a batch is one gesture.</string>
+    <string name="guide_privacy_title">What stays private</string>
+    <string name="guide_privacy_body">Still has no internet permission, so the process cannot send anything. Location is never copied into an export; camera fields only if you switch that on. A crash log, if there ever is one, stays on the phone until you choose to send it.</string>
+    <string name="guide_outro">Something missing from this guide, or from the app? The Contact page reaches a person.</string>
+    <string name="contact_title">Contact</string>
+    <string name="contact_intro">A message reaches a person. Nothing about your pictures travels with it unless you attach something yourself.</string>
+    <string name="contact_email_title">Email</string>
+    <string name="contact_email_body">Questions, a tool you expected, a word in the wrong language.</string>
+    <string name="contact_write">Write</string>
+    <string name="contact_copy">Copy address</string>
+    <string name="contact_whatsapp_title">WhatsApp</string>
+    <string name="contact_whatsapp_body">Opens the WhatsApp app with the Layerbit number; nothing is sent until you do.</string>
+    <string name="contact_bug_title">Something went wrong</string>
+    <string name="contact_bug_body">Say what you did and what you expected. The version and phone model are filled in; a picture is never attached by the app.</string>
+    <string name="contact_bug_write">Report it</string>
+    <string name="contact_bug_template">Still %1$s on %2$s, Android %3$s\n\nWhat I did:\n\nWhat I expected:\n\nWhat happened:\n</string>
 </resources>

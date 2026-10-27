@@ -35,6 +35,9 @@ import com.layerbit.still.files.StillFile
 import com.layerbit.still.ops.ToolId
 import com.layerbit.still.prefs.Settings
 import com.layerbit.still.ui.about.AboutScreen
+import com.layerbit.still.ui.pages.ContactScreen
+import com.layerbit.still.ui.pages.GuideScreen
+import com.layerbit.still.ui.pages.ToolsScreen
 import com.layerbit.still.ui.components.StillTopBar
 import com.layerbit.still.ui.editor.EditorScreen
 import com.layerbit.still.ui.home.HomeScreen
@@ -54,6 +57,9 @@ object Routes {
     const val ABOUT = "about"
     const val SETTINGS = "settings"
     const val COLLAGE = "collage"
+    const val TOOLS = "tools"
+    const val GUIDE = "guide"
+    const val CONTACT = "contact"
     const val PIPELINE = "pipeline?preset={preset}"
     const val EDITOR = "editor?project={project}&uri={uri}&panel={panel}&tool={tool}"
 
@@ -125,9 +131,36 @@ fun StillApp(
                     onProcessMany = { preset -> navController.navigate(Routes.pipeline(preset)) },
                     onQuickTool = { tool -> onPickOne(tool) },
                     onCollage = { navController.navigate(Routes.COLLAGE) },
+                    onTools = { navController.navigate(Routes.TOOLS) },
+                    onGuide = { navController.navigate(Routes.GUIDE) },
+                    onContact = { navController.navigate(Routes.CONTACT) },
                     onSettings = { navController.navigate(Routes.SETTINGS) },
                     onAbout = { navController.navigate(Routes.ABOUT) }
                 )
+            }
+            composable(Routes.TOOLS) {
+                Column {
+                    StillTopBar(title = stringResource(R.string.tools_page_title), subtitle = stringResource(R.string.tools_page_subtitle), onBack = { navController.popBackStack() })
+                    ToolsScreen(onTool = { tool ->
+                        when {
+                            tool.mode == ToolId.Mode.EDITOR -> onPickOne(tool)
+                            tool == ToolId.COLLAGE -> navController.navigate(Routes.COLLAGE)
+                            else -> navController.navigate(Routes.pipeline(presetFor(tool)))
+                        }
+                    })
+                }
+            }
+            composable(Routes.GUIDE) {
+                Column {
+                    StillTopBar(title = stringResource(R.string.guide_title), onBack = { navController.popBackStack() })
+                    GuideScreen()
+                }
+            }
+            composable(Routes.CONTACT) {
+                Column {
+                    StillTopBar(title = stringResource(R.string.contact_title), onBack = { navController.popBackStack() })
+                    ContactScreen()
+                }
             }
             composable(
                 Routes.EDITOR,
@@ -177,7 +210,7 @@ fun StillApp(
             composable(Routes.ABOUT) {
                 Column {
                     StillTopBar(title = stringResource(R.string.about_title), onBack = { navController.popBackStack() })
-                    AboutScreen()
+                    AboutScreen(onGuide = { navController.navigate(Routes.GUIDE) }, onContact = { navController.navigate(Routes.CONTACT) }, onTools = { navController.navigate(Routes.TOOLS) })
                 }
             }
         }
@@ -199,6 +232,13 @@ fun StillApp(
             IntroScreen(onDone = { still.prompts.introSeen = true; showIntro = false })
         }
     }
+}
+
+/** The batch screen preset a batch tool opens with. */
+private fun presetFor(tool: ToolId): String? = when (tool) {
+    ToolId.RESIZE -> "resize"; ToolId.RESIZE_KB -> "under"; ToolId.COMPRESS, ToolId.CONVERT -> "convert"; ToolId.STRIP_METADATA -> "clean"
+    ToolId.ENHANCE -> "enhance"; ToolId.APPLY_RECIPE -> "look"; ToolId.WATERMARK -> "watermark"; ToolId.PASSPORT -> "passport"
+    ToolId.CUTOUT -> "cutout"; ToolId.SCAN -> "scan"; else -> null
 }
 
 private fun adoptAndEdit(still: StillApplication, file: StillFile, scope: kotlinx.coroutines.CoroutineScope, open: (String) -> Unit) {

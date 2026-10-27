@@ -74,6 +74,9 @@ fun HomeScreen(
     onProcessMany: (String?) -> Unit,
     onQuickTool: (ToolId) -> Unit,
     onCollage: () -> Unit,
+    onTools: () -> Unit,
+    onGuide: () -> Unit,
+    onContact: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier = Modifier
@@ -96,6 +99,7 @@ fun HomeScreen(
             Door(Glyph.EDIT, Color(0xFF5B9DFF), stringResource(R.string.home_door_edit), stringResource(R.string.home_door_edit_body), onEditOne)
             Door(Glyph.RECIPE, Color(0xFF3ED3C0), stringResource(R.string.home_door_batch), stringResource(R.string.home_door_batch_body), { onProcessMany(null) })
             Door(Glyph.COLLAGE, Color(0xFFFF6BA8), stringResource(R.string.home_door_collage), stringResource(R.string.home_door_collage_body), onCollage)
+            Door(Glyph.LAYERS, Color(0xFFB08CFF), stringResource(R.string.home_door_tools), stringResource(R.string.home_door_tools_body), onTools)
         }
         item(key = "quick") {
             SectionHeading(stringResource(R.string.home_quick), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
@@ -121,6 +125,11 @@ fun HomeScreen(
         item(key = "footer") {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.home_promise), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, textAlign = TextAlign.Center)
+                Row {
+                    TextButton(onClick = onGuide) { Text(stringResource(R.string.guide_title), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
+                    TextButton(onClick = onContact) { Text(stringResource(R.string.contact_title), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
+                    TextButton(onClick = onAbout) { Text(stringResource(R.string.app_about), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
+                }
                 TextButton(onClick = onAbout) { Text(stringResource(R.string.home_footer, BrandLinks.BRAND_LABEL), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim) }
             }
         }

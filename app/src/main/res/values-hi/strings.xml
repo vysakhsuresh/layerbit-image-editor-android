@@ -656,4 +656,44 @@
     <string name="home_quick_sticker">स्टिकर बनाएं</string>
     <string name="home_quick_watermark">वॉटरमार्क</string>
     <string name="home_quick_collage">कोलाज</string>
+
+    <!-- Pages: tools, guide, contact -->
+    <string name="home_door_tools">हर टूल</string>
+    <string name="home_door_tools_body">पूरा सेट, काम के हिसाब से, हर एक के साथ वह क्या करता है</string>
+    <string name="tools_page_title">टूल</string>
+    <string name="tools_page_subtitle">Still जो कुछ करता है, और कहां</string>
+    <string name="tools_page_intro">इस्तेमाल के लिए टूल पर टैप करें. एक-तस्वीर टूल पहले तस्वीर मांगते हैं; बैच टूल अपने चरण चालू करके खुलते हैं.</string>
+    <string name="tools_page_one">एक तस्वीर</string>
+    <string name="tools_page_many">कई</string>
+    <string name="guide_title">गाइड</string>
+    <string name="guide_intro">Still कैसे काम करता है, पहले दिन के क्रम में. यहां किसी खाते, लॉगिन या कनेक्शन की ज़रूरत नहीं.</string>
+    <string name="guide_open_title">तस्वीरें खोलें</string>
+    <string name="guide_open_body">होम स्क्रीन का बड़ा खाना ही पूरा दरवाज़ा है. एक तस्वीर चुनें तो वह एडिटर में खुलती है; कई चुनें तो वे बैच स्क्रीन पर जाती हैं. किसी दूसरे ऐप से शेयर करना, या “एडिट इन” या “ओपन विद” में Still चुनना, उन्हीं जगहों पर पहुंचता है. हर तस्वीर पहले निजी तौर पर कॉपी होती है, इसलिए मूल पर कभी नहीं लिखा जाता.</string>
+    <string name="guide_edit_title">एक तस्वीर संपादित करें</string>
+    <string name="guide_edit_body">तस्वीर के नीचे की पट्टी हर पैनल है: क्रॉप, सीधा, रोशनी, रंग, कर्व, लुक, डिटेल, कट-आउट, स्कैन, ड्रॉ, रीटच, परतें, फ़्रेम, फ़ाइल के अंदर क्या है, और निर्यात. मूल देखने के लिए तस्वीर दबाए रखें. पूर्ववत और फिर से सौ चरण रखते हैं. रोशनी पैनल पर ऑटो हिस्टोग्राम पढ़ता है और बताता है कि कौन से स्लाइडर हिले; लुक स्लाइडर चालों का सेट है जिसे आप देख और बदल सकते हैं.</string>
+    <string name="guide_batch_title">कई तस्वीरें प्रोसेस करें</string>
+    <string name="guide_batch_body">तस्वीरें जोड़ें, चरण चालू करें, चलाएं. आकार, तय KB के नीचे, फ़ॉर्मैट, निखार, लुक या सहेजी रेसिपी, वॉटरमार्क, फ़्रेम, कट-आउट, स्कैन. चरण हर तस्वीर पर एक ही बार में मिलकर चलते हैं. छिपा डेटा हमेशा हटता है; जब वही अकेला चरण हो तो JPEG बाइट-दर-बाइट साफ़ होता है, कुछ फिर से एन्कोड नहीं होता, और उसकी दिशा बनी रहती है.</string>
+    <string name="guide_cutout_title">बैकग्राउंड हटाएं</string>
+    <string name="guide_cutout_body">लाल धुलाई दिखाती है कि क्या हटेगा, कुछ हटने से पहले. गलती से लाल हुए हिस्से पर “रखें” और गलती से रखे गए पर “हटाएं” पेंट करें; किनारा तस्वीर के अपने किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है. पीछे: पारदर्शी, रंग, या तस्वीर का धुंधलापन. स्याही मोड फ़ोटो खींचे पन्ने से हस्ताक्षर या मुहर उठाता है. पारदर्शिता रखने के लिए PNG या WebP में, या 512 × 512 स्टिकर के रूप में निर्यात करें.</string>
+    <string name="guide_scan_title">पन्ना स्कैन करें</string>
+    <string name="guide_scan_body">पहले “सीधा” पैनल पर पन्ना सीधा करें. फिर स्कैन पन्ने पर पड़ी रोशनी नापकर हटाता है, ताकि कागज़ हर जगह बराबर सफ़ेद हो और स्याही अपना वज़न रखे. रंगीन मुहर या शीर्षक रखता है; काला-सफ़ेद सबसे छोटी, सबसे साफ़ फ़ाइल देता है.</string>
+    <string name="guide_size_title">तय आकार से कम फ़ोटो</string>
+    <string name="guide_size_body">फ़ॉर्म 50 KB या 100 KB से कम फ़ोटो मांगते हैं, कभी पासपोर्ट आकार में. Still वह सबसे अच्छी गुणवत्ता ढूंढता है जो समाए, और तस्वीर तभी छोटी करता है जब सबसे कम गुणवत्ता भी सीमा से ऊपर हो, और बताता है कि क्या किया. दिखाया गया नंबर लिखी गई फ़ाइल पर नापा जाता है.</string>
+    <string name="guide_save_title">सहेजना और शेयर करना</string>
+    <string name="guide_save_body">निर्यात फ़ाइल तैयार करता है और कुछ लिखने से पहले उसका असली आकार और पिक्सेल दिखाता है. “कॉपी सहेजें” आपकी चुनी जगह पर नई फ़ाइल बनाता है; मूल जैसा था वैसा रहता है. शेयर फ़ाइल दूसरे ऐप को देता है. सेटिंग्स एक फ़ोल्डर याद रख सकती हैं ताकि बैच एक इशारा हो.</string>
+    <string name="guide_privacy_title">क्या निजी रहता है</string>
+    <string name="guide_privacy_body">Still के पास इंटरनेट की अनुमति नहीं, इसलिए प्रोसेस कुछ भेज ही नहीं सकता. लोकेशन कभी निर्यात में कॉपी नहीं होती; कैमरा फ़ील्ड तभी जब आप चालू करें. क्रैश लॉग, अगर कभी हो, फ़ोन पर रहता है जब तक आप भेजना न चुनें.</string>
+    <string name="guide_outro">इस गाइड में, या ऐप में, कुछ छूट गया? संपर्क पेज एक व्यक्ति तक पहुंचता है.</string>
+    <string name="contact_title">संपर्क</string>
+    <string name="contact_intro">संदेश एक व्यक्ति तक पहुंचता है. आपकी तस्वीरों के बारे में कुछ भी साथ नहीं जाता, जब तक आप खुद कुछ न जोड़ें.</string>
+    <string name="contact_email_title">ईमेल</string>
+    <string name="contact_email_body">सवाल, कोई टूल जिसकी उम्मीद थी, गलत भाषा में कोई शब्द.</string>
+    <string name="contact_write">लिखें</string>
+    <string name="contact_copy">पता कॉपी करें</string>
+    <string name="contact_whatsapp_title">WhatsApp</string>
+    <string name="contact_whatsapp_body">Layerbit के नंबर के साथ WhatsApp ऐप खोलता है; जब तक आप न भेजें कुछ नहीं जाता.</string>
+    <string name="contact_bug_title">कुछ गड़बड़ हुई</string>
+    <string name="contact_bug_body">बताएं कि आपने क्या किया और क्या उम्मीद थी. संस्करण और फ़ोन मॉडल भर दिए जाते हैं; ऐप कभी तस्वीर नहीं जोड़ता.</string>
+    <string name="contact_bug_write">रिपोर्ट करें</string>
+    <string name="contact_bug_template">Still %1$s, %2$s पर, Android %3$s\n\nमैंने क्या किया:\n\nक्या उम्मीद थी:\n\nक्या हुआ:\n</string>
 </resources>

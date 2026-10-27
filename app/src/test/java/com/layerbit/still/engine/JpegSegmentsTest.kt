@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream
 class JpegSegmentsTest {
 
     /** A JPEG skeleton: real markers, nonsense payloads, and a picture made of [picture]. */
-    private fun jpeg(exif: Boolean, gps: Boolean = false, icc: Boolean = false, comment: Boolean = false, picture: ByteArray = byteArrayOf(1, 2, 3, 4)): ByteArray {
+    private fun jpeg(exif: Boolean, gps: Boolean = false, icc: Boolean = false, comment: Boolean = false, picture: ByteArray = byteArrayOf(1, 2, 3, 4), orientation: Int = 0): ByteArray {
         val out = ByteArrayOutputStream()
         fun seg(marker: Int, payload: ByteArray) { out.write(0xFF); out.write(marker); val len = payload.size + 2; out.write(len shr 8); out.write(len and 0xFF); out.write(payload) }
         out.write(0xFF); out.write(0xD8)
@@ -21,9 +21,11 @@ class JpegSegmentsTest {
             // TIFF header, little-endian, IFD0 with one entry: GPS pointer or a Make tag.
             val tiff = ByteArrayOutputStream()
             tiff.write("II".toByteArray()); tiff.write(byteArrayOf(0x2A, 0)); tiff.write(byteArrayOf(8, 0, 0, 0))
-            tiff.write(byteArrayOf(1, 0)) // one entry
+            val entries = 1 + (if (orientation > 0) 1 else 0)
+            tiff.write(byteArrayOf(entries.toByte(), 0))
             val tag = if (gps) 0x8825 else 0x010F
             tiff.write(byteArrayOf((tag and 0xFF).toByte(), (tag shr 8).toByte(), 4, 0, 1, 0, 0, 0, 26, 0, 0, 0))
+            if (orientation > 0) tiff.write(byteArrayOf(0x12, 0x01, 3, 0, 1, 0, 0, 0, orientation.toByte(), 0, 0, 0))
             tiff.write(byteArrayOf(0, 0, 0, 0))
             seg(0xE1, "Exif\u0000\u0000".toByteArray() + tiff.toByteArray())
         }
@@ -107,5 +109,21 @@ class JpegSegmentsTest {
         }
         assertTrue(JpegSegments.pngHasHiddenChunks(png("IHDR", "tEXt", "IDAT")))
         assertFalse(JpegSegments.pngHasHiddenChunks(png("IHDR", "IDAT")))
+    }
+
+    @Test
+    fun stripKeepsTheOrientationAndNothingElse() {
+        val src = jpeg(exif = true, gps = true, orientation = 6)
+        assertEquals(6, JpegSegments.orientation(src))
+        val out = JpegSegments.strip(src)!!
+        assertEquals("the picture still turns the right way", 6, JpegSegments.orientation(out))
+        assertFalse(JpegSegments.hasGps(out))
+        assertFalse("an orientation-only EXIF is not hidden data", JpegSegments.hasHiddenData(out))
+        assertEquals(listOf("EXIF/XMP", "JFIF", "Quantisation", "Frame", "Huffman", "Picture"), JpegSegments.segments(out)!!.map { it.name })
+        assertArrayEquals("stripping twice changes nothing", out, JpegSegments.strip(out))
+        // Upright pictures get no EXIF at all; a file with no EXIF reads as upright.
+        assertNull(JpegSegments.exifSegment(JpegSegments.strip(jpeg(exif = true, gps = true, orientation = 1))!!))
+        assertEquals(1, JpegSegments.orientation(jpeg(exif = false)))
+        assertEquals(36, JpegSegments.orientationSegment(8).size)
     }
 }

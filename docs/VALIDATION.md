@@ -24,6 +24,8 @@ Later revisions are green or they are not; this table is updated when a release 
 
 ## Required before a public release
 
+The fuller list, with the reasoning, is in `docs/ROADMAP.md` under release checks: document providers and reopening, all eight EXIF orientations, an interrupted batch, transparent pictures, a 24 MP export on a 256 MB heap, and a fixed corpus for the cut-out and scan.
+
 1. Run the exact release revision on API 26 and on a current phone, including one with a 256 MB app heap. Record cold start, preview latency per slider tick on a 12 MP source, export time at the full budget, peak memory from `dumpsys meminfo`, and whether `Budget.exportPixels` at a twentieth of the heap survives a 24 MP export with the frame and layers on. Lower the divisor if it does not; the number in `Budget.kt` changes only with this measurement.
 2. Exercise every panel: drag-handle crop with each aspect, straighten while the crop stays put, perspective on a photographed page, Auto on dark and bright pictures, curves on each channel, every look, text placed, moved and edited, clone, erase exported as PNG and WebP, frame with blurred fill, undo and redo across geometry and layers.
 3. Batch: fifty mixed JPEG and PNG inputs through resize, under-50-KB, convert, strip and collage; cancel midway and confirm finished outputs survive; rotate the phone midway.

@@ -327,6 +327,35 @@ object Segment {
         return out
     }
 
+    /** One value of a small map at a fractional position, bilinear. */
+    fun sample(map: IntArray, mw: Int, mh: Int, fx: Float, fy: Float): Int {
+        val x0 = fx.toInt().coerceIn(0, mw - 1); val y0 = fy.toInt().coerceIn(0, mh - 1)
+        val x1 = min(mw - 1, x0 + 1); val y1 = min(mh - 1, y0 + 1)
+        val wx = (fx - x0).coerceIn(0f, 1f); val wy = (fy - y0).coerceIn(0f, 1f)
+        val top = map[y0 * mw + x0] * (1 - wx) + map[y0 * mw + x1] * wx
+        val bottom = map[y1 * mw + x0] * (1 - wx) + map[y1 * mw + x1] * wx
+        return (top * (1 - wy) + bottom * wy).roundToInt()
+    }
+
+    /** The mask value under picture pixel ([x], [y]) of a [w] x [h] picture, from a mask of [mw] x [mh]. */
+    fun maskAt(mask: IntArray, mw: Int, mh: Int, x: Int, y: Int, w: Int, h: Int, invert: Boolean): Int {
+        val m = sample(mask, mw, mh, x.toFloat() * (mw - 1) / max(1, w - 1), y.toFloat() * (mh - 1) / max(1, h - 1))
+        return if (invert) 255 - m else m
+    }
+
+    /**
+     * Source-over with straight alpha: [top] over [under], both ARGB. Colour is weighted by each
+     * layer's own alpha, so a translucent edge over a translucent ground stays the right colour.
+     */
+    fun over(top: Int, under: Int): Int {
+        val a = Argb.alpha(top); val ua = Argb.alpha(under)
+        if (a == 255 || ua == 0) return top
+        val outA = a + ua * (255 - a) / 255
+        if (outA == 0) return 0
+        fun ch(t: Int, u: Int) = ((t * a + u * ua * (255 - a) / 255) / outA).coerceIn(0, 255)
+        return Argb.pack(outA, ch(Argb.red(top), Argb.red(under)), ch(Argb.green(top), Argb.green(under)), ch(Argb.blue(top), Argb.blue(under)))
+    }
+
     /** Multiplies the pixels' alpha by the mask (inverted if asked), premultiplication-free since the pixels are straight ARGB. */
     fun applyAlpha(pixels: IntArray, mask: IntArray, invert: Boolean) {
         for (i in pixels.indices) {

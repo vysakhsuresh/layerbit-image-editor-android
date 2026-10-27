@@ -208,6 +208,21 @@ class EditorFlowTest {
         compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("quickTools"))
         settle()
         screenshot("14-home-quick")
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_tools)))
+        compose.onNodeWithText(app.getString(R.string.home_door_tools)).tap()
+        waitFor { compose.onAllNodesWithTag("toolsList").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("15-tools")
+        back()
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.guide_title)))
+        compose.onNodeWithText(app.getString(R.string.guide_title)).tap()
+        waitFor { compose.onAllNodesWithTag("guideList").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("16-guide")
+        back()
+        compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.contact_title)))
+        compose.onNodeWithText(app.getString(R.string.contact_title)).tap()
+        waitFor { compose.onAllNodesWithTag("contactList").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("17-contact")
+        back()
         compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("openPhotos"))
         app.settings.update { it.copy(theme = ThemeChoice.DARK) }
         settle()

@@ -86,6 +86,10 @@ object JpegSegments {
         val segs = segments(b) ?: return null
         val out = ByteArrayOutputStream(b.size)
         out.write(0xFF); out.write(0xD8)
+        // The one EXIF field that changes how the picture looks: without it a phone's portrait
+        // would turn on its side. It is written back on its own, in a segment that says nothing else.
+        val orientation = orientation(b)
+        if (orientation in 2..8) out.write(orientationSegment(orientation))
         var sawFrame = false
         for (s in segs) {
             if (s.marker in 0xC0..0xCF && s.marker != 0xC4 && s.marker != 0xC8 && s.marker != 0xCC) {
@@ -105,9 +109,53 @@ object JpegSegments {
     }
 
     private fun keep(s: Segment, b: ByteArray): Boolean = when (s.marker) {
-        0xE1, in 0xE3..0xED, 0xEF, 0xFE -> false
+        0xE1 -> isOrientationOnly(s, b)
+        in 0xE3..0xED, 0xEF, 0xFE -> false
         0xE2 -> ascii(b, s.offset + 4, 11) == "ICC_PROFILE"
         else -> true
+    }
+
+    /** The EXIF orientation, 1..8, or 1 when there is none. */
+    fun orientation(b: ByteArray): Int {
+        val seg = exifSegment(b) ?: return 1
+        val tiff = seg.offset + 10
+        if (tiff + 8 > b.size) return 1
+        val little = ascii(b, tiff, 2) == "II"
+        fun u16(at: Int) = if (at + 2 > b.size) -1 else if (little) u(b, at) or (u(b, at + 1) shl 8) else (u(b, at) shl 8) or u(b, at + 1)
+        fun u32(at: Int): Long = if (at + 4 > b.size) -1 else if (little)
+            (u(b, at).toLong() or (u(b, at + 1).toLong() shl 8) or (u(b, at + 2).toLong() shl 16) or (u(b, at + 3).toLong() shl 24))
+        else ((u(b, at).toLong() shl 24) or (u(b, at + 1).toLong() shl 16) or (u(b, at + 2).toLong() shl 8) or u(b, at + 3).toLong())
+        val ifd0 = u32(tiff + 4)
+        if (ifd0 < 0 || tiff + ifd0 + 2 > b.size) return 1
+        val base = (tiff + ifd0).toInt()
+        val count = u16(base)
+        if (count < 0 || count > 500) return 1
+        for (k in 0 until count) {
+            val entry = base + 2 + k * 12
+            if (entry + 12 > b.size || entry + 12 > seg.offset + seg.length) return 1
+            if (u16(entry) == 0x0112) { val v = u16(entry + 8); return if (v in 1..8) v else 1 }
+        }
+        return 1
+    }
+
+    /** An APP1 holding a TIFF with a single Orientation entry: 36 bytes with its marker, a length of 34. */
+    fun orientationSegment(orientation: Int): ByteArray {
+        require(orientation in 1..8)
+        return byteArrayOf(
+            0xFF.toByte(), 0xE1.toByte(), 0, 34,
+            'E'.code.toByte(), 'x'.code.toByte(), 'i'.code.toByte(), 'f'.code.toByte(), 0, 0,
+            'M'.code.toByte(), 'M'.code.toByte(), 0, 0x2A, 0, 0, 0, 8,
+            0, 1,
+            0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, orientation.toByte(), 0, 0,
+            0, 0, 0, 0
+        )
+    }
+
+    /** Whether an APP1 is exactly the segment [orientationSegment] writes: nothing hidden in it. */
+    private fun isOrientationOnly(s: Segment, b: ByteArray): Boolean {
+        if (s.length != 36 || ascii(b, s.offset + 4, 4) != "Exif") return false
+        val o = u(b, s.offset + 4 + 6 + 8 + 2 + 9)
+        return o in 1..8 && b.copyOfRange(s.offset, s.offset + 36).contentEquals(orientationSegment(o))
     }
 
     private fun u(b: ByteArray, i: Int) = if (i < b.size) b[i].toInt() and 0xFF else -1

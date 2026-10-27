@@ -36,7 +36,7 @@ object ScanMath {
         for (i in pixels.indices) {
             if (i and 0xFFFF == 0) check()
             val c = pixels[i]
-            val p = max(24, paper[i])
+            val p = max(24, paper.at(i % w, i / w, w, h))
             // Divide out the light that fell on the paper, then lift what is nearly white to white.
             var r = min(255f, Argb.red(c) * 255f / p * lift)
             var g = min(255f, Argb.green(c) * 255f / p * lift)
@@ -65,7 +65,12 @@ object ScanMath {
      * The brightness of the paper under every pixel: the brightest channel, taken as the maximum
      * over small blocks so ink never counts, then blurred over about a tenth of the page.
      */
-    fun paper(pixels: IntArray, w: Int, h: Int, check: () -> Unit = {}): IntArray {
+    /** A map far smaller than the picture, read bilinearly: no buffer the size of the picture. */
+    class PaperMap(val values: IntArray, val width: Int, val height: Int) {
+        fun at(x: Int, y: Int, w: Int, h: Int): Int = Segment.sample(values, width, height, x.toFloat() * (width - 1) / max(1, w - 1), y.toFloat() * (height - 1) / max(1, h - 1))
+    }
+
+    fun paper(pixels: IntArray, w: Int, h: Int, check: () -> Unit = {}): PaperMap {
         val block = max(2, (min(w, h) / 60f).roundToInt())
         val sw = max(1, (w + block - 1) / block); val sh = max(1, (h + block - 1) / block)
         val small = IntArray(sw * sh)
@@ -83,8 +88,7 @@ object ScanMath {
         val radius = max(1, (min(sw, sh) / 8f).roundToInt())
         var a = small; var tmp = IntArray(small.size)
         repeat(2) { pass(a, tmp, sw, sh, radius, true); pass(tmp, a, sw, sh, radius, false) }
-        // Back up to the picture, bilinear.
-        return Segment.resample(a, sw, sh, w, h)
+        return PaperMap(a, sw, sh)
     }
 
     private fun pass(input: IntArray, output: IntArray, w: Int, h: Int, r: Int, horizontal: Boolean) {
@@ -104,10 +108,10 @@ object ScanMath {
     }
 
     /** Otsu on the normalised page, so a grey photograph of white paper still splits ink from paper. */
-    private fun inkThreshold(pixels: IntArray, paper: IntArray, w: Int, h: Int): Int {
+    private fun inkThreshold(pixels: IntArray, paper: PaperMap, w: Int, h: Int): Int {
         val step = max(1, pixels.size / 200_000)
         val normalised = IntArray(pixels.size / step) { k ->
-            val i = k * step; val c = pixels[i]; val p = max(24, paper[i])
+            val i = k * step; val c = pixels[i]; val p = max(24, paper.at(i % w, i / w, w, h))
             val l = min(255, Argb.luma(c) * 255 / p)
             Argb.pack(255, l, l, l)
         }

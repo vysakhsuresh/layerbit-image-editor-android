@@ -298,33 +298,40 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     private fun cutoutStage(picture: Bitmap, base: Bitmap, cut: Cutout, key: String?, preview: Boolean, check: () -> Unit): Bitmap {
         val w = picture.width; val h = picture.height
         val analysis = maskFor(base, cut, key, check)
-        var mask = Segment.resample(analysis.mask, analysis.width, analysis.height, w, h)
-        val featherPx = (cut.feather * min(w, h)).roundToInt()
-        if (featherPx > 0) mask = Segment.feather(mask, w, h, featherPx)
+        val mw = analysis.width; val mh = analysis.height
+        // Feathered at the analysis size and read bilinearly: no mask buffer the size of the picture,
+        // and the same softness relative to the picture at every size.
+        val featherPx = (cut.feather * min(mw, mh)).roundToInt()
+        val mask = if (featherPx > 0) Segment.feather(analysis.mask, mw, mh, featherPx) else analysis.mask
         check()
         val px = IntArray(w * h)
         picture.getPixels(px, 0, w, 0, 0, w, h)
         if (preview) {
-            for (i in px.indices) {
-                val m = if (cut.invert) 255 - mask[i] else mask[i]
-                val f = (255 - m) * 0.62f / 255f
-                if (f > 0f) {
-                    val c = px[i]
-                    px[i] = Argb.pack(Argb.alpha(c), (Argb.red(c) + (235 - Argb.red(c)) * f).roundToInt(), (Argb.green(c) + (40 - Argb.green(c)) * f).roundToInt(), (Argb.blue(c) + (70 - Argb.blue(c)) * f).roundToInt())
+            for (y in 0 until h) {
+                if (y and 0x3F == 0) check()
+                for (x in 0 until w) {
+                    val i = y * w + x
+                    val m = Segment.maskAt(mask, mw, mh, x, y, w, h, cut.invert)
+                    val f = (255 - m) * 0.62f / 255f
+                    if (f > 0f) {
+                        val c = px[i]
+                        px[i] = Argb.pack(Argb.alpha(c), (Argb.red(c) + (235 - Argb.red(c)) * f).roundToInt(), (Argb.green(c) + (40 - Argb.green(c)) * f).roundToInt(), (Argb.blue(c) + (70 - Argb.blue(c)) * f).roundToInt())
+                    }
                 }
             }
         } else {
-            val behind: IntArray? = if (cut.backdrop == Backdrop.BLUR) blurredCopy(picture, cut.blur, check) else null
-            Segment.applyAlpha(px, mask, cut.invert)
-            if (cut.backdrop != Backdrop.TRANSPARENT) {
-                for (i in px.indices) {
-                    val top = px[i]; val a = Argb.alpha(top)
-                    if (a == 255) continue
-                    val under = behind?.get(i) ?: cut.color
-                    val ua = Argb.alpha(under)
-                    val outA = a + ua * (255 - a) / 255
-                    fun ch(t: Int, u: Int) = (t * a + u * (255 - a)) / 255
-                    px[i] = Argb.pack(outA, ch(Argb.red(top), Argb.red(under)), ch(Argb.green(top), Argb.green(under)), ch(Argb.blue(top), Argb.blue(under)))
+            val behind = if (cut.backdrop == Backdrop.BLUR) blurredCopy(picture, cut.blur, check) else null
+            for (y in 0 until h) {
+                if (y and 0x3F == 0) check()
+                for (x in 0 until w) {
+                    val i = y * w + x
+                    val m = Segment.maskAt(mask, mw, mh, x, y, w, h, cut.invert)
+                    val top = Argb.withAlpha(px[i], Argb.alpha(px[i]) * m / 255)
+                    px[i] = when (cut.backdrop) {
+                        Backdrop.TRANSPARENT -> top
+                        Backdrop.COLOUR -> Segment.over(top, cut.color)
+                        Backdrop.BLUR -> Segment.over(top, behind!!.at(x, y, w, h))
+                    }
                 }
             }
         }
@@ -333,21 +340,25 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         return out
     }
 
-    /** The picture blurred by [fraction] of its shorter edge, done small and scaled back, as pixels at full size. */
-    private fun blurredCopy(picture: Bitmap, fraction: Float, check: () -> Unit): IntArray {
+    /** A blurred, quarter-size copy of the picture, read bilinearly where it is needed. */
+    private class SmallMap(val values: IntArray, val width: Int, val height: Int) {
+        fun at(x: Int, y: Int, w: Int, h: Int): Int {
+            val fx = x.toFloat() * (width - 1) / max(1, w - 1); val fy = y.toFloat() * (height - 1) / max(1, h - 1)
+            val x0 = fx.toInt().coerceIn(0, width - 1); val y0 = fy.toInt().coerceIn(0, height - 1)
+            // Nearest of the four is enough under a blur this wide.
+            return values[y0 * width + x0]
+        }
+    }
+
+    private fun blurredCopy(picture: Bitmap, fraction: Float, check: () -> Unit): SmallMap {
         val w = picture.width; val h = picture.height
         val small = scale(picture, max(1, w / 4), max(1, h / 4))
         val sp = IntArray(small.width * small.height)
         small.getPixels(sp, 0, small.width, 0, 0, small.width, small.height)
         val blurred = Spatial.boxBlur(sp, small.width, small.height, max(1, (fraction * min(w, h) / 4).roundToInt()), check = check)
-        val bb = Bitmap.createBitmap(blurred, small.width, small.height, Bitmap.Config.ARGB_8888)
+        val map = SmallMap(blurred, small.width, small.height)
         if (small !== picture) small.recycle()
-        val big = scale(bb, w, h)
-        val out = IntArray(w * h)
-        big.getPixels(out, 0, w, 0, 0, w, h)
-        if (big !== bb) big.recycle()
-        bb.recycle()
-        return out
+        return map
     }
 
     /** A 512 x 512 transparent canvas with the picture fitted inside, as sticker apps want it. */

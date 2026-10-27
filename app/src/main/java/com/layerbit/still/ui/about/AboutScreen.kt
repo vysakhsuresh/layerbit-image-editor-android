@@ -48,7 +48,7 @@ import com.layerbit.still.ui.theme.StillColors
 
 /** What the app is, what it refuses to do, and how to reach a person. */
 @Composable
-fun AboutScreen(modifier: Modifier = Modifier) {
+fun AboutScreen(onGuide: () -> Unit = {}, onContact: () -> Unit = {}, onTools: () -> Unit = {}, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 36.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Masthead() }
@@ -101,6 +101,13 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                     }
                 }
                 PrimaryButton(stringResource(R.string.about_coffee), onClick = { BrandLinks.openUrl(context, BrandLinks.COFFEE_URL) }, modifier = Modifier.fillMaxWidth().padding(top = 14.dp), tall = false)
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                SecondaryButton(stringResource(R.string.guide_title), onClick = onGuide, modifier = Modifier.weight(1f), tall = false)
+                SecondaryButton(stringResource(R.string.contact_title), onClick = onContact, modifier = Modifier.weight(1f), tall = false)
+                SecondaryButton(stringResource(R.string.tools_page_title), onClick = onTools, modifier = Modifier.weight(1f), tall = false)
             }
         }
         item {

@@ -76,6 +76,8 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
             "watermark" -> steps = steps.copy(watermarkOn = true)
             "cutout" -> steps = steps.copy(cutoutOn = true)
             "scan" -> steps = steps.copy(scanOn = true)
+            "enhance" -> steps = steps.copy(enhance = true)
+            "look" -> steps = steps.copy(lookOn = true)
         }
         val waiting = still.handoff.take()
         if (waiting.isNotEmpty()) addPictures(waiting)
