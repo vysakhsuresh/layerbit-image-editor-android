@@ -16,7 +16,7 @@ Sheaf uses Kotlin/Compose, private input copies, Android's scoped file pickers, 
 
 ## Image budget
 
-The working budget is `maxHeap / 48`, clamped to 1–8 million pixels, plus an 8192-pixel edge limit. Previews use at most 900,000 pixels. Decoding reserves additional area for diagonal rotation. Explicit oversized resize requests fail with a useful message. Natural-size renders may be sampled; the encoded preview displays actual dimensions and original dimensions before Save. This is a bounded raster implementation, not a tiled full-resolution engine. It is not a full-fidelity RAW/HDR editor. Wide-gamut input is converted to 8-bit sRGB. Standard resize interpolation does not recover missing detail.
+The working budget is `maxHeap / 48`, clamped to 1–8 million pixels, plus an 8192-pixel edge limit. Previews use at most 900,000 pixels. Decoding reserves additional area for diagonal rotation; the actual rotated bounding box is checked before allocation, including thin panoramas. Explicit oversized resize requests fail with a useful message. Natural-size renders may be sampled; the encoded preview displays actual dimensions and original dimensions before Save. This is a bounded raster implementation, not a tiled full-resolution engine. It is not a full-fidelity RAW/HDR editor. Wide-gamut input is converted to 8-bit sRGB. Standard resize interpolation does not recover missing detail.
 
 ## Export semantics
 
@@ -24,7 +24,7 @@ JPEG flattens transparency onto white; PNG keeps transparency and encodes the ed
 
 ## State and background behavior
 
-The latest recipe is persisted in private storage. Undo/redo is a 60-step session history. Batch work survives Activity recreation through the ViewModel but is not a foreground service: keep the app open. Process death can interrupt a batch. Already prepared output files and imported projects stay private on disk; the batch results list itself is session state. Projects can be reopened. Prepared exports are not a backup; Save copies to a chosen destination.
+The latest committed recipe is persisted in private storage. Undo/redo is a 60-step session history. Batch work survives Activity recreation through the ViewModel but is not a foreground service: keep the app open. Process death can interrupt a batch. Already prepared output files and imported projects stay private on disk; the latest 50 valid outputs are recovered on launch. Projects can be reopened. Prepared exports are not a backup; Save copies to a chosen destination.
 
 ## Staged advanced features
 
@@ -34,4 +34,4 @@ Deferred and hidden: neural subject segmentation, generative object erasing, hea
 
 ## Motion and accessibility
 
-All tool cards use distinct Canvas drawings. One six-second clock is read during drawing rather than recomposing the whole list. The lifecycle and Android animator scale gate the clock; a user setting also disables it. System typography, TalkBack labels and 48 dp controls cover standard controls. Freehand work still requires spatial touch interaction; text has a centre-placement alternative. Full screen-reader parity for brush-based editing remains a device usability task.
+All tool cards use distinct Canvas drawings. One shared 1.1-second preview plays on entering the app/editor and changing tools, then rests. The clock is read during drawing rather than recomposing the whole list. The lifecycle and Android animator scale gate the clock; a user setting also disables it. System typography, TalkBack labels and 48 dp controls cover standard controls. Freehand work still requires spatial touch interaction; text has a centre-placement alternative. Full screen-reader parity for brush-based editing remains a device usability task.

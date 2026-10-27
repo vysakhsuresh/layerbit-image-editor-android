@@ -24,7 +24,14 @@ class StudioViewModel(app:Application):AndroidViewModel(app) {
     var options by mutableStateOf(ExportOptions())
     private val undo=ArrayDeque<Recipe>(); private val redo=ArrayDeque<Recipe>()
     private val persistence=Mutex(); private var saveJob:Job?=null
-    private fun persist(p:Project) { saveJob?.cancel(); saveJob=viewModelScope.launch { persistence.withLock { withContext(Dispatchers.IO) { ensureActive();store.save(p) } } } }
+    private fun persist(p:Project) {
+        saveJob?.cancel()
+        saveJob=viewModelScope.launch {
+            try { persistence.withLock { withContext(Dispatchers.IO) { ensureActive();store.save(p) } } }
+            catch(c:CancellationException) { throw c }
+            catch(e:Exception) { message("Could not save the private project: ${e.message}. Keep the editor open and export a copy.") }
+        }
+    }
     private var baseline=Recipe(); private var previewJob:Job?=null; private var work:Job?=null
     init { viewModelScope.launch { refreshProjects(); val outputs=withContext(Dispatchers.IO){store.outputs()};state=state.copy(batch=outputs) } }
     private suspend fun refreshProjects() { val all=withContext(Dispatchers.IO) { store.projects() }; val presets=withContext(Dispatchers.IO) { store.presets() }; state=state.copy(projects=all,presets=presets) }
@@ -34,7 +41,7 @@ class StudioViewModel(app:Application):AndroidViewModel(app) {
         state=state.copy(current=p,preview=null,original=null,prepared=null,preparedPreview=null,canUndo=false,canRedo=false)
         render()
     }
-    fun home() { commit(); state.current?.let(::persist); state=state.copy(current=null,preview=null,original=null,prepared=null,preparedPreview=null); previewJob?.cancel(); viewModelScope.launch { refreshProjects() } }
+    fun home() { commit(); val pendingSave=saveJob; state=state.copy(current=null,preview=null,original=null,prepared=null,preparedPreview=null); previewJob?.cancel(); viewModelScope.launch { pendingSave?.join(); refreshProjects() } }
     fun draft(recipe:Recipe) { state=state.copy(current=state.current?.copy(recipe=recipe),prepared=null); render() }
     fun commit() {
         val recipe=state.current?.recipe ?: return
@@ -42,7 +49,11 @@ class StudioViewModel(app:Application):AndroidViewModel(app) {
         state.current?.let(::persist)
         state=state.copy(canUndo=undo.isNotEmpty(),canRedo=redo.isNotEmpty())
     }
-    fun change(block:(Recipe)->Recipe) { state.current?.let { draft(block(it.recipe)); commit() } }
+    fun change(block:(Recipe)->Recipe) { state.current?.let {
+        val next=block(it.recipe)
+        if(!next.crop.valid()) { message("This crop is too narrow. Keep at least 1% of each image dimension.");return }
+        draft(next); commit()
+    } }
     fun undo() { if(undo.isNotEmpty()) { val r=undo.removeLast(); redo.addLast(baseline); baseline=r; draft(r); state.current?.let(::persist); state=state.copy(canUndo=undo.isNotEmpty(),canRedo=true) } }
     fun redo() { if(redo.isNotEmpty()) { val r=redo.removeLast(); undo.addLast(baseline); baseline=r; draft(r); state.current?.let(::persist); state=state.copy(canUndo=true,canRedo=redo.isNotEmpty()) } }
     private fun render() {
@@ -55,7 +66,7 @@ class StudioViewModel(app:Application):AndroidViewModel(app) {
                 val bitmap=withContext(Dispatchers.Default) { context.ensureActive(); engine.render(File(p.source.path),p.recipe,true) { context.ensureActive() } }
                 val original=state.original ?: withContext(Dispatchers.Default) { engine.decode(File(p.source.path),minOf(engine.budget,900_000L)) { context.ensureActive() } }
                 if(state.current==p) state=state.copy(preview=bitmap,original=original,previewBusy=false)
-            } catch(c:CancellationException) { throw c } catch(e:Exception) { state=state.copy(previewBusy=false,message=e.message ?: "Preview failed. Your edits are saved.") }
+            } catch(c:CancellationException) { throw c } catch(e:Exception) { state=state.copy(previewBusy=false,message=e.message ?: "Preview failed. Your original image is safe.") }
         }
     }
     private fun runTask(label:String,block:suspend ()->Unit) {

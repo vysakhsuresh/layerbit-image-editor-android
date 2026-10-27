@@ -12,6 +12,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -19,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "platform-tools"'
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests, lint and debug APK
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug --console plain
@@ -34,6 +35,7 @@ jobs:
             app/build/reports/
   device:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -52,11 +54,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: |
-            status=0
-            ./gradlew connectedDebugAndroidTest --console plain || status=$?
-            adb pull /sdcard/Android/data/com.layerbit.studio/files/screenshots device-screenshots || true
-            exit $status
+          script: bash scripts/device_checks.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

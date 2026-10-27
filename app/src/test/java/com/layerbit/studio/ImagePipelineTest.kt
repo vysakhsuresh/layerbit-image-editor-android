@@ -75,6 +75,12 @@ class ImagePipelineTest {
         val src=fixture(2400,1600);val b=engine.decode(src,150_000)
         assertTrue(b.width.toLong()*b.height<=150_000);b.recycle()
     }
+    @Test fun diagonalPanoramaReservesItsFullBoundingBox() {
+        val src=fixture(8000,4)
+        val b=engine.render(src,Recipe(straighten=45f))
+        assertTrue(b.width.toLong()*b.height<=engine.budget)
+        assertTrue(b.width<=8192 && b.height<=8192);b.recycle()
+    }
     @Test fun cloneAndLocalBlurAreRealPixelOperations() {
         val src=fixture();val base=engine.render(src,Recipe())
         val clone=Mark(MarkKind.CLONE,listOf(Point(.7f,.5f),Point(.72f,.5f)),width=.15f,source=Point(.2f,.5f))

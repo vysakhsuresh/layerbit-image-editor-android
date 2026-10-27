@@ -67,4 +67,4 @@ No unsolicited messaging, purchased reviews, automated spam, or guaranteed-downl
 
 ## Business tradeoff
 
-This brief excludes ads, tracking, subscriptions and network services, and keeps tools free. It therefore has no direct revenue from those mechanisms. Later options for owner review include optional support via the Layerbit website, transparent sponsorship of development, paid organizational support, or separately licensed custom development. Each needs its own business and privacy review. No payment or sponsor integration is implemented. These options do not guarantee ₹30,000 monthly profit.
+This brief excludes ads, tracking, subscriptions and network services, and keeps tools free. It therefore has no direct revenue from those mechanisms. Later options for owner review include optional support via the Layerbit website, transparent sponsorship of development, paid organizational support, or separately licensed custom development. Each needs its own business and privacy review. No payment or sponsor integration is implemented, and no earnings are guaranteed.

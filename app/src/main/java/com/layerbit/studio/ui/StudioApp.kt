@@ -58,7 +58,7 @@ import kotlin.math.*
     val save=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(state.prepared?.mime ?: vm.options.format.mime)) { it?.let(vm::save) }
     val folder=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { it?.let(vm::saveBatch) }
     BackHandler(state.current!=null && state.busy==null) { vm.home() }
-    StudioTheme(theme) { MotionProvider(motion) {
+    StudioTheme(theme) { MotionProvider(motion,tool to (state.current!=null)) {
         Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -143,7 +143,7 @@ import kotlin.math.*
         state.prepared?.let { e -> AlertDialog(onDismissRequest=vm::dismissExport,title={Text("Ready to save")},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
             state.preparedPreview?.let { Image(it.asImageBitmap(),"Encoded output preview",Modifier.fillMaxWidth().height(180.dp),contentScale=ContentScale.Fit) }
             Text("${e.width} × ${e.height} · ${"%.1f".format(e.bytes/1024.0)} KB",fontWeight=FontWeight.Bold,modifier=Modifier.testTag("exportDimensions"))
-            Text("${e.mime} · encoder quality ${e.quality}")
+            Text(if(e.mime=="image/png") "PNG · lossless encoding of edited pixels" else "${e.mime} · encoder quality ${e.quality}")
             Text(e.note,style=MaterialTheme.typography.bodySmall)
             state.current?.let { Text("Original: ${it.source.width} × ${it.source.height}. Check output dimensions before saving.",style=MaterialTheme.typography.bodySmall) }
             OutlinedButton(onClick={share(listOf(e))},modifier=Modifier.fillMaxWidth()) { Text("Share new copy") }

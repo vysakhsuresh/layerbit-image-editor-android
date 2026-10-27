@@ -11,12 +11,13 @@ import kotlin.math.*
 class ImageEngine(val budget: Long = (Runtime.getRuntime().maxMemory()/48).coerceIn(1_000_000L,8_000_000L)) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     fun decode(file: File, maxPixels: Long, check: () -> Unit = {}): Bitmap {
+        require(maxPixels>0)
         val bounds=BitmapFactory.Options().apply { inJustDecodeBounds=true }
         BitmapFactory.decodeFile(file.path,bounds)
         require(bounds.outWidth>0 && bounds.outHeight>0) { "This file is not a supported still image." }
         check()
         var sample=1
-        while(bounds.outWidth.toLong()/sample*(bounds.outHeight/sample)>maxPixels || max(bounds.outWidth,bounds.outHeight)/sample>8192) sample*=2
+        while(((bounds.outWidth.toLong()+sample-1)/sample)*((bounds.outHeight.toLong()+sample-1)/sample)>maxPixels || (max(bounds.outWidth,bounds.outHeight).toLong()+sample-1)/sample>8192) sample*=2
         val opts=BitmapFactory.Options().apply { inSampleSize=sample; inPreferredConfig=Bitmap.Config.ARGB_8888
             inPreferredColorSpace=ColorSpace.get(ColorSpace.Named.SRGB); inMutable=true }
         val raw=BitmapFactory.decodeFile(file.path,opts) ?: error("The image could not be decoded.")
@@ -46,7 +47,23 @@ class ImageEngine(val budget: Long = (Runtime.getRuntime().maxMemory()/48).coerc
             val h=((r.crop.bottom-r.crop.top)*b.height).roundToInt().coerceIn(1,b.height-y)
             replace(Bitmap.createBitmap(b,x,y,w,h))
             val matrix=Matrix().apply { postScale(if(r.flipX)-1f else 1f,if(r.flipY)-1f else 1f); postRotate(r.rotation+r.straighten) }
-            if(!matrix.isIdentity) replace(Bitmap.createBitmap(b,0,0,b.width,b.height,matrix,true))
+            if(!matrix.isIdentity) {
+                // Thin panoramas can grow far beyond twice their area when rotated.
+                // Check the actual bounding box before allocating the transformed bitmap.
+                fun transformedSize():Pair<Int,Int> {
+                    val bounds=RectF(0f,0f,b.width.toFloat(),b.height.toFloat())
+                    matrix.mapRect(bounds)
+                    return ceil(bounds.width().toDouble()).toInt() to ceil(bounds.height().toDouble()).toInt()
+                }
+                var dims=transformedSize()
+                while(dims.first.toLong()*dims.second>maxPixels || max(dims.first,dims.second)>8192) {
+                    val fit=Geometry.fit(dims.first,dims.second,maxPixels)
+                    val factor=min(fit.first.toDouble()/dims.first,fit.second.toDouble()/dims.second)*.98
+                    replace(Bitmap.createScaledBitmap(b,max(1,(b.width*factor).toInt()),max(1,(b.height*factor).toInt()),true))
+                    check();dims=transformedSize()
+                }
+                replace(Bitmap.createBitmap(b,0,0,b.width,b.height,matrix,true))
+            }
             if(r.width>0 && r.height>0) {
                 val dims=if(preview) Geometry.fit(r.width,r.height,maxPixels) else {
                     require(r.width.toLong()*r.height<=budget && max(r.width,r.height)<=8192) { "Requested dimensions exceed this device's ${budget/1_000_000f} MP working limit. Choose a smaller size." }

@@ -39,7 +39,7 @@ val LocalMotion=staticCompositionLocalOf<State<Float>?> { null }
         onSurfaceVariant=Color(0xff4f6369),secondary=Color(0xff925031))
     MaterialTheme(colorScheme=colors,content=content)
 }
-@Composable fun MotionProvider(enabled:Boolean,content:@Composable ()->Unit) {
+@Composable fun MotionProvider(enabled:Boolean,previewKey:Any?=null,content:@Composable ()->Unit) {
     val context=LocalContext.current; val lifecycle=LocalLifecycleOwner.current.lifecycle
     fun allowed()=Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f
     var systemMotion by remember { mutableStateOf(allowed()) }; var active by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
@@ -51,8 +51,12 @@ val LocalMotion=staticCompositionLocalOf<State<Float>?> { null }
         onDispose { context.contentResolver.unregisterContentObserver(observer); lifecycle.removeObserver(events) }
     }
     if(enabled && systemMotion && active) {
-        val clock=rememberInfiniteTransition(label="tool previews").animateFloat(0f,1f,infiniteRepeatable(tween(6000,easing=LinearEasing)),label="motion clock")
-        CompositionLocalProvider(LocalMotion provides clock,content=content)
+        val clock=remember { Animatable(.25f) }
+        LaunchedEffect(previewKey) {
+            clock.snapTo(.25f)
+            clock.animateTo(1.25f,tween(1100,easing=LinearEasing))
+        }
+        CompositionLocalProvider(LocalMotion provides clock.asState(),content=content)
     } else CompositionLocalProvider(LocalMotion provides null,content=content)
 }
 @Composable fun ToolGlyph(tool:Tool,modifier:Modifier=Modifier) {
