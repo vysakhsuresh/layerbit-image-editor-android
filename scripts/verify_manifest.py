@@ -16,6 +16,7 @@ for p in paths:
     if app.get(android+'dataExtractionRules')!='@xml/data_extraction_rules':sys.exit('Device-transfer exclusions must be declared.')
     for provider in app.findall('provider'):
         if provider.get(android+'name')=='androidx.core.content.FileProvider' and provider.get(android+'exported')!='false':sys.exit('FileProvider must not be exported.')
+        if any(m.get(android+'name')=='androidx.emoji2.text.EmojiCompatInitializer' for m in provider.findall('meta-data')):sys.exit('Automatic emoji-font downloads must remain disabled.')
 domains={'root','file','database','sharedpref','external','device_root','device_file','device_database','device_sharedpref'}
 rules=ET.parse('app/src/main/res/xml/data_extraction_rules.xml').getroot()
 for mode in ('cloud-backup','device-transfer'):

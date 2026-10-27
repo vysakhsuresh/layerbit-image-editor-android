@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.ViewModelProvider
+import androidx.emoji2.text.EmojiCompat
 import com.layerbit.studio.core.ImageEngine
 import com.layerbit.studio.core.ProjectStore
 import org.junit.Assert.*
@@ -29,6 +30,7 @@ class EditorFlowTest {
     }
     @Test fun settingsHomeAndExportAreConnected() {
         val app=ApplicationProvider.getApplicationContext<Application>()
+        assertFalse("Automatic downloadable emoji fonts must be disabled",EmojiCompat.isConfigured())
         app.getSharedPreferences("appearance",0).edit().putBoolean("motion",true).putString("theme","System").commit()
         val f=File(app.cacheDir,"ui-fixture.png")
         Bitmap.createBitmap(320,240,Bitmap.Config.ARGB_8888).apply {eraseColor(Color.rgb(41,120,100));f.outputStream().use{compress(Bitmap.CompressFormat.PNG,100,it)};recycle()}
@@ -59,5 +61,6 @@ class EditorFlowTest {
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Home").performClick()
         compose.onNodeWithTag("openPhotos").assertIsDisplayed()
+        assertFalse("Opening the editor must not enable downloadable fonts",EmojiCompat.isConfigured())
     }
 }

@@ -27,3 +27,5 @@ Official implementation references:
 - https://developer.android.com/training/secure-file-sharing/setup-sharing
 
 Private data is explicitly excluded from cloud backups and device transfers using the [Android backup rules](https://developer.android.com/identity/data/autobackup), alongside `allowBackup=false`. CI records the resolved release runtime dependencies and checks the debug/release merged manifests.
+
+Compose's transitive Emoji2 dependency adds an automatic initializer capable of requesting a downloadable font from an external provider. The app removes `EmojiCompatInitializer` during manifest merging and never initializes it manually. Text uses the device's existing fonts; newer emoji may be unavailable on older devices. The manifest check and emulator test enforce this choice. See [Android's Emoji2 configuration](https://developer.android.com/develop/ui/views/text-and-emoji/emoji2). No downloadable-font, model-fetching, analytics, advertising or HTTP-client SDK is configured.
