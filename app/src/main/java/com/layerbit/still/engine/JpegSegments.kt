@@ -45,7 +45,7 @@ object JpegSegments {
     }
 
     /** Whether the file carries anything a stripped copy would leave out. */
-    fun hasHiddenData(b: ByteArray): Boolean = segments(b)?.any { !keep(it, b) } ?: false
+    fun hasHiddenData(b: ByteArray): Boolean = segments(b)?.any { !keep(it, b) && !isOrientationOnly(it, b) } ?: false
 
     /** The APP1 segment that holds EXIF, or null. */
     fun exifSegment(b: ByteArray): Segment? = segments(b)?.firstOrNull { it.marker == 0xE1 && ascii(b, it.offset + 4, 4) == "Exif" }
@@ -108,9 +108,9 @@ object JpegSegments {
         return null
     }
 
+    /** What a strip copies through. EXIF never: the orientation is written afresh from the parsed value. */
     private fun keep(s: Segment, b: ByteArray): Boolean = when (s.marker) {
-        0xE1 -> isOrientationOnly(s, b)
-        in 0xE3..0xED, 0xEF, 0xFE -> false
+        0xE1, in 0xE3..0xED, 0xEF, 0xFE -> false
         0xE2 -> ascii(b, s.offset + 4, 11) == "ICC_PROFILE"
         else -> true
     }
