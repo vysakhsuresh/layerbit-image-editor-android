@@ -18,7 +18,7 @@ Green on `e6486a1`: https://github.com/vysakhsuresh/layerbit-image-editor-androi
 | Engine | standalone Kotlin compiler, JUnit | 59 tests pass; nothing in `engine/` imports `android.*` |
 | Gradle | GitHub Actions, JDK 17 | unit tests, lint with the baseline, debug APK and release bundle, manifest check, dependency report |
 | Robolectric | SDK 28, native graphics | 83 tests pass: renderer, codecs, EXIF, strip, every batch op, the pipeline |
-| Emulator | API 35 | the home, editor and export flow with screenshots; device checks |
+| Emulator | API 35 | the home, editor and export flow, and a walk through every screen that commits its screenshots to `docs/screenshots` when the commit message carries `[screens]` (run 40462061887) |
 
 Later revisions are green or they are not; this table is updated when a release candidate is cut.
 
