@@ -70,7 +70,7 @@ Other apps or document providers selected through Save/Share control what they d
 
 ## Architecture, licenses and launch materials
 
-[Architecture and Sheaf audit](docs/ARCHITECTURE.md) describes the source/recipe/renderer separation and staged advanced work. [Dependency decisions](docs/DEPENDENCIES.md) records third-party licensing. [Validation](docs/VALIDATION.md) separates automated evidence from outstanding release checks. The [launch kit](docs/LAUNCH_KIT.md) includes an unpublished listing, screenshot plan, demo script, FAQ and organic discovery plan.
+[Architecture and Sheaf audit](docs/ARCHITECTURE.md) describes the source/recipe/renderer separation and staged advanced work. [Dependency decisions](docs/DEPENDENCIES.md) records third-party licensing. [Validation](docs/VALIDATION.md) separates automated evidence from outstanding release checks. The [launch kit](docs/LAUNCH_KIT.md) includes an unpublished listing, screenshot plan, demo script, FAQ and organic discovery plan. The [upgrade backlog](docs/UPGRADE_BACKLOG.md) records the audit of this branch and the prioritised next work.
 
 Sheaf was used only as a product/architecture reference. No code, icons, fonts or assets were copied. The repository had no source license; its owner must select a redistribution license before an open-source release. Public visibility alone is not a license grant. Third-party components retain their own licenses.
 
