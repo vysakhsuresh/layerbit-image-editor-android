@@ -41,6 +41,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests, lint, debug APK and release bundle
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug bundleRelease --console plain
+      - name: Failed unit tests, with their messages
+        if: failure()
+        run: find app/build/test-results -name '*.xml' -exec grep -h -B1 -A6 '<failure' {} \; 2>/dev/null | head -120
       - name: Verify merged privacy manifests (debug and release)
         run: python3 tools/verify_manifest.py
       - name: Record runtime dependencies

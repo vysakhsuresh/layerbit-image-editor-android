@@ -209,7 +209,7 @@ object Segment {
         val len = floatArrayOf(1f, 1f, 1f, 1f, 1.4142f, 1.4142f, 1.4142f, 1.4142f)
         var popped = 0
         while (queue.isNotEmpty()) {
-            val packed = queue.poll()
+            val packed = queue.poll() ?: break
             val d = java.lang.Float.intBitsToFloat((packed ushr 32).toInt())
             val i = (packed and 0xFFFFFFFFL).toInt()
             if (d > dist[i]) continue

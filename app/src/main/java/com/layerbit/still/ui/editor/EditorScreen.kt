@@ -356,7 +356,7 @@ private fun ZoomBar(t: CanvasTransform) {
 @Composable
 private fun PanelStrip(current: ToolId.Panel, onPick: (ToolId.Panel) -> Unit) {
     val panels = ToolId.Panel.entries.filter { it != ToolId.Panel.NONE }
-    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("panelStrip")) {
         items(panels, key = { it.name }) { p ->
             val active = p == current
             val label = panelLabel(p)

@@ -295,14 +295,15 @@ class RendererTest {
         }
         val src = File(dir, "page.png"); src.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle()
         val ink = renderer.render(src, Recipe(cutout = Cutout(enabled = true, mode = CutoutMode.INK)))
-        assertEquals(255, Color.alpha(ink.getPixel(100, 85))); assertEquals(0, Color.alpha(ink.getPixel(100, 30))); ink.recycle()
+        assertEquals("ink kept", 255, Color.alpha(ink.getPixel(100, 85))); assertEquals("paper gone", 0, Color.alpha(ink.getPixel(100, 30))); ink.recycle()
         val scanned = renderer.render(src, Recipe(scan = Scan(ScanMode.COLOUR)))
-        assertTrue(Color.red(scanned.getPixel(230, 30)) > 235); assertTrue(Color.red(scanned.getPixel(230, 85)) < 90); scanned.recycle()
+        assertTrue("paper white: ${Color.red(scanned.getPixel(230, 30))}", Color.red(scanned.getPixel(230, 30)) > 235)
+        assertTrue("ink dark: ${Color.red(scanned.getPixel(230, 85))}", Color.red(scanned.getPixel(230, 85)) < 90); scanned.recycle()
         val sticker = export(src, Recipe(cutout = Cutout(enabled = true, mode = CutoutMode.INK)), ExportOptions(OutputFormat.JPEG, sticker = true), File(dir, "sticker.webp"))
-        assertEquals(512, sticker.width); assertEquals(512, sticker.height)
+        assertEquals("sticker width", 512, sticker.width); assertEquals("sticker height", 512, sticker.height)
         assertEquals(OutputFormat.WEBP, sticker.format)
-        assertTrue(sticker.bytes <= ExportOptions.STICKER_BYTES)
+        assertTrue("sticker bytes ${sticker.bytes}", sticker.bytes <= ExportOptions.STICKER_BYTES)
         val decoded = renderer.decode(sticker.file, 2_000_000)
-        assertEquals(0, Color.alpha(decoded.getPixel(2, 2))); decoded.recycle()
+        assertEquals("sticker corner transparent", 0, Color.alpha(decoded.getPixel(2, 2))); decoded.recycle()
     }
 }
