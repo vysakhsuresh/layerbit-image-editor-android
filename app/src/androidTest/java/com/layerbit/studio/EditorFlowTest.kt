@@ -144,7 +144,8 @@ class EditorFlowTest {
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
         compose.onNodeWithText(app.getString(R.string.home_door_batch)).tap()
-        waitFor { compose.onAllNodesWithTag("pipelineRun").fetchSemanticsNodes().isNotEmpty() }
+        // The run button is the list's last item and not composed until scrolled to; the list itself is the screen.
+        waitFor { compose.onAllNodesWithTag("pipelineList").fetchSemanticsNodes().isNotEmpty() }
         screenshot("03-batch-empty")
         // The picker cannot be driven from a test; the handoff is how a share arrives, and it is the same path.
         app.handoff.offer(fixtures.map { Uri.fromFile(it) })
