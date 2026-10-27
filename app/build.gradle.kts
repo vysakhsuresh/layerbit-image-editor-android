@@ -19,11 +19,11 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.layerbit.studio"
+    namespace = "com.layerbit.still"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.layerbit.studio"
+        applicationId = "com.layerbit.still"
         // The family floor Deja, Abhyas and Sheaf established. Nothing in the editor needs a
         // newer platform: the photo picker is backported through androidx.activity, WebP
         // lossless is offered only from 30, and everything else is android.graphics.
@@ -67,7 +67,7 @@ android {
         buildConfig = true
     }
 
-    // Writes the locale list Android 13+ shows under Settings > Apps > Layerbit Studio >
+    // Writes the locale list Android 13+ shows under Settings > Apps > Still >
     // Language, from the values-xx folders that exist. English is the unqualified default.
     androidResources {
         generateLocaleConfig = true

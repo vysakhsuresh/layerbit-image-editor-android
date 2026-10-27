@@ -1,4 +1,4 @@
-# Layerbit Studio
+# Still
 
 **A picture editor that cannot upload your pictures.**
 
@@ -8,11 +8,11 @@ Crop, straighten, light and colour, curves, looks, retouching, frames, resize, p
 
 The picture editors people install come in two kinds. One uploads the photo to a server to do the work, which for a photo of an ID card, a child or a medical report is a strange thing to ask. The other keeps the first few tools free and puts curves, batch resize and "remove watermark" behind a subscription. The free tier exists to sell the paid one.
 
-Studio does the work on the device, in code that is visible here. There is no server, so there is nothing to pay for, so there is nothing to gate.
+Still does the work on the device, in code that is visible here. There is no server, so there is nothing to pay for, so there is nothing to gate.
 
 ## Nothing leaves the phone
 
-Studio does not declare the `INTERNET` permission, so the process cannot open a socket. Your pictures cannot leave the device even if a dependency tried to send them, and that is checkable on the Play listing without taking anyone's word for it.
+Still does not declare the `INTERNET` permission, so the process cannot open a socket. Your pictures cannot leave the device even if a dependency tried to send them, and that is checkable on the Play listing without taking anyone's word for it.
 
 `app/src/main/AndroidManifest.xml` strips network access explicitly, and `tools/verify_manifest.py` fails CI if the merged debug or release manifest ever gains it back:
 
@@ -28,14 +28,14 @@ Consequences that shape the code:
 - **No camera.** The camera app the phone already has is better at it; a photo taken there arrives here by share.
 - **No image-loading library and no model.** Every tool is `android.graphics` plus the pure engine in `engine/`.
 
-## Studio never writes to your original
+## Still never writes to your original
 
-Every edit works on a private copy. `ImageStore` copies what you picked and hands back a `StudioFile` pointing at the copy; every operation takes a `StudioFile`, so an operation can only ever reach the copy. The only component permitted to open a Uri for writing is `Exporter`, against a new document you just named in the system picker or a folder you granted.
+Every edit works on a private copy. `ImageStore` copies what you picked and hands back a `StillFile` pointing at the copy; every operation takes a `StillFile`, so an operation can only ever reach the copy. The only component permitted to open a Uri for writing is `Exporter`, against a new document you just named in the system picker or a folder you granted.
 
 ## One shape for every batch tool
 
 ```
-List<StudioFile> -> Op -> List<StudioFile>
+List<StillFile> -> Op -> List<StillFile>
 ```
 
 Resize is one-to-one, a collage is many-to-one, and a batch is the same operation handed more inputs. "Process fifty photos at once" is not a feature to charge for; it is what the type means.
@@ -44,7 +44,7 @@ The front door is one gesture: open pictures. One picture opens the editor; seve
 
 ## The engine is pure, and tested without a phone
 
-`app/src/main/java/com/layerbit/studio/engine/` imports nothing from `android.*`. Tone is a 3×4 matrix plus three 256-entry tables, decided once per recipe and applied per pixel; blur, sharpening, clarity, vignette and grain are sized to the picture so a 900-pixel preview and a 24-megapixel export agree; JPEG metadata is removed by walking the file's segments so the picture is kept byte for byte; a target size is found by halving against an injected encoder. `tools/jvm-check.sh` compiles that package with the standalone Kotlin compiler and runs its tests in seconds, on any machine with a JDK. CI runs it before Gradle.
+`app/src/main/java/com/layerbit/still/engine/` imports nothing from `android.*`. Tone is a 3×4 matrix plus three 256-entry tables, decided once per recipe and applied per pixel; blur, sharpening, clarity, vignette and grain are sized to the picture so a 900-pixel preview and a 24-megapixel export agree; JPEG metadata is removed by walking the file's segments so the picture is kept byte for byte; a target size is found by halving against an injected encoder. `tools/jvm-check.sh` compiles that package with the standalone Kotlin compiler and runs its tests in seconds, on any machine with a JDK. CI runs it before Gradle.
 
 ## What it does
 

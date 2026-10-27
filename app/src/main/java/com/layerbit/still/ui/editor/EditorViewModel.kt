@@ -1,0 +1,366 @@
+package com.layerbit.still.ui.editor
+
+import android.app.Application
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.layerbit.still.R
+import com.layerbit.still.StillApplication
+import com.layerbit.still.engine.AutoEnhance
+import com.layerbit.still.engine.Crop
+import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.Geometry
+import com.layerbit.still.engine.Geometry2D
+import com.layerbit.still.engine.Histogram
+import com.layerbit.still.engine.Recipe
+import com.layerbit.still.files.ImageStore
+import com.layerbit.still.files.StillFile
+import com.layerbit.still.image.Budget
+import com.layerbit.still.image.ExportOptions
+import com.layerbit.still.image.Exported
+import com.layerbit.still.ops.ToolId
+import com.layerbit.still.text.Strings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
+
+/**
+ * One picture, one recipe, and the preview that follows the recipe.
+ *
+ * The expensive half of a render - decode, perspective, turns, straighten, crop - is cached
+ * as [base] and reused while a tone slider moves; only [com.layerbit.still.image.Renderer.finish]
+ * runs per tick. A slider drag calls [draft] on every move and [commit] on release, so undo has
+ * one entry per gesture. The latest committed recipe is written to the project on commit.
+ */
+class EditorViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val still = app as StillApplication
+    private val store = still.store
+    private val renderer = still.renderer
+    private val codecs = still.codecs
+
+    data class Ui(
+        val project: ImageStore.Project? = null,
+        val recipe: Recipe = Recipe(),
+        val panel: ToolId.Panel = ToolId.Panel.CROP,
+        /** The preview of what the panel wants to show; see [previewRecipe]. */
+        val preview: Bitmap? = null,
+        /** The untouched source at preview size, for press-and-hold compare. */
+        val original: Bitmap? = null,
+        val previewBusy: Boolean = false,
+        val histogram: Histogram? = null,
+        val canUndo: Boolean = false,
+        val canRedo: Boolean = false,
+        val message: String? = null,
+        /** A modal task's label while it runs. */
+        val busy: String? = null,
+        val export: Exported? = null,
+        val exportFile: StillFile? = null,
+        val exportPreview: Bitmap? = null,
+        val presets: List<ImageStore.Preset> = emptyList(),
+        /** The canvas the preview stands for, in output pixels. */
+        val canvasSize: Geometry2D.Size? = null,
+        val loading: Boolean = true
+    )
+
+    private val _ui = MutableStateFlow(Ui())
+    val ui: StateFlow<Ui> = _ui.asStateFlow()
+
+    var options by mutableStateOf(ExportOptions(format = still.settings.current.defaultFormat, quality = still.settings.current.defaultQuality, keepCameraFields = still.settings.current.keepCameraFields))
+
+    private val undo = ArrayDeque<Recipe>()
+    private val redo = ArrayDeque<Recipe>()
+    private var baseline = Recipe()
+
+    /** The cached geometry stage and the geometry it was rendered for. */
+    private var base: Bitmap? = null
+    private var baseGeometry: Geometry? = null
+    private var baseScaled = false
+
+    private val renderRequests = MutableStateFlow(0L)
+    private var persistJob: Job? = null
+    private var exportJob: Job? = null
+
+    init {
+        viewModelScope.launch { renderLoop() }
+    }
+
+    // ------------------------------------------------------------------ opening
+
+    fun open(projectId: String, panel: ToolId.Panel) {
+        val p = store.project(projectId)
+        if (p == null) { message(Strings.get(R.string.editor_project_gone)); return }
+        install(p, panel)
+    }
+
+    fun openUri(uri: Uri, panel: ToolId.Panel) {
+        _ui.update { it.copy(loading = true) }
+        viewModelScope.launch {
+            try {
+                val p = store.importProject(uri)
+                install(p, panel)
+            } catch (e: Exception) {
+                _ui.update { it.copy(loading = false, message = e.message ?: Strings.get(R.string.app_error_not_image, "")) }
+            }
+        }
+    }
+
+    fun adopt(file: StillFile, panel: ToolId.Panel) {
+        _ui.update { it.copy(loading = true) }
+        viewModelScope.launch {
+            try { install(store.adoptAsProject(file), panel) } catch (e: Exception) { _ui.update { it.copy(loading = false, message = e.message) } }
+        }
+    }
+
+    private fun install(p: ImageStore.Project, panel: ToolId.Panel) {
+        dropBase()
+        undo.clear(); redo.clear()
+        baseline = p.recipe
+        _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
+        requestRender()
+    }
+
+    // ------------------------------------------------------------------ recipe edits
+
+    fun setPanel(panel: ToolId.Panel) {
+        commit()
+        _ui.update { it.copy(panel = panel) }
+        requestRender()
+    }
+
+    /** A live change during a gesture: rendered, not yet undoable. */
+    fun draft(recipe: Recipe) {
+        if (!recipe.valid) return
+        _ui.update { it.copy(recipe = recipe, export = null, exportFile = null, exportPreview = null) }
+        requestRender()
+    }
+
+    /** Ends a gesture: the change becomes one undo step and is written to the project. */
+    fun commit() {
+        val recipe = _ui.value.recipe
+        if (recipe != baseline) {
+            undo.addLast(baseline)
+            if (undo.size > MAX_UNDO) undo.removeFirst()
+            redo.clear()
+            baseline = recipe
+            persist()
+        }
+        _ui.update { it.copy(canUndo = undo.isNotEmpty(), canRedo = redo.isNotEmpty()) }
+    }
+
+    /** A one-shot change: draft and commit together. */
+    fun change(block: (Recipe) -> Recipe) {
+        val next = block(_ui.value.recipe)
+        if (!next.valid) { message(Strings.get(R.string.editor_invalid_change)); return }
+        draft(next); commit()
+    }
+
+    fun undo() {
+        val r = undo.removeLastOrNull() ?: return
+        redo.addLast(baseline); baseline = r
+        _ui.update { it.copy(recipe = r, canUndo = undo.isNotEmpty(), canRedo = true, export = null, exportFile = null, exportPreview = null) }
+        persist(); requestRender()
+    }
+
+    fun redo() {
+        val r = redo.removeLastOrNull() ?: return
+        undo.addLast(baseline); baseline = r
+        _ui.update { it.copy(recipe = r, canUndo = true, canRedo = redo.isNotEmpty(), export = null, exportFile = null, exportPreview = null) }
+        persist(); requestRender()
+    }
+
+    fun resetAll() = change { Recipe() }
+
+    /** Levels and exposure from the current preview's histogram, as sliders the user can see. */
+    fun auto() {
+        val h = _ui.value.histogram ?: return
+        change { it.copy(tone = AutoEnhance.tone(h, it.tone)) }
+    }
+
+    fun savePreset(name: String) {
+        val r = _ui.value.recipe
+        viewModelScope.launch(Dispatchers.IO) {
+            store.savePreset(name, r)
+            val presets = store.presets()
+            _ui.update { it.copy(presets = presets, message = Strings.get(R.string.editor_preset_saved, name)) }
+        }
+    }
+
+    fun applyPreset(p: ImageStore.Preset) = change { current ->
+        p.recipe.copy(marks = current.marks, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height))
+    }
+
+    fun removePreset(p: ImageStore.Preset) {
+        viewModelScope.launch(Dispatchers.IO) {
+            store.removePreset(p.name)
+            val presets = store.presets()
+            _ui.update { it.copy(presets = presets) }
+        }
+    }
+
+    fun message(text: String?) = _ui.update { it.copy(message = text) }
+
+    private fun persist() {
+        val p = _ui.value.project ?: return
+        val recipe = _ui.value.recipe
+        persistJob?.cancel()
+        persistJob = viewModelScope.launch(Dispatchers.IO) {
+            try { store.save(p.copy(recipe = recipe)) } catch (c: CancellationException) { throw c } catch (e: Exception) {
+                _ui.update { it.copy(message = Strings.get(R.string.editor_save_failed, e.message ?: "")) }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ preview
+
+    /**
+     * What the canvas shows for a panel. Crop shows the whole straightened picture with the
+     * crop drawn over it; perspective shows the upright source with the corners over it; the
+     * layer panels hide the frame so a tap lands on canvas coordinates; everything else shows
+     * the recipe as it will export.
+     */
+    fun previewRecipe(recipe: Recipe, panel: ToolId.Panel): Recipe = when (panel) {
+        ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame())
+        ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame())
+        ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS -> recipe.copy(frame = Frame())
+        else -> recipe
+    }
+
+    private fun requestRender() { renderRequests.value = System.nanoTime() }
+
+    @OptIn(FlowPreview::class)
+    private suspend fun renderLoop() {
+        renderRequests.debounce(30).collectLatest {
+            val state = _ui.value
+            val project = state.project ?: return@collectLatest
+            val shown = previewRecipe(state.recipe, state.panel)
+            _ui.update { it.copy(previewBusy = true) }
+            try {
+                val ctx = currentCoroutineContext()
+                val check = { ctx.ensureActive() }
+                val geometry = shown.geometry
+                val current = base
+                val b = if (current != null && baseGeometry == geometry && !current.isRecycled) current else {
+                    val fresh = withContext(Dispatchers.Default) { renderer.geometry(project.file.file, geometry, Budget.PREVIEW_PIXELS, check) }
+                    dropBase()
+                    base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
+                    fresh.bitmap
+                }
+                val finished = renderer.finish(b, shown, check)
+                val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
+                val histogram = withContext(Dispatchers.Default) {
+                    val px = IntArray(finished.width * finished.height)
+                    finished.getPixels(px, 0, finished.width, 0, 0, finished.width, finished.height)
+                    Histogram.of(px)
+                }
+                val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
+                // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
+                // old one, and from API 26 the garbage collector frees pixel memory itself.
+                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas) }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (e: OutOfMemoryError) {
+                _ui.update { it.copy(previewBusy = false, message = Strings.get(R.string.engine_out_of_memory)) }
+            } catch (e: Exception) {
+                _ui.update { it.copy(previewBusy = false, message = e.message ?: Strings.get(R.string.editor_preview_failed)) }
+            }
+        }
+    }
+
+    private fun dropBase() {
+        base?.recycle(); base = null; baseGeometry = null
+    }
+
+    // ------------------------------------------------------------------ export
+
+    /** Renders the full picture, encodes it under [options], and measures the result. */
+    fun prepareExport() {
+        commit()
+        val project = _ui.value.project ?: return
+        val recipe = _ui.value.recipe
+        val settings = options
+        if (!settings.valid) { message(Strings.get(R.string.export_options_invalid)); return }
+        exportJob?.cancel()
+        _ui.update { it.copy(busy = Strings.get(R.string.export_preparing), export = null, exportFile = null, exportPreview = null) }
+        exportJob = viewModelScope.launch {
+            try {
+                val ctx = currentCoroutineContext()
+                val check = { ctx.ensureActive() }
+                val result = withContext(Dispatchers.Default) {
+                    val stage = renderer.geometry(project.file.file, recipe.geometry, Budget.exportPixels, check)
+                    val picture = try { renderer.finish(stage.bitmap, recipe, check) } finally { stage.bitmap.recycle() }
+                    try {
+                        val out = still.workspace.newOutput(project.name, "export", settings.format.extension)
+                        val exported = codecs.export(picture, settings, out, project.file.file, stage.scaled, check)
+                        val file = StillFile(out, com.layerbit.still.engine.Names.stem(project.name) + "-edited." + settings.format.extension, StillFile.Origin.Derived("export"), settings.format.mime, exported.width, exported.height)
+                        val preview = renderer.decode(out, 600_000, check)
+                        Triple(exported, file, preview)
+                    } finally { picture.recycle() }
+                }
+                _ui.update { it.copy(busy = null, export = result.first, exportFile = result.second, exportPreview = result.third) }
+            } catch (c: CancellationException) {
+                _ui.update { it.copy(busy = null) }
+                throw c
+            } catch (e: OutOfMemoryError) {
+                _ui.update { it.copy(busy = null, message = Strings.get(R.string.engine_out_of_memory)) }
+            } catch (e: Exception) {
+                _ui.update { it.copy(busy = null, message = e.message ?: Strings.get(R.string.export_failed)) }
+            }
+        }
+    }
+
+    fun cancelExport() { exportJob?.cancel() }
+
+    fun dismissExport() = _ui.update { it.copy(export = null, exportFile = null, exportPreview = null) }
+
+    /** Copies the prepared export to a document the user just created. */
+    fun saveTo(uri: Uri) {
+        val file = _ui.value.exportFile ?: return
+        viewModelScope.launch {
+            _ui.update { it.copy(busy = Strings.get(R.string.export_saving)) }
+            try {
+                still.exporter.writeTo(uri, file)
+                _ui.update { it.copy(busy = null, message = Strings.get(R.string.export_saved, file.displayName)) }
+            } catch (e: Exception) {
+                _ui.update { it.copy(busy = null, message = e.message) }
+            }
+        }
+    }
+
+    fun saveInto(folder: Uri) {
+        val file = _ui.value.exportFile ?: return
+        viewModelScope.launch {
+            _ui.update { it.copy(busy = Strings.get(R.string.export_saving)) }
+            val problem = still.exporter.writeInto(folder, file)
+            _ui.update { it.copy(busy = null, message = problem ?: Strings.get(R.string.export_saved, file.displayName)) }
+        }
+    }
+
+    fun shareIntent() = _ui.value.exportFile?.let { still.exporter.shareIntent(it) }
+
+    val exportSourceFile: File? get() = _ui.value.project?.file?.file
+
+    override fun onCleared() {
+        dropBase()
+    }
+
+    companion object {
+        const val MAX_UNDO = 100
+    }
+}

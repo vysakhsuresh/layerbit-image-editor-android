@@ -23,8 +23,8 @@ jobs:
           java-version: '17'
       - uses: actions/cache@v4
         with:
-          path: ~/.studio-kt
-          key: studio-kt-2.2.21
+          path: ~/.still-kt
+          key: still-kt-2.2.21
       - name: Compile engine/ without android.* and run its tests
         run: bash tools/jvm-check.sh
   build:
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: studio-apk-and-reports
+          name: still-apk-and-reports
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/bundle/release/*.aab
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: studio-device-reports
+          name: still-device-reports
           path: |
             app/build/reports/androidTests/
             device-screenshots/

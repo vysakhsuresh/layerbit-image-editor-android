@@ -3,17 +3,17 @@
 One Gradle module of app code, boundaries by package, enforced where it matters by a script.
 
 ```
-com.layerbit.studio
+com.layerbit.still
   engine/     pure Kotlin, no android.* import, compiled by tools/jvm-check.sh
               Recipe, Json, RecipeJson, ColorMath (TonePipeline, CurveMath, Looks),
               Spatial, Histogram/AutoEnhance, Geometry2D, JpegSegments, FitSize, Names, Collage
   image/      the Android renderer: Renderer (decode, geometry, finish), Codecs (encode,
               target size, selective EXIF, lossless strip), Budget
-  files/      StudioFile, ImageStore (the only way a picture enters), Exporter (the only
+  files/      StillFile, ImageStore (the only way a picture enters), Exporter (the only
               thing that writes a Uri), Workspace, Handoff, CrashLog
   ops/        ToolId, Op, the batch operations, PipelineOp (the steps composed into one op)
   jobs/       JobRunner and JobState, app-scoped
-  prefs/      StudioSettings, Prompts
+  prefs/      StillSettings, Prompts
   ui/         theme, components, icons (Glyphs), home (one gesture), editor, pipeline (the
               batch screen), tools (collage), intro, settings, about
 ```

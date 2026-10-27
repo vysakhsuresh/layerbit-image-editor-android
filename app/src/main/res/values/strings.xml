@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Shared -->
-    <string name="app_name">Layerbit Studio</string>
-    <string name="app_name_short">Studio</string>
+    <string name="app_name">Still</string>
+    <string name="app_name_short">Still</string>
     <string name="app_tagline">Every picture tool. Nothing leaves your phone.</string>
     <string name="app_settings">Settings</string>
     <string name="app_about">About</string>
@@ -139,7 +139,7 @@
     <string name="home_footer">Free, offline, and from %1$s</string>
     <string name="home_edited">edited</string>
     <string name="home_remove_project">Remove this picture</string>
-    <string name="home_remove_title">Remove this picture from Studio?</string>
+    <string name="home_remove_title">Remove this picture from Still?</string>
     <string name="home_remove_body">Its private copy and its edits are deleted. Your original and anything you saved stay where they are.</string>
 
     <!-- Intro -->
@@ -148,7 +148,7 @@
     <string name="intro_start">Start</string>
     <string name="intro_position">Card %1$d of %2$d</string>
     <string name="intro_offline_title">Your pictures stay on this phone</string>
-    <string name="intro_offline_body">Studio has no internet permission, so it cannot send a picture anywhere, even by accident. You can check that on the Play listing.</string>
+    <string name="intro_offline_body">Still has no internet permission, so it cannot send a picture anywhere, even by accident. You can check that on the Play listing.</string>
     <string name="intro_original_title">Your originals are never touched</string>
     <string name="intro_original_body">Every edit works on a private copy. Saving makes a new file where you choose. The photo in your gallery is exactly as it was.</string>
     <string name="intro_free_title">Every tool is free</string>
@@ -165,7 +165,7 @@
     <string name="editor_reset_slider">Double-tap to reset %1$s</string>
     <string name="editor_choose_colour">Choose colour</string>
     <string name="editor_curve_description">Tone curve. Tap to add a point, drag to move it, drag off the edge to remove it.</string>
-    <string name="editor_project_gone">That picture is no longer in Studio.</string>
+    <string name="editor_project_gone">That picture is no longer in Still.</string>
     <string name="editor_invalid_change">That change goes outside what the editor allows.</string>
     <string name="editor_preview_failed">The preview could not be drawn. Your original is safe.</string>
     <string name="editor_save_failed">The edit could not be written to the private project (%1$s). Export a copy before closing.</string>
@@ -495,8 +495,8 @@
     <string name="settings_results">in results waiting to be saved</string>
     <string name="settings_results_detail">Exports and batch results are kept here until you clear them, so you can come back and save them. Nothing here is a backup.</string>
     <plurals name="settings_project_count">
-        <item quantity="one">%1$d picture in Studio, %2$s</item>
-        <item quantity="other">%1$d pictures in Studio, %2$s</item>
+        <item quantity="one">%1$d picture in Still, %2$s</item>
+        <item quantity="other">%1$d pictures in Still, %2$s</item>
     </plurals>
     <string name="settings_projects_detail">Private copies and their edits. Removing them does not touch your originals.</string>
     <string name="settings_budget">This phone edits up to %1$d megapixels at once, from a %2$d MB app heap. Larger pictures work at that size and the export says so.</string>
@@ -513,17 +513,17 @@
     <string name="settings_cannot_detail">It has no internet permission, so it cannot upload, sync, track or show ads, whatever a future update might want. That is enforced by Android, not promised by a policy.</string>
 
     <!-- About -->
-    <string name="about_title">About Studio</string>
+    <string name="about_title">About Still</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_offline_title">Nothing leaves the phone</string>
-    <string name="about_offline_body">Studio does not declare the INTERNET permission, so the process cannot open a socket. Your pictures cannot leave the device even if a library tried to send them. Check it on the Play listing without taking anyone\'s word for it.</string>
+    <string name="about_offline_body">Still does not declare the INTERNET permission, so the process cannot open a socket. Your pictures cannot leave the device even if a library tried to send them. Check it on the Play listing without taking anyone\'s word for it.</string>
     <string name="about_honest_title">It says what it did</string>
     <string name="about_honest_body">Every export is measured after it is made, so the size and pixels you see are the file\'s own. Looks show the sliders they move. A picture that needed no change says so instead of pretending.</string>
     <string name="about_feedback_title">Tell us what is missing</string>
     <string name="about_feedback_body">A tool you expected, a picture that came out wrong, a word in the wrong language: a message reaches a person.</string>
     <string name="about_email">Email</string>
     <string name="about_free_title">Free, and staying free</string>
-    <string name="about_free_body">No subscription, no paywall on the second tool, no ads. If Studio saved you an upload to a stranger\'s server, a coffee says thanks.</string>
+    <string name="about_free_body">No subscription, no paywall on the second tool, no ads. If Still saved you an upload to a stranger\'s server, a coffee says thanks.</string>
     <string name="about_coffee">Buy a coffee</string>
     <string name="about_rate">Rate on Google Play</string>
     <string name="about_privacy">Privacy policy</string>

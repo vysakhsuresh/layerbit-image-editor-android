@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mirrors StudioColors.Background in the LIGHT palette. Change both together. -->
+    <!-- Mirrors StillColors.Background in the LIGHT palette. Change both together. -->
     <color name="window_background">#F5F4EF</color>
     <!-- Not themed. A launcher icon keeps one background whatever the phone is set to. -->
 </resources>

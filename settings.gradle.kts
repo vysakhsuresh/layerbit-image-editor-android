@@ -22,6 +22,6 @@ dependencyResolutionManagement {
 // :baselineprofile holds no app code. It drives the app on a device and writes one text file
 // that :app ships; it is a module because it has to start and kill the app as a separate
 // process, which is what com.android.test is for.
-rootProject.name = "LayerbitStudio"
+rootProject.name = "Still"
 include(":app")
 include(":baselineprofile")

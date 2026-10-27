@@ -7,7 +7,7 @@ test_status=0
 # The failure text of any failed test, since the HTML report is only in the artifact.
 find app/build/outputs/androidTest-results -name '*.xml' -exec grep -h -A4 '<failure' {} \; 2>/dev/null | head -60
 mkdir -p device-screenshots
-if ! adb exec-out run-as com.layerbit.studio tar -cf - -C files screenshots | tar -xf - -C device-screenshots; then
+if ! adb exec-out run-as com.layerbit.still tar -cf - -C files screenshots | tar -xf - -C device-screenshots; then
     echo "Screenshot collection failed. Inspect device test outputs."
     test_status=1
 fi

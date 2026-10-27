@@ -1,4 +1,4 @@
-# Layerbit Studio launch kit — draft, unpublished
+# Still launch kit — draft, unpublished
 
 ## Icon
 
@@ -6,7 +6,7 @@ Three pictures fanned up and to the right: the back one in navy, the middle in p
 
 ## Store listing draft
 
-**Title:** Layerbit Studio: Photo Editor
+**Title:** Still: Photo Editor
 
 **Short description:** Every picture tool, free, and nothing leaves your phone.
 
@@ -15,7 +15,7 @@ Crop and straighten with real handles. Fix the light and colour, or tap Auto and
 
 Get a photo under 50 KB for a form, as a passport photo if you need one. Resize fifty pictures at once. Convert to JPEG, PNG or WebP. Remove the location and camera data from a photo without touching a single pixel of the picture. Make a collage.
 
-Studio has no internet permission. Your pictures cannot leave the phone. Every edit works on a private copy; saving makes a new file where you choose. No account, no ads, no subscription, no paywall on the second tool.
+Still has no internet permission. Your pictures cannot leave the phone. Every edit works on a private copy; saving makes a new file where you choose. No account, no ads, no subscription, no paywall on the second tool.
 
 Every export is measured before you save it, so the size and pixels you see are real.
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.layerbit.studio.baselineprofile"
+    namespace = "com.layerbit.still.baselineprofile"
     compileSdk = 36
 
     defaultConfig {

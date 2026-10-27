@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Compiles the pure engine (app/src/main/java/com/layerbit/studio/engine) and runs its JUnit
+# Compiles the pure engine (app/src/main/java/com/layerbit/still/engine) and runs its JUnit
 # tests with the standalone Kotlin compiler, with NO Android classes on the path.
 #
 # Two things this proves on every run, on any machine with a JDK and no Android SDK:
 #   1. Nothing under engine/ imports android.* - the compile fails if it does. The engine is
 #      where every number the app shows and every pixel it changes is decided, and keeping it
 #      pure is what lets those decisions be tested in seconds rather than on an emulator.
-#   2. The tests under app/src/test/java/com/layerbit/studio/engine pass.
+#   2. The tests under app/src/test/java/com/layerbit/still/engine pass.
 #
-# Jars are fetched once from Maven Central into ~/.studio-kt. CI runs this before Gradle.
+# Jars are fetched once from Maven Central into ~/.still-kt. CI runs this before Gradle.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-K="${STUDIO_KT_HOME:-$HOME/.studio-kt}"
+K="${STILL_KT_HOME:-$HOME/.still-kt}"
 KV=2.2.21
 MC=https://repo.maven.apache.org/maven2
 mkdir -p "$K"
@@ -42,8 +42,8 @@ COMPILER_CP="$K/kotlin-compiler-embeddable.jar:$K/kotlin-stdlib.jar:$K/kotlin-sc
 OUT="$ROOT/tools/out"
 rm -rf "$OUT" && mkdir -p "$OUT"
 
-ENGINE="$ROOT/app/src/main/java/com/layerbit/studio/engine"
-TESTS="$ROOT/app/src/test/java/com/layerbit/studio/engine"
+ENGINE="$ROOT/app/src/main/java/com/layerbit/still/engine"
+TESTS="$ROOT/app/src/test/java/com/layerbit/still/engine"
 
 if grep -rn "^import android" "$ENGINE"; then
   echo "engine/ must not import android.* (see above)"; exit 1
@@ -53,8 +53,8 @@ echo "compiling engine/ and its tests"
 java -cp "$COMPILER_CP" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
   -no-stdlib -nowarn -cp "$K/kotlin-stdlib.jar:$K/junit.jar" -d "$OUT" \
   $(find "$ENGINE" "$TESTS" -name '*.kt') 2>&1 | grep -v JAVA_TOOL_OPTIONS || true
-[ -d "$OUT/com/layerbit/studio/engine" ] || { echo "compile failed"; exit 1; }
+[ -d "$OUT/com/layerbit/still/engine" ] || { echo "compile failed"; exit 1; }
 
-CLASSES=$(cd "$OUT" && find com/layerbit/studio/engine -name '*Test.class' | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+CLASSES=$(cd "$OUT" && find com/layerbit/still/engine -name '*Test.class' | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
 echo "running: $CLASSES"
 java -cp "$OUT:$K/kotlin-stdlib.jar:$K/junit.jar:$K/hamcrest.jar" org.junit.runner.JUnitCore $CLASSES 2>&1 | grep -v JAVA_TOOL_OPTIONS

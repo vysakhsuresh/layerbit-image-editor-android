@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Shared -->
-    <string name="app_name">Layerbit Studio</string>
-    <string name="app_name_short">Studio</string>
+    <string name="app_name">Still</string>
+    <string name="app_name_short">Still</string>
     <string name="app_tagline">तस्वीर का हर टूल. आपके फ़ोन से बाहर कुछ नहीं जाता.</string>
     <string name="app_settings">सेटिंग</string>
     <string name="app_about">जानकारी</string>
@@ -139,7 +139,7 @@
     <string name="home_footer">मुफ़्त, ऑफ़लाइन, और %1$s की ओर से</string>
     <string name="home_edited">संपादित</string>
     <string name="home_remove_project">यह तस्वीर हटाएं</string>
-    <string name="home_remove_title">यह तस्वीर Studio से हटाएं?</string>
+    <string name="home_remove_title">यह तस्वीर Still से हटाएं?</string>
     <string name="home_remove_body">इसकी निजी प्रति और इसके संपादन मिटा दिए जाएंगे. आपकी मूल तस्वीर और जो कुछ आपने सहेजा है, वह जहां है वहीं रहेगा.</string>
 
     <!-- Intro -->
@@ -148,7 +148,7 @@
     <string name="intro_start">शुरू करें</string>
     <string name="intro_position">कार्ड %1$d / %2$d</string>
     <string name="intro_offline_title">आपकी तस्वीरें इसी फ़ोन में रहती हैं</string>
-    <string name="intro_offline_body">Studio के पास इंटरनेट की अनुमति ही नहीं है, इसलिए यह तस्वीर कहीं भेज नहीं सकता, गलती से भी नहीं. आप इसे Play की सूची में जांच सकते हैं.</string>
+    <string name="intro_offline_body">Still के पास इंटरनेट की अनुमति ही नहीं है, इसलिए यह तस्वीर कहीं भेज नहीं सकता, गलती से भी नहीं. आप इसे Play की सूची में जांच सकते हैं.</string>
     <string name="intro_original_title">आपकी मूल तस्वीर कभी नहीं छुई जाती</string>
     <string name="intro_original_body">हर संपादन एक निजी प्रति पर होता है. सहेजने पर आपकी चुनी जगह पर नई फ़ाइल बनती है. गैलरी की फ़ोटो वैसी ही रहती है जैसी थी.</string>
     <string name="intro_free_title">हर टूल मुफ़्त है</string>
@@ -165,7 +165,7 @@
     <string name="editor_reset_slider">%1$s रीसेट करने के लिए दो बार टैप करें</string>
     <string name="editor_choose_colour">रंग चुनें</string>
     <string name="editor_curve_description">टोन कर्व. बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें, हटाने के लिए किनारे से बाहर खींचें.</string>
-    <string name="editor_project_gone">वह तस्वीर अब Studio में नहीं है.</string>
+    <string name="editor_project_gone">वह तस्वीर अब Still में नहीं है.</string>
     <string name="editor_invalid_change">वह बदलाव एडिटर की सीमा से बाहर है.</string>
     <string name="editor_preview_failed">पूर्वावलोकन नहीं बन सका. आपकी मूल तस्वीर सुरक्षित है.</string>
     <string name="editor_save_failed">संपादन निजी प्रोजेक्ट में लिखा नहीं जा सका (%1$s). बंद करने से पहले एक प्रति निर्यात करें.</string>
@@ -495,8 +495,8 @@
     <string name="settings_results">सहेजे जाने के इंतज़ार में नतीजों में</string>
     <string name="settings_results_detail">निर्यात और बैच के नतीजे यहां तब तक रहते हैं जब तक आप हटा न दें, ताकि आप लौटकर सहेज सकें. यहां कुछ भी बैकअप नहीं है.</string>
     <plurals name="settings_project_count">
-        <item quantity="one">Studio में %1$d तस्वीर, %2$s</item>
-        <item quantity="other">Studio में %1$d तस्वीरें, %2$s</item>
+        <item quantity="one">Still में %1$d तस्वीर, %2$s</item>
+        <item quantity="other">Still में %1$d तस्वीरें, %2$s</item>
     </plurals>
     <string name="settings_projects_detail">निजी प्रतियां और उनके संपादन. इन्हें हटाने से आपकी मूल तस्वीरें नहीं छुई जातीं.</string>
     <string name="settings_budget">यह फ़ोन %2$d MB ऐप हीप से एक बार में %1$d मेगापिक्सेल तक संपादित करता है. बड़ी तस्वीरें उसी आकार पर काम करती हैं और निर्यात यह बता देता है.</string>
@@ -513,17 +513,17 @@
     <string name="settings_cannot_detail">इसके पास इंटरनेट की अनुमति नहीं है, इसलिए यह अपलोड, सिंक, ट्रैक या विज्ञापन नहीं कर सकता, भविष्य का कोई अपडेट चाहे जो चाहे. यह Android लागू करता है, कोई नीति वादा नहीं करती.</string>
 
     <!-- About -->
-    <string name="about_title">Studio के बारे में</string>
+    <string name="about_title">Still के बारे में</string>
     <string name="about_version">संस्करण %1$s</string>
     <string name="about_offline_title">फ़ोन से बाहर कुछ नहीं जाता</string>
-    <string name="about_offline_body">Studio INTERNET अनुमति घोषित नहीं करता, इसलिए प्रक्रिया कोई सॉकेट खोल ही नहीं सकती. कोई लाइब्रेरी भेजना भी चाहे तो आपकी तस्वीरें डिवाइस से बाहर नहीं जा सकतीं. किसी की बात माने बिना इसे Play की सूची में जांचें.</string>
+    <string name="about_offline_body">Still INTERNET अनुमति घोषित नहीं करता, इसलिए प्रक्रिया कोई सॉकेट खोल ही नहीं सकती. कोई लाइब्रेरी भेजना भी चाहे तो आपकी तस्वीरें डिवाइस से बाहर नहीं जा सकतीं. किसी की बात माने बिना इसे Play की सूची में जांचें.</string>
     <string name="about_honest_title">यह बताता है कि इसने क्या किया</string>
     <string name="about_honest_body">हर निर्यात बनने के बाद मापा जाता है, इसलिए जो आकार और पिक्सेल आप देखते हैं वे फ़ाइल के अपने हैं. लुक बताते हैं कि वे कौन-से स्लाइडर बदलते हैं. जिस तस्वीर को बदलाव की ज़रूरत न हो, वह दिखावा करने के बजाय यही कह देती है.</string>
     <string name="about_feedback_title">बताएं क्या कमी है</string>
     <string name="about_feedback_body">कोई टूल जिसकी आपको उम्मीद थी, कोई तस्वीर जो गलत निकली, गलत भाषा में कोई शब्द: संदेश एक इंसान तक पहुंचता है.</string>
     <string name="about_email">ईमेल</string>
     <string name="about_free_title">मुफ़्त, और मुफ़्त ही रहेगा</string>
-    <string name="about_free_body">कोई सदस्यता नहीं, दूसरे टूल पर कोई पेवॉल नहीं, कोई विज्ञापन नहीं. अगर Studio ने आपको किसी अनजान सर्वर पर अपलोड से बचाया, तो एक कॉफ़ी धन्यवाद कह देती है.</string>
+    <string name="about_free_body">कोई सदस्यता नहीं, दूसरे टूल पर कोई पेवॉल नहीं, कोई विज्ञापन नहीं. अगर Still ने आपको किसी अनजान सर्वर पर अपलोड से बचाया, तो एक कॉफ़ी धन्यवाद कह देती है.</string>
     <string name="about_coffee">एक कॉफ़ी पिलाएं</string>
     <string name="about_rate">Google Play पर रेट करें</string>
     <string name="about_privacy">निजता नीति</string>
