@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,7 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.layerbit.still.R
 import com.layerbit.still.ops.ToolId
+import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.Panel
+import com.layerbit.still.ui.components.rise
 import com.layerbit.still.ui.components.Pill
 import com.layerbit.still.ui.components.SectionHeading
 import com.layerbit.still.ui.icons.AnimatedGlyph
@@ -38,8 +41,10 @@ import com.layerbit.still.ui.theme.StillColors
 @Composable
 fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier) {
     val groups = ToolId.Group.entries
+    Box(modifier.fillMaxSize()) {
+    AmbientBackdrop(strength = 0.7f)
     LazyColumn(
-        modifier = modifier.fillMaxWidth().testTag("toolsList"),
+        modifier = Modifier.fillMaxWidth().testTag("toolsList"),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -51,7 +56,7 @@ fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier) {
             items(tools.size, key = { "t-" + tools[it].name }) { i ->
                 val tool = tools[i]
                 val accent = GroupAccents.of(group)
-                Panel(modifier = Modifier.fillMaxWidth(), onClick = { onTool(tool) }, inset = 12.dp) {
+                Panel(modifier = rise(i).fillMaxWidth(), onClick = { onTool(tool) }, inset = 12.dp) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
                             val glyph = glyphFor(iconFor(tool))
@@ -66,5 +71,6 @@ fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
     }
 }

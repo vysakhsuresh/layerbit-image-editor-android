@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,7 +51,12 @@ import com.layerbit.still.R
 import com.layerbit.still.brand.BrandLinks
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.ops.ToolId
+import com.layerbit.still.ui.components.AmbientBackdrop
+import com.layerbit.still.ui.components.LocalLivelyClock
 import com.layerbit.still.ui.components.Panel
+import com.layerbit.still.ui.components.breathe
+import com.layerbit.still.ui.components.drawOn
+import com.layerbit.still.ui.components.rise
 import com.layerbit.still.ui.components.Pill
 import com.layerbit.still.ui.components.RoundIconButton
 import com.layerbit.still.ui.components.SectionHeading
@@ -81,27 +87,34 @@ fun HomeScreen(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    Box(modifier.fillMaxSize()) {
+    AmbientBackdrop()
     LazyColumn(
-        modifier = modifier.fillMaxWidth().testTag("homeList"),
+        modifier = Modifier.fillMaxWidth().testTag("homeList"),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item(key = "hero") { Hero(onSettings, onAbout) }
-        item(key = "drop") { DropZone(onOpenPictures) }
+        item(key = "hero") { Box(rise(0)) { Hero(onSettings, onAbout) } }
+        item(key = "drop") { Box(rise(1)) { DropZone(onOpenPictures) } }
         if (projects.isNotEmpty()) item(key = "projects") {
+            Column(rise(2)) {
             SectionHeading(stringResource(R.string.home_pick_up), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(projects, key = { it.id }) { p -> ProjectCard(p, thumbnail, onOpen = { onOpenProject(p) }, onForget = { onForgetProject(p) }) }
             }
+            }
         }
         item(key = "doors") {
+            Column(rise(3)) {
             SectionHeading(stringResource(R.string.home_or), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
             Door(Glyph.EDIT, Color(0xFF5B9DFF), stringResource(R.string.home_door_edit), stringResource(R.string.home_door_edit_body), onEditOne)
             Door(Glyph.RECIPE, Color(0xFF3ED3C0), stringResource(R.string.home_door_batch), stringResource(R.string.home_door_batch_body), { onProcessMany(null) })
             Door(Glyph.COLLAGE, Color(0xFFFF6BA8), stringResource(R.string.home_door_collage), stringResource(R.string.home_door_collage_body), onCollage)
             Door(Glyph.LAYERS, Color(0xFFB08CFF), stringResource(R.string.home_door_tools), stringResource(R.string.home_door_tools_body), onTools)
+            }
         }
         item(key = "quick") {
+            Column(rise(4)) {
             SectionHeading(stringResource(R.string.home_quick), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
             // Each icon acts out its tool. One picture tools ask for the picture first; batch tools open the steps ready.
             val quick = listOf(
@@ -121,9 +134,10 @@ fun HomeScreen(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().testTag("quickTools")) {
                 items(quick.size) { i -> val (glyph, label, action) = quick[i]; Quick(glyph, stringResource(label), Modifier.width(96.dp), action) }
             }
+            }
         }
         item(key = "footer") {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(modifier = rise(5).fillMaxWidth().padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.home_promise), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, textAlign = TextAlign.Center)
                 Row {
                     TextButton(onClick = onGuide) { Text(stringResource(R.string.guide_title), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
@@ -134,6 +148,7 @@ fun HomeScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -141,6 +156,7 @@ private fun Hero(onSettings: () -> Unit, onAbout: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
             Text(stringResource(R.string.app_name_short), style = MaterialTheme.typography.displayMedium, color = StillColors.Text)
+            Box(drawOn().padding(top = 2.dp, bottom = 6.dp).height(4.dp).width(64.dp).background(Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright)), RoundedCornerShape(2.dp)))
             Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted)
         }
         RoundIconButton(icon = Icons.Filled.Settings, contentDescription = stringResource(R.string.app_settings), onClick = onSettings)
@@ -154,16 +170,19 @@ private fun Hero(onSettings: () -> Unit, onAbout: () -> Unit) {
 private fun DropZone(onOpen: () -> Unit) {
     val shape = RoundedCornerShape(24.dp)
     val border = StillColors.Band
+    val clock = LocalLivelyClock.current
     Column(
         modifier = Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(StillColors.Band.copy(alpha = if (StillColors.isDark) 0.18f else 0.10f), StillColors.Surface)))
+            .background(Brush.verticalGradient(listOf(StillColors.Band.copy(alpha = if (StillColors.isDark) 0.22f else 0.14f), StillColors.Surface)))
             .drawBehind {
-                drawRoundRect(border.copy(alpha = 0.7f), cornerRadius = CornerRadius(24.dp.toPx()), style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 12f))))
+                // The dashes walk round the door, so it looks like it is waiting for something.
+                val phase = -(clock?.value ?: 0f) * 360f
+                drawRoundRect(border.copy(alpha = 0.75f), cornerRadius = CornerRadius(24.dp.toPx()), style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 12f), phase)))
             }
             .clickable(role = Role.Button, onClick = onOpen).testTag("openPhotos").padding(vertical = 34.dp, horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)).background(StillColors.Band), contentAlignment = Alignment.Center) {
+        Box(breathe().size(64.dp).clip(RoundedCornerShape(20.dp)).background(Brush.linearGradient(listOf(StillColors.BandBright, StillColors.Band))), contentAlignment = Alignment.Center) {
             AnimatedGlyph(Glyph.PLUS, StillColors.OnBand, Modifier.size(34.dp), seed = 3)
         }
         Text(stringResource(R.string.home_open_pictures), style = MaterialTheme.typography.headlineSmall, color = StillColors.Text, modifier = Modifier.padding(top = 14.dp), textAlign = TextAlign.Center)

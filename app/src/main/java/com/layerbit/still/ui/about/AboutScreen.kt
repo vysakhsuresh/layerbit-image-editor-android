@@ -38,6 +38,7 @@ import com.layerbit.still.BuildConfig
 import com.layerbit.still.R
 import com.layerbit.still.brand.BrandLinks
 import com.layerbit.still.ops.ToolId
+import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.IconTile
 import com.layerbit.still.ui.components.LivelyIcon
 import com.layerbit.still.ui.components.Panel
@@ -50,7 +51,9 @@ import com.layerbit.still.ui.theme.StillColors
 @Composable
 fun AboutScreen(onGuide: () -> Unit = {}, onContact: () -> Unit = {}, onTools: () -> Unit = {}, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 36.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Box(modifier.fillMaxSize()) {
+    AmbientBackdrop(strength = 0.8f)
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 36.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Masthead() }
         item {
             Panel(modifier = Modifier.fillMaxWidth(), tint = StillColors.Done) {
@@ -120,6 +123,7 @@ fun AboutScreen(onGuide: () -> Unit = {}, onContact: () -> Unit = {}, onTools: (
                 Text(stringResource(R.string.about_licences), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
             }
         }
+    }
     }
 }
 

@@ -38,6 +38,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -94,8 +96,12 @@ fun Panel(
     }
     var base = modifier
     if (onClick != null) base = base.pressScale(interaction)
+    // Doors and tinted cards stand a little off the page in the light theme; a flat card there reads as a form.
+    if (!StillColors.isDark && (onClick != null || tint != null)) {
+        base = base.shadow(if (onClick != null) 3.dp else 1.5.dp, PanelShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.22f), spotColor = StillColors.Band.copy(alpha = 0.28f))
+    }
     base = base.clip(PanelShape).background(StillColors.Surface)
-        .then(if (tint != null) Modifier.background(surface) else Modifier)
+        .then(if (tint != null) Modifier.background(Brush.verticalGradient(listOf(surface, surface.copy(alpha = surface.alpha * 0.35f)))) else Modifier)
         .border(if (onClick != null && focused) 2.dp else 1.dp, border, PanelShape)
     val tappable = when {
         onClick == null -> base
@@ -136,10 +142,14 @@ fun PrimaryButton(
     icon: ImageVector? = null, iconRes: Int? = null, tall: Boolean = true
 ) {
     val interaction = remember { MutableInteractionSource() }
+    val clock = LocalLivelyClock.current
     val brush = if (enabled) Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright))
     else Brush.horizontalGradient(listOf(StillColors.SurfaceDim, StillColors.SurfaceDim))
     Row(
-        modifier = modifier.pressScale(interaction).height(if (tall) 52.dp else 40.dp).clip(ButtonShape).background(brush)
+        modifier = modifier.pressScale(interaction).height(if (tall) 52.dp else 40.dp)
+            .then(if (enabled && !StillColors.isDark) Modifier.shadow(4.dp, ButtonShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.3f), spotColor = StillColors.Band.copy(alpha = 0.4f)) else Modifier)
+            .clip(ButtonShape).background(brush)
+            .drawWithContent { sheen(clock?.value, enabled) }
             .then(if (!enabled) Modifier.border(1.dp, StillColors.Border, ButtonShape) else Modifier)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp),

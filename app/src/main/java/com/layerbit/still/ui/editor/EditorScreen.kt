@@ -360,9 +360,10 @@ private fun PanelStrip(current: ToolId.Panel, onPick: (ToolId.Panel) -> Unit) {
         items(panels, key = { it.name }) { p ->
             val active = p == current
             val label = panelLabel(p)
+            val tabColour by androidx.compose.animation.animateColorAsState(if (active) StillColors.BandDim else StillColors.SurfaceDim, label = "tab")
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (active) StillColors.BandDim else StillColors.SurfaceDim)
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(tabColour)
                     .clickable(role = androidx.compose.ui.semantics.Role.Tab) { onPick(p) }.padding(horizontal = 10.dp, vertical = 6.dp).semantics { contentDescription = label }
             ) {
                 IconTile(iconRes = iconFor(p), accent = if (active) StillColors.Band else StillColors.Muted, size = 30.dp, lively = active)

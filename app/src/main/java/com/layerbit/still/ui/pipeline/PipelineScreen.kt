@@ -56,7 +56,9 @@ import com.layerbit.still.jobs.JobState
 import com.layerbit.still.jobs.belongsTo
 import com.layerbit.still.ops.OpOutcome
 import com.layerbit.still.ops.ToolId
+import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.ChipRow
+import com.layerbit.still.ui.components.rise
 import com.layerbit.still.ui.components.IconTile
 import com.layerbit.still.ui.components.Panel
 import com.layerbit.still.ui.components.Pill
@@ -117,6 +119,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
     val shown = if (job.belongsTo(ToolId.PROCESS)) job else JobState.Idle
 
     Box(Modifier.fillMaxSize()) {
+        AmbientBackdrop(strength = 0.6f)
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize().testTag("pipelineList")) {
             if (shown is JobState.Finished) {
                 item {
@@ -135,11 +138,11 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                     }
                 }
                 items(shown.outcomes.size) { i ->
-                    when (val o = shown.outcomes[i]) {
+                    Box(rise(i + 1)) { when (val o = shown.outcomes[i]) {
                         is OpOutcome.Produced -> ResultRow(o, vm::thumbnail, onSave = { save(o.file) }, onShare = { context.startActivity(vm.shareIntent(listOf(o.file))) }, onEdit = { onOpenInEditor(o.file) })
                         is OpOutcome.Failed -> Panel(Modifier.fillMaxWidth(), tint = StillColors.Failed, inset = 12.dp) { Text(o.inputName, color = StillColors.Text); Text(o.reason, style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
                         is OpOutcome.Skipped -> Panel(Modifier.fillMaxWidth(), tint = StillColors.Skipped, inset = 12.dp) { Text(o.inputName, color = StillColors.Text); Text(o.reason, style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
-                    }
+                    } }
                 }
                 return@LazyColumn
             }
@@ -197,8 +200,11 @@ private fun InputRow(files: List<StillFile>, thumbnail: suspend (StillFile) -> a
 
 /** One panel per step: a switch in its header, the options under it when it is on. */
 @Composable
+private val STEP_ORDER = listOf("resize", "under", "format", "enhance", "look", "watermark", "frame", "cutout", "scan")
+
+@Composable
 private fun Step(key: String, title: String, detail: String, iconRes: Int, accent: Color, on: Boolean, onToggle: (Boolean) -> Unit, content: @Composable () -> Unit) {
-    Panel(Modifier.fillMaxWidth().padding(bottom = 10.dp), tint = if (on) accent else null, inset = 14.dp) {
+    Panel(rise(STEP_ORDER.indexOf(key) + 2).fillMaxWidth().padding(bottom = 10.dp), tint = if (on) accent else null, inset = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(iconRes = iconRes, accent = accent, size = 34.dp, lively = on)
             Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {

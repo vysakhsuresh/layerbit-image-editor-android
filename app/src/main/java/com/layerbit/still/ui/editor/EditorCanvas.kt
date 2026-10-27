@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
@@ -78,7 +79,7 @@ fun EditorCanvas(
     Box(
         modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(StillColors.Canvas)
+            .background(Brush.radialGradient(listOf(StillColors.SurfaceDim, StillColors.Canvas)))
             .onSizeChanged { transform.box = it }
             .canvasGestures(transform, mode, onCompare, slop)
             .semantics { contentDescription = label }

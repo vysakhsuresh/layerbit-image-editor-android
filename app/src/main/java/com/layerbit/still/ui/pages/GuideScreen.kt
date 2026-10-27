@@ -1,9 +1,11 @@
 package com.layerbit.still.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +19,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.layerbit.still.R
 import com.layerbit.still.ui.components.IconTile
+import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.Panel
+import com.layerbit.still.ui.components.rise
 import com.layerbit.still.ui.theme.StillColors
 
 /** How the app works, in the order a first day goes: open, edit, process many, the harder tools, saving, privacy. */
@@ -33,15 +37,17 @@ fun GuideScreen(modifier: Modifier = Modifier) {
         Triple(R.drawable.ic_tool_export, R.string.guide_save_title, R.string.guide_save_body),
         Triple(R.drawable.ic_lock, R.string.guide_privacy_title, R.string.guide_privacy_body)
     )
+    Box(modifier.fillMaxSize()) {
+    AmbientBackdrop(strength = 0.7f)
     LazyColumn(
-        modifier = modifier.fillMaxWidth().testTag("guideList"),
+        modifier = Modifier.fillMaxWidth().testTag("guideList"),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item { Text(stringResource(R.string.guide_intro), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, modifier = Modifier.padding(bottom = 4.dp)) }
         items(sections.size) { i ->
             val (icon, title, body) = sections[i]
-            Panel(modifier = Modifier.fillMaxWidth()) {
+            Panel(modifier = rise(i).fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.Top) {
                     IconTile(iconRes = icon, accent = StillColors.Band)
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
@@ -52,5 +58,6 @@ fun GuideScreen(modifier: Modifier = Modifier) {
             }
         }
         item { Text(stringResource(R.string.guide_outro), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 6.dp)) }
+    }
     }
 }

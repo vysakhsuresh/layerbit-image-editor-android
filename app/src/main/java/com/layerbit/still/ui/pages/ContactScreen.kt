@@ -1,9 +1,11 @@
 package com.layerbit.still.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.layerbit.still.BuildConfig
 import com.layerbit.still.R
 import com.layerbit.still.brand.BrandLinks
+import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.Panel
+import com.layerbit.still.ui.components.rise
 import com.layerbit.still.ui.components.PrimaryButton
 import com.layerbit.still.ui.components.SecondaryButton
 import com.layerbit.still.ui.theme.StillColors
@@ -41,14 +45,16 @@ fun ContactScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val subject = "Still (Layerbit) ${BuildConfig.VERSION_NAME}"
+    Box(modifier.fillMaxSize()) {
+    AmbientBackdrop(strength = 0.7f)
     LazyColumn(
-        modifier = modifier.fillMaxWidth().testTag("contactList"),
+        modifier = Modifier.fillMaxWidth().testTag("contactList"),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item { Text(stringResource(R.string.contact_intro), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted) }
         item {
-            Panel(modifier = Modifier.fillMaxWidth()) {
+            Panel(modifier = rise(0).fillMaxWidth()) {
                 Text(stringResource(R.string.contact_email_title), style = MaterialTheme.typography.titleMedium, color = StillColors.Text)
                 SelectionContainer { Text(BrandLinks.SUPPORT_EMAIL, style = MaterialTheme.typography.bodyLarge, color = StillColors.BandBright, modifier = Modifier.padding(top = 4.dp)) }
                 Text(stringResource(R.string.contact_email_body), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 4.dp))
@@ -59,14 +65,14 @@ fun ContactScreen(modifier: Modifier = Modifier) {
             }
         }
         item {
-            Panel(modifier = Modifier.fillMaxWidth()) {
+            Panel(modifier = rise(1).fillMaxWidth()) {
                 Text(stringResource(R.string.contact_whatsapp_title), style = MaterialTheme.typography.titleMedium, color = StillColors.Text)
                 Text(stringResource(R.string.contact_whatsapp_body), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 4.dp))
                 SecondaryButton("WhatsApp", icon = Icons.Filled.Send, onClick = { BrandLinks.openUrl(context, BrandLinks.WHATSAPP_URL) }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp), tall = false)
             }
         }
         item {
-            Panel(modifier = Modifier.fillMaxWidth()) {
+            Panel(modifier = rise(2).fillMaxWidth()) {
                 Text(stringResource(R.string.contact_bug_title), style = MaterialTheme.typography.titleMedium, color = StillColors.Text)
                 Text(stringResource(R.string.contact_bug_body), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 4.dp))
                 SecondaryButton(stringResource(R.string.contact_bug_write), icon = Icons.Filled.Email, onClick = {
@@ -83,5 +89,6 @@ fun ContactScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
     }
 }
