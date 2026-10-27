@@ -1,77 +1,97 @@
 # Layerbit Studio
 
-A native, offline Android image editor built with Kotlin and Jetpack Compose. All included tools are free. This is a separate product and repository from Sheaf and IPO-RADAR.
+**A picture editor that cannot upload your pictures.**
 
-**Status: 0.1.0 development preview.** This branch implements real editing and export flows. It is not a production release or a claim of market-leading quality. See [validation and release gates](docs/VALIDATION.md) before distributing it.
+Crop, straighten, light and colour, curves, looks, retouching, frames, resize, photo-under-50-KB, convert, compress, lossless metadata removal and collages, on your phone. Every tool is free. Nothing is sent anywhere, and the reason to believe that is this repository rather than a privacy policy.
 
-## Included tools
+## Why this exists
 
-| Area | Implemented behavior |
-| --- | --- |
-| Geometry | Four independent crop edges, common aspect presets, quarter-turn rotation, flips and straightening |
-| Resize | Exact pixel dimensions, aspect lock and percentage presets; requested and actual export dimensions |
-| Compress | Maximum file size in KB/MB for JPEG/WebP; measured encoded preview; optional dimension reduction |
-| Convert/export | JPEG, PNG and lossy WebP; format/quality controls, new-copy document export and Android sharing |
-| Colour | Brightness, contrast, highlights, shadows, saturation, warmth, hue and sharpness; individual resets |
-| Filters | Five adjustable looks, original comparison and reusable recipes |
-| Markup | Text, freehand strokes, arrows, boxes, ellipses, opaque covers, pixelation and rectangular local blur |
-| Manual layers | Reorder, visibility, opacity, delete, reversible transparency masks and sampled clone strokes |
-| Batch | Sequential resize, compress, convert, filename prefixes and saved recipes; per-image failure reporting |
-| Collage | Automatic fit grids for 2–9 selected projects, subject to the device pixel budget |
-| Projects | Private source copies, saved edit recipes, recent projects, 60-step session undo/redo and recovered exports |
-| Interface | Light/dark/system appearance, zoom, semantic animated icons, reduced-motion controls and labelled standard controls |
+The picture editors people install come in two kinds. One uploads the photo to a server to do the work, which for a photo of an ID card, a child or a medical report is a strange thing to ask. The other keeps the first few tools free and puts curves, batch resize and "remove watermark" behind a subscription. The free tier exists to sell the paid one.
 
-There are no placeholder AI buttons. Neural background removal, object erasing, healing/inpainting and learned upscaling are deferred until model licensing, accuracy, size, latency and device memory have been evaluated. Full image-layer compositing and arbitrary selective colour masks are also future work.
+Studio does the work on the device, in code that is visible here. There is no server, so there is nothing to pay for, so there is nothing to gate.
+
+## Nothing leaves the phone
+
+Studio does not declare the `INTERNET` permission, so the process cannot open a socket. Your pictures cannot leave the device even if a dependency tried to send them, and that is checkable on the Play listing without taking anyone's word for it.
+
+`app/src/main/AndroidManifest.xml` strips network access explicitly, and `tools/verify_manifest.py` fails CI if the merged debug or release manifest ever gains it back:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+```
+
+Consequences that shape the code:
+
+- **No crash reporting.** The crash log is written to private storage and offered from Settings; the user sends it, or does not.
+- **No storage permission** and never `MANAGE_EXTERNAL_STORAGE`. Pictures come in through the photo picker and the Storage Access Framework and go out through documents the user creates.
+- **No camera.** The camera app the phone already has is better at it; a photo taken there arrives here by share.
+- **No image-loading library and no model.** Every tool is `android.graphics` plus the pure engine in `engine/`.
+
+## Studio never writes to your original
+
+Every edit works on a private copy. `ImageStore` copies what you picked and hands back a `StudioFile` pointing at the copy; every operation takes a `StudioFile`, so an operation can only ever reach the copy. The only component permitted to open a Uri for writing is `Exporter`, against a new document you just named in the system picker or a folder you granted.
+
+## One shape for every batch tool
+
+```
+List<StudioFile> -> Op -> List<StudioFile>
+```
+
+Resize is one-to-one, a collage is many-to-one, and a batch is the same operation handed more inputs. "Process fifty photos at once" is not a feature to charge for; it is what the type means.
+
+## The engine is pure, and tested without a phone
+
+`app/src/main/java/com/layerbit/studio/engine/` imports nothing from `android.*`. Tone is a 3×4 matrix plus three 256-entry tables, decided once per recipe and applied per pixel; blur, sharpening, clarity, vignette and grain are sized to the picture so a 900-pixel preview and a 24-megapixel export agree; JPEG metadata is removed by walking the file's segments so the picture is kept byte for byte; a target size is found by halving against an injected encoder. `tools/jvm-check.sh` compiles that package with the standalone Kotlin compiler and runs its tests in seconds, on any machine with a JDK. CI runs it before Gradle.
+
+## What it does
+
+| Tool | What it does |
+|---|---|
+| Edit | One editor: crop, square, light, colour, curves, looks, detail, draw, retouch, layers, frame, inside, export, with undo, press-and-hold compare, pinch zoom and a histogram |
+| Crop and straighten | Drag handles with thirds, aspect presets that mean what they say after a turn, straighten, turn, flip, exact output pixels |
+| Straighten a document | Four corners dragged onto a page; a perspective map squares it |
+| Light | Exposure, contrast, highlights, shadows, whites, blacks; Auto from the histogram, left as visible sliders |
+| Colour | Temperature, tint, vibrance, saturation, hue |
+| Curves | Monotone curve per channel, drag to edit |
+| Looks and recipes | Fourteen looks that state which sliders they move; save any edit as a recipe and run it over a batch |
+| Detail | Sharpness, clarity, dehaze, fade, vignette, grain, all resolution-independent |
+| Draw and write | Freehand, arrows, boxes, circles, movable wrapped text; every stroke a layer with opacity and order |
+| Hide and retouch | Blur, pixelate, opaque cover, erase to transparency, clone |
+| Frame and pad | Pad to an aspect, border, rounded corners, blurred fill |
+| Watermark | Repeated text at an angle, batch |
+| Resize | Longest edge, percent or exact pixels, batch, halving pyramid so thin lines survive |
+| Photo under a size | Under 20 KB, 50 KB or whatever a form asks; best quality that fits first, shrink only if it must; passport shape; a JPEG already under is only cleaned, never re-encoded |
+| Compress / Convert | Quality or target size; JPEG, PNG, WebP, lossless WebP |
+| Remove hidden data | Location, camera and everything else, with the JPEG picture byte for byte the same |
+| What is inside | Pixels, camera fields and whether a location is hidden |
+| Enhance automatically | Levels and exposure from each picture's histogram; no model |
+| Collage | Grid, columns, feature, strip, polaroid, two to twelve pictures |
+
+Every export is measured after it is written: the size and pixels you see are the file's own. A picture that needed no change says so instead of pretending.
 
 ## Build and run
 
-Requirements: JDK 17, Android SDK platform 36, build tools 36.0.0 and platform tools. Android 8.0/API 26 or later is required to install the app. Use Android Studio or the checked-in Gradle 8.13 wrapper; it verifies the distribution checksum.
-
-1. Clone this repository and check out `codex/offline-editor` while the implementation is under review.
-2. Set `ANDROID_HOME` to your SDK directory, or put `sdk.dir=/your/android/sdk` in an untracked `local.properties` file.
-3. Build and check:
+Requirements: JDK 17, Android SDK platform 36, build tools 36.0.0. Android 8.0 (API 26) or later installs the app.
 
 ```sh
-./gradlew assembleDebug testDebugUnitTest lintDebug --console plain
-python3 scripts/verify_manifest.py
-```
-
-Install `app/build/outputs/apk/debug/app-debug.apk` on a connected device:
-
-```sh
+bash tools/jvm-check.sh                          # engine, no Android SDK needed
+./gradlew testDebugUnitTest lintDebug assembleDebug --console plain
+python3 tools/verify_manifest.py
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ./gradlew connectedDebugAndroidTest --console plain
 ```
 
-The first build downloads build dependencies. **The installed app does not require network access.** GitHub Actions runs host checks and an API 35 emulator flow, with APK/report artifacts. Debug APKs use development signing; no release key, store upload or publication is configured.
+Release signing reads a git-ignored `keystore.properties` (see the `.example`). CI builds the unsigned bundle and checks its merged manifest.
 
-## Privacy and output behavior
+## Honest limits
 
-- No internet, network-state or broad storage permission. CI checks the merged app manifest.
-- No analytics, crash-upload SDKs, ads, account system, cloud models or hidden upload paths.
-- Photo Picker/Storage Access Framework inputs are copied to app-private storage. The renderer only reads these copies. Original provider URIs are never used as write destinations.
-- Save creates a separate document; batch export creates new documents in the selected folder. Share grants read access only to selected encoded copies through a narrow FileProvider.
-- Source metadata is removed by default. Optional JPEG preservation includes only camera/date/exposure fields. GPS is always excluded.
-- Private project backup is disabled. Remove projects and clear prepared exports from the app. Save important outputs outside the app before uninstalling.
+- The working budget is a twentieth of the app heap in pixels, between 2 and 24 megapixels, with an 8192-pixel edge. Larger sources work at that size and the export says so. This is computed, not yet measured on a 256 MB-heap device; see `docs/VALIDATION.md`.
+- 8-bit sRGB throughout. RAW development, HDR gain maps and wide-gamut output are not supported; animated images are treated as stills.
+- Blur and pixelation are visual effects. Use Cover to hide a number or a name.
+- A batch runs in the process, not a foreground service. Leave the app long enough and Android may end it; finished pictures stay on disk.
+- Lossless WebP needs Android 11 to encode; below that it is not offered.
 
-Other apps or document providers selected through Save/Share control what they do with the copies they receive.
+## Where things are
 
-## Quality and practical limits
-
-- The working budget is based on the app heap and is limited to 1–8 MP and 8192 pixels per edge. Large sources may be downsampled. This first version is **not a tiled full-resolution editor**. Confirm the actual dimensions in the encoded preview.
-- Processing uses 8-bit sRGB. RAW development, HDR/gain-map preservation, wide-gamut output and animated-image editing are not supported. Inputs are treated as still images.
-- Straightening expands the canvas. PNG/WebP can preserve transparency; JPEG flattens it onto white.
-- JPEG and WebP exports are lossy. PNG encoding is lossless for the edited pixels; editing and resizing may already have changed those pixels.
-- A target file size is a maximum, not an exact byte count. A target that cannot be met fails clearly unless dimension reduction was enabled. The preview uses the actual encoded file.
-- Crop currently uses labelled edge sliders, with a minimum of 1% per dimension. Manual layers are applied after geometry; changing geometry does not track an overlay to its original subject.
-- Local blur and pixelation are visual effects, not a guarantee that sensitive information is unrecoverable. Use opaque Cover and inspect the exported file when concealing information.
-- Keep batch processing open. Activity recreation is supported; process termination can interrupt a job. Completed private outputs are retained, and the latest 50 are recovered on launch. Undo/redo history is session-only; the latest committed recipe is saved.
-- Freehand editing needs spatial touch input. Physical-device TalkBack, large-text, thermal and battery qualification remain release gates.
-
-## Architecture, licenses and launch materials
-
-[Architecture and Sheaf audit](docs/ARCHITECTURE.md) describes the source/recipe/renderer separation and staged advanced work. [Dependency decisions](docs/DEPENDENCIES.md) records third-party licensing. [Validation](docs/VALIDATION.md) separates automated evidence from outstanding release checks. The [launch kit](docs/LAUNCH_KIT.md) includes an unpublished listing, screenshot plan, demo script, FAQ and organic discovery plan. The [upgrade backlog](docs/UPGRADE_BACKLOG.md) records the audit of this branch and the prioritised next work.
-
-Sheaf was used only as a product/architecture reference. No code, icons, fonts or assets were copied. The repository had no source license; its owner must select a redistribution license before an open-source release. Public visibility alone is not a license grant. Third-party components retain their own licenses.
-
-There are no monetization mechanisms under this brief. Optional external support, development sponsorship or paid organizational/custom-development services are future business choices for the owner, not implemented app features.
+`docs/ARCHITECTURE.md` for the shape of the code; `docs/DEPENDENCIES.md` for licences; `docs/VALIDATION.md` for what has been checked and what has not; `docs/LAUNCH_KIT.md` for the unpublished listing. The repository's source has no redistribution licence yet; public visibility is not a licence grant.
