@@ -11,7 +11,16 @@ A green run is evidence that these things hold on that revision. It is not a rel
 
 ## Evidence for this revision
 
-The engine suite passed locally during the rebuild (59 tests) with no Android SDK present. The Gradle, Robolectric and emulator stages run in GitHub Actions; the run for the commit under review is the evidence for them, and this file is updated with its link and counts once it is green.
+Green on `e6486a1`: https://github.com/vysakhsuresh/layerbit-image-editor-android/actions/runs/40453673866
+
+| Stage | Where | Result |
+| --- | --- | --- |
+| Engine | standalone Kotlin compiler, JUnit | 59 tests pass; nothing in `engine/` imports `android.*` |
+| Gradle | GitHub Actions, JDK 17 | unit tests, lint with the baseline, debug APK and release bundle, manifest check, dependency report |
+| Robolectric | SDK 28, native graphics | 83 tests pass: renderer, codecs, EXIF, strip, every batch op, the pipeline |
+| Emulator | API 35 | the home, editor and export flow with screenshots; device checks |
+
+Later revisions are green or they are not; this table is updated when a release candidate is cut.
 
 ## Required before a public release
 
