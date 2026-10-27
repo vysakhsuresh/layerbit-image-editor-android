@@ -178,7 +178,7 @@ class EditorFlowTest {
         settle()
         screenshot("07-editor-light")
         compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).tap()
-        waitFor { compose.onAllNodesWithText(app.getString(R.string.looks_presets)).fetchSemanticsNodes().isNotEmpty() }
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.look_sepia)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("08-editor-looks")
         back()
         compose.waitForIdle()
