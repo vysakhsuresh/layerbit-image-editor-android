@@ -87,7 +87,7 @@ class ResizeOp(private val mode: Mode, private val options: ExportOptions, priva
             is Mode.Exact -> Geometry2D.Size(mode.width, mode.height)
             is Mode.Percent -> Geometry2D.Size(max(1, (input.width * mode.percent / 100f).roundToInt()), max(1, (input.height * mode.percent / 100f).roundToInt()))
             is Mode.LongEdge -> {
-                val k = mode.pixels.toFloat() / max(input.width, input.height)
+                val k = minOf(1f, mode.pixels.toFloat() / max(input.width, input.height))
                 Geometry2D.Size(max(1, (input.width * k).roundToInt()), max(1, (input.height * k).roundToInt()))
             }
         }

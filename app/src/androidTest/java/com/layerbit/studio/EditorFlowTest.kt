@@ -49,6 +49,19 @@ class EditorFlowTest {
         image.recycle()
     }
 
+    /** A screen's own node, then a settled frame: a click starts a transition the idle check does not cover. */
+    private fun waitFor(condition: () -> Boolean) {
+        compose.waitUntil(10_000, condition)
+        settle()
+    }
+
+    /** Thumbnails and the first render arrive from IO after the composition is idle. */
+    private fun settle() {
+        compose.waitForIdle()
+        Thread.sleep(1_200)
+        compose.waitForIdle()
+    }
+
     private fun back() {
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
@@ -116,12 +129,12 @@ class EditorFlowTest {
         compose.waitForIdle()
         screenshot("01-intro")
         compose.onNodeWithText(app.getString(R.string.intro_skip)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithTag("openPhotos").fetchSemanticsNodes().isNotEmpty() }
         screenshot("02-home")
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(app.getString(R.string.home_door_batch)))
         compose.onNodeWithText(app.getString(R.string.home_door_batch)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithTag("pipelineRun").fetchSemanticsNodes().isNotEmpty() }
         screenshot("03-batch-empty")
         // The picker cannot be driven from a test; the handoff is how a share arrives, and it is the same path.
         app.handoff.offer(fixtures.map { Uri.fromFile(it) })
@@ -139,41 +152,42 @@ class EditorFlowTest {
         compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("pipelineRun"))
         compose.onNodeWithTag("pipelineRun").performClick()
         compose.waitUntil(60_000) { compose.onAllNodesWithText(app.getString(R.string.tools_start_again)).fetchSemanticsNodes().isNotEmpty() }
-        compose.waitForIdle()
+        settle()
         screenshot("05-batch-done")
         back()
         compose.waitForIdle()
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasText(project.name))
         compose.onNodeWithText(project.name).performClick()
-        compose.waitUntil(20_000) { compose.onAllNodesWithTag("editorExport").fetchSemanticsNodes().isNotEmpty() }
-        compose.waitForIdle()
+        compose.waitUntil(20_000) { compose.onAllNodesWithText("640 × 480").fetchSemanticsNodes().isNotEmpty() }
+        settle()
         screenshot("06-editor-crop")
         compose.onNodeWithContentDescription(app.getString(R.string.panel_light)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.light_auto)).fetchSemanticsNodes().isNotEmpty() }
+        settle()
         screenshot("07-editor-light")
         compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.looks_presets)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("08-editor-looks")
         back()
         compose.waitForIdle()
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_settings)))
         compose.onNodeWithContentDescription(app.getString(R.string.app_settings)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.settings_appearance)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("09-settings")
         back()
         compose.waitForIdle()
         compose.onNodeWithTag("homeList").performScrollToNode(hasContentDescription(app.getString(R.string.app_about)))
         compose.onNodeWithContentDescription(app.getString(R.string.app_about)).performClick()
-        compose.waitForIdle()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.about_title)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("10-about")
         back()
         compose.waitForIdle()
 
         compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("openPhotos"))
         app.settings.update { it.copy(theme = ThemeChoice.DARK) }
-        compose.waitForIdle()
+        settle()
         screenshot("11-home-dark")
         app.settings.update { it.copy(theme = ThemeChoice.SYSTEM) }
     }

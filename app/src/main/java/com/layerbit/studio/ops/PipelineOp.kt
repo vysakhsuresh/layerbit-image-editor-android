@@ -131,7 +131,8 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
                 is ResizeOp.Mode.Exact -> Geometry2D.Size(mode.width, mode.height)
                 is ResizeOp.Mode.Percent -> Geometry2D.Size(max(1, (input.width * mode.percent / 100f).roundToInt()), max(1, (input.height * mode.percent / 100f).roundToInt()))
                 is ResizeOp.Mode.LongEdge -> {
-                    val k = mode.pixels.toFloat() / max(input.width, input.height)
+                    // A longest-edge limit never enlarges: a 640-pixel picture asked for 1920 stays 640.
+                    val k = minOf(1f, mode.pixels.toFloat() / max(input.width, input.height))
                     Geometry2D.Size(max(1, (input.width * k).roundToInt()), max(1, (input.height * k).roundToInt()))
                 }
             }

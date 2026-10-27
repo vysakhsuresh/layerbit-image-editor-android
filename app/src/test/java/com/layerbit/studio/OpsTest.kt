@@ -232,4 +232,13 @@ class OpsTest {
         assertEquals(StudioFile.MIME_JPEG, converted.file.mimeType)
         assertEquals(300, converted.file.width)
     }
+
+    @Test
+    fun longEdgeResizeNeverEnlarges() {
+        val small = picture(640, 480, jpeg = true, name = "small.jpg")
+        val out = run(PipelineOp(Pipeline(resize = ResizeOp.Mode.LongEdge(1920))), small).single() as OpOutcome.Produced
+        assertEquals(640, out.file.width); assertEquals(480, out.file.height)
+        val old = run(ResizeOp(ResizeOp.Mode.LongEdge(1920), ExportOptions()), small).single() as OpOutcome.Produced
+        assertEquals(640, old.file.width)
+    }
 }
