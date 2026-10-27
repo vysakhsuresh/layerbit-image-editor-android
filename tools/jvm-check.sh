@@ -15,14 +15,17 @@ K="${STUDIO_KT_HOME:-$HOME/.studio-kt}"
 KV=2.2.21
 MC=https://repo.maven.apache.org/maven2
 mkdir -p "$K"
+is_jar() { [ -s "$1" ] && [ "$(head -c 2 "$1")" = "PK" ]; }
 fetch() { # name path
-  if [ ! -s "$K/$1" ]; then
+  if ! is_jar "$K/$1"; then
     for try in 1 2 3 4 5; do
-      if curl -sS -f -o "$K/$1" "$MC/$2"; then break; fi
+      # -L: Maven Central answers with a redirect to its CDN, and a redirect page is not a jar.
+      if curl -sSL -f -o "$K/$1" "$MC/$2" && is_jar "$K/$1"; then break; fi
+      rm -f "$K/$1"
       sleep $((try * 5))
     done
   fi
-  [ -s "$K/$1" ] || { echo "could not fetch $1"; exit 1; }
+  is_jar "$K/$1" || { echo "could not fetch $1"; exit 1; }
 }
 fetch kotlin-compiler-embeddable.jar "org/jetbrains/kotlin/kotlin-compiler-embeddable/$KV/kotlin-compiler-embeddable-$KV.jar"
 fetch kotlin-stdlib.jar "org/jetbrains/kotlin/kotlin-stdlib/$KV/kotlin-stdlib-$KV.jar"
