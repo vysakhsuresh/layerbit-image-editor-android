@@ -60,7 +60,7 @@ import kotlin.math.*
     BackHandler(state.current!=null && state.busy==null) { vm.home() }
     StudioTheme(theme) { MotionProvider(motion,tool to (state.current!=null)) {
         Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding)) {
+            Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
                     if(state.current!=null) TextButton(onClick=vm::home) { Text("Home") }
                     Column(Modifier.weight(1f)) { Text("Layerbit Studio",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
@@ -157,9 +157,12 @@ import kotlin.math.*
     val image by produceState<Bitmap?>(null,p.source.id) { value=withContext(Dispatchers.Default) { runCatching { engine.decode(File(p.source.path),30_000) }.getOrNull() } }
     Box(Modifier.size(54.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) { image?.let { Image(it.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) } }
 }
-@Composable private fun ToolCard(tool:Tool,selected:Boolean,onClick:()->Unit) {
-    Card(onClick=onClick,modifier=Modifier.width(110.dp),colors=CardDefaults.cardColors(containerColor=if(selected)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) { ToolGlyph(tool,Modifier.size(40.dp));Text(tool.title,style=MaterialTheme.typography.labelLarge);Text(tool.hint,style=MaterialTheme.typography.labelSmall,minLines=2) }
+@Composable private fun ToolCard(tool:Tool,isSelected:Boolean,compact:Boolean=false,onClick:()->Unit) {
+    Card(onClick=onClick,modifier=Modifier.width(110.dp).semantics{selected=isSelected},colors=CardDefaults.cardColors(containerColor=if(isSelected)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(if(compact)8.dp else 12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+            ToolGlyph(tool,Modifier.size(if(compact)30.dp else 40.dp));Text(tool.title,style=MaterialTheme.typography.labelLarge)
+            if(!compact)Text(tool.hint,style=MaterialTheme.typography.labelSmall,minLines=2)
+        }
     }
 }
 @Composable fun Choices(labels:List<String>,selected:String,pick:(String)->Unit) {
@@ -182,11 +185,10 @@ import kotlin.math.*
         FlowRow(Modifier.padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(4.dp)) {
             TextButton(onClick=vm::undo,enabled=vm.state.canUndo) {Text("Undo")};TextButton(onClick=vm::redo,enabled=vm.state.canRedo) {Text("Redo")}
             FilterChip(compare,{compare=!compare},label={Text(if(compare)"Original" else "Compare")})
-            TextButton(onClick=savePreset) { Text("Save preset") }
             Button(onClick={pick(Tool.EXPORT)},modifier=Modifier.testTag("editorExport")) {Text("Export")}
         }
         LazyRow(contentPadding=PaddingValues(horizontal=16.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            items(Tool.entries.filter { it !in listOf(Tool.BATCH,Tool.COLLAGE) }) { t -> ToolCard(t,tool==t) {vm.commit();pick(t)} }
+            items(Tool.entries.filter { it !in listOf(Tool.BATCH,Tool.COLLAGE) }) { t -> ToolCard(t,tool==t,compact=true) {vm.commit();pick(t)} }
         }
         BoxWithConstraints(Modifier.weight(1f)) {
             val panelHeight=(maxHeight*.52f).coerceAtMost(300.dp)
@@ -203,7 +205,9 @@ import kotlin.math.*
                     Text(tool.title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                     when(tool) {
                         Tool.CROP -> {
-                            Choices(listOf("Free","1:1","4:3","3:2","16:9","9:16"),"Free") { v -> vm.change {it.copy(crop=if(v=="Free")Crop() else {val a=v.split(':');Geometry.aspectCrop(p.source.width,p.source.height,a[0].toFloat()/a[1].toFloat())})} }
+                            val aspects=listOf("1:1","4:3","3:2","16:9","9:16")
+                            val choice=if(r.crop==Crop()) "Free" else aspects.firstOrNull { v->val a=v.split(':');r.crop==Geometry.aspectCrop(p.source.width,p.source.height,a[0].toFloat()/a[1].toFloat()) } ?: "Free"
+                            Choices(listOf("Free")+aspects,choice) { v -> vm.change {it.copy(crop=if(v=="Free")Crop() else {val a=v.split(':');Geometry.aspectCrop(p.source.width,p.source.height,a[0].toFloat()/a[1].toFloat())})} }
                             Text("Free crop: adjust each edge. Crop is applied before rotation and layers.",style=MaterialTheme.typography.bodySmall)
                             Knob("Left",r.crop.left,0f..(r.crop.right-.01f),{vm.draft(r.copy(crop=r.crop.copy(left=it)))},vm::commit,{vm.change{it.copy(crop=it.crop.copy(left=0f))}})
                             Knob("Top",r.crop.top,0f..(r.crop.bottom-.01f),{vm.draft(r.copy(crop=r.crop.copy(top=it)))},vm::commit,{vm.change{it.copy(crop=it.crop.copy(top=0f))}})
@@ -227,6 +231,7 @@ import kotlin.math.*
                             Choices(listOf("Original","Mono","Warm","Cool","Fade","Noir"),r.filter) {v->vm.change{it.copy(filter=v)}}
                             Knob("Intensity",r.intensity,0f..1f,{vm.draft(r.copy(intensity=it))},vm::commit,{vm.change{it.copy(intensity=1f)}})
                             Text("Saved recipes",fontWeight=FontWeight.Bold)
+                            OutlinedButton(onClick=savePreset) {Text("Save preset")}
                             if(vm.state.presets.isEmpty()) Text("Use Save preset after making a look you like.")
                             vm.state.presets.forEach { (name,recipe) -> OutlinedButton(onClick={vm.change{recipe.copy(marks=it.marks)}}) {Text(name)} }
                         }

@@ -2,6 +2,7 @@ name: Android quality checks
 on:
   push:
     branches: [main, codex/offline-editor]
+    paths-ignore: ['**/*.md']
   pull_request:
   workflow_dispatch:
 permissions:
