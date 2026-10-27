@@ -1,9 +1,20 @@
+*.iml
 .gradle/
-.idea/
-**/build/
-local.properties
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+*.apk
+*.aab
+/app/build
+/app/release
+/baselineprofile/build
+/tools/out
+__pycache__/
+
+# Real signing credentials - never commit these.
+/keystore.properties
 *.jks
 *.keystore
-keystore.properties
-captures/
-__pycache__/

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Long-press the launcher icon. Each shortcut is a VIEW on a studio:// Uri; MainActivity reads
+  the last path segment as a ToolId name. Three, because Android shows four at most.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="edit"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_edit"
+        android:shortcutShortLabel="@string/shortcut_edit_short"
+        android:shortcutLongLabel="@string/shortcut_edit_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="studio://tool/EDIT"
+            android:targetClass="com.layerbit.studio.MainActivity"
+            android:targetPackage="com.layerbit.studio" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="resize_kb"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_resize"
+        android:shortcutShortLabel="@string/shortcut_resize_short"
+        android:shortcutLongLabel="@string/shortcut_resize_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="studio://tool/RESIZE_KB"
+            android:targetClass="com.layerbit.studio.MainActivity"
+            android:targetPackage="com.layerbit.studio" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="strip"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_strip"
+        android:shortcutShortLabel="@string/shortcut_strip_short"
+        android:shortcutLongLabel="@string/shortcut_strip_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="studio://tool/STRIP_METADATA"
+            android:targetClass="com.layerbit.studio.MainActivity"
+            android:targetPackage="com.layerbit.studio" />
+    </shortcut>
+</shortcuts>

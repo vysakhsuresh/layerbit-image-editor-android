@@ -1,25 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Private source copies, recipes and results are the user's pictures. They stay on this phone:
+  nothing of them goes into a cloud backup or a device-to-device transfer. Exports the user
+  saved live wherever they chose, outside the app.
+-->
 <data-extraction-rules>
-  <cloud-backup>
-    <exclude domain="root" path="." />
-    <exclude domain="file" path="." />
-    <exclude domain="database" path="." />
-    <exclude domain="sharedpref" path="." />
-    <exclude domain="external" path="." />
-    <exclude domain="device_root" path="." />
-    <exclude domain="device_file" path="." />
-    <exclude domain="device_database" path="." />
-    <exclude domain="device_sharedpref" path="." />
-  </cloud-backup>
-  <device-transfer>
-    <exclude domain="root" path="." />
-    <exclude domain="file" path="." />
-    <exclude domain="database" path="." />
-    <exclude domain="sharedpref" path="." />
-    <exclude domain="external" path="." />
-    <exclude domain="device_root" path="." />
-    <exclude domain="device_file" path="." />
-    <exclude domain="device_database" path="." />
-    <exclude domain="device_sharedpref" path="." />
-  </device-transfer>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </device-transfer>
 </data-extraction-rules>

@@ -1,1 +1,9 @@
-<paths><files-path name="exports" path="exports/" /></paths>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What FileProvider may hand out: the app's own result files and the crash log the user chooses
+  to send. Never a private source copy, and never a path that could reach the user's storage.
+-->
+<paths>
+    <cache-path name="work" path="work/" />
+    <files-path name="crashes" path="crashes/" />
+</paths>
