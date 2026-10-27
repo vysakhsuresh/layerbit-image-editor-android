@@ -5,11 +5,12 @@ import com.layerbit.studio.R
 import com.layerbit.studio.text.Strings
 
 /**
- * Every tool the app offers, and what the home board needs to draw it.
+ * Every capability the app has, by name, for jobs, shortcuts, icons and the about screen.
  *
  * A tool either opens the editor on one picture with a panel in front ([Mode.EDITOR]), or runs
- * an [Op] over any number of pictures ([Mode.BATCH]). Adding a tool is one entry here plus a
- * panel or an Op. The groups are by what someone is trying to do.
+ * an [Op] over any number of pictures ([Mode.BATCH]). The front door shows three doors and one
+ * batch screen ([PROCESS]) that composes the batch tools as steps; the entries stay so each op
+ * keeps its own title, icon and test.
  */
 enum class ToolId(
     @StringRes val titleRes: Int,
@@ -44,7 +45,9 @@ enum class ToolId(
 
     ENHANCE(R.string.tool_enhance_title, R.string.tool_enhance_summary, R.string.tool_enhance_action, Group.BATCH, Mode.BATCH),
     APPLY_RECIPE(R.string.tool_recipe_title, R.string.tool_recipe_summary, R.string.tool_recipe_action, Group.BATCH, Mode.BATCH),
-    COLLAGE(R.string.tool_collage_title, R.string.tool_collage_summary, R.string.tool_collage_action, Group.BATCH, Mode.BATCH);
+    COLLAGE(R.string.tool_collage_title, R.string.tool_collage_summary, R.string.tool_collage_action, Group.BATCH, Mode.BATCH),
+    /** The one batch screen: every step composed into one run. */
+    PROCESS(R.string.tool_process_title, R.string.tool_process_summary, R.string.tool_process_action, Group.BATCH, Mode.BATCH);
 
     val title: String get() = Strings.get(titleRes)
     val summary: String get() = Strings.get(summaryRes)

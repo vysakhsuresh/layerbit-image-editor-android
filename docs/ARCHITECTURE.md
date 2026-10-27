@@ -11,10 +11,11 @@ com.layerbit.studio
               target size, selective EXIF, lossless strip), Budget
   files/      StudioFile, ImageStore (the only way a picture enters), Exporter (the only
               thing that writes a Uri), Workspace, Handoff, CrashLog
-  ops/        ToolId, Op, the batch operations
+  ops/        ToolId, Op, the batch operations, PipelineOp (the steps composed into one op)
   jobs/       JobRunner and JobState, app-scoped
   prefs/      StudioSettings, Prompts
-  ui/         theme, components, icons (Glyphs), home, editor, tools, intro, settings, about
+  ui/         theme, components, icons (Glyphs), home (one gesture), editor, pipeline (the
+              batch screen), tools (collage), intro, settings, about
 ```
 
 ## A recipe, not pixels

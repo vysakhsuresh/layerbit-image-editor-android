@@ -17,7 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.layerbit.studio.ops.ToolId
+import com.layerbit.studio.ui.Arrival
 import com.layerbit.studio.ui.StudioApp
 import com.layerbit.studio.ui.components.ProvideLivelyClock
 import com.layerbit.studio.ui.theme.StudioColors
@@ -27,16 +27,14 @@ class MainActivity : ComponentActivity() {
 
     private val studio: StudioApplication get() = application as StudioApplication
 
-    /** Bumped on every single picture that arrives, which tells the UI to open the editor. */
-    private var openTicket by mutableIntStateOf(0)
-    private var incoming by mutableStateOf<Uri?>(null)
+    /** Bumped on every arrival from outside, which is what tells the UI to navigate. */
+    private var ticket by mutableIntStateOf(0)
+    private var arrival by mutableStateOf<Arrival?>(null)
 
-    /** A tool to go straight to, from a shortcut or a share of several pictures. */
-    private var jumpToTool by mutableStateOf<ToolId?>(null)
+    /** The front door: any number of pictures. One edits; several go to the pipeline. */
+    private val pickPictures = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris -> arrive(uris) }
 
-    private val pickPicture = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-        if (uri != null) open(uri)
-    }
+    private val pickOne = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) arrive(listOf(uri)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,8 +42,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by studio.settings.state.collectAsState()
             StudioTheme(theme = settings.theme) {
-                // The status and navigation bar glyphs, re-decided once the palette is known;
-                // enableEdgeToEdge's default reads the phone's night mode, not this app's choice.
                 LaunchedEffect(StudioColors.isDark) {
                     val style = if (StudioColors.isDark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
@@ -54,11 +50,10 @@ class MainActivity : ComponentActivity() {
                     StudioApp(
                         settings = settings,
                         onSettingsChange = { transform -> studio.settings.update(transform) },
-                        openTicket = openTicket,
-                        incomingUri = incoming,
-                        jumpToTool = jumpToTool,
-                        onJumpHandled = { jumpToTool = null },
-                        onPickPicture = { pickPicture.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                        arrivalTicket = ticket,
+                        arrival = arrival,
+                        onPickPictures = { pickPictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        onPickOne = { pickOne.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                     )
                 }
             }
@@ -72,23 +67,17 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    /**
-     * Pictures and shortcuts arriving from outside. One picture opens in the editor; several go
-     * to Resize, with the whole set loaded, because an editor shows one and a batch is the
-     * obvious thing to want with five. A shortcut arrives as a VIEW on a studio:// Uri.
-     */
+    /** Pictures and shortcuts from outside: share, "edit in", "open with", launcher shortcuts. */
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SHORTCUT_SCHEME) {
-            jumpToTool = ToolId.byName(intent.data?.lastPathSegment)
+            when (val which = intent.data?.lastPathSegment) {
+                "EDIT" -> pickPictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                else -> { arrival = Arrival.Shortcut(if (which == "RESIZE_KB") "under" else if (which == "STRIP_METADATA") "clean" else null); ticket += 1 }
+            }
             return
         }
         if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
-            val uris = intent.parcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
-            when {
-                uris.isEmpty() -> Unit
-                uris.size == 1 -> open(uris.first())
-                else -> { studio.handoff.offer(uris); jumpToTool = ToolId.RESIZE }
-            }
+            arrive(intent.parcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty())
             return
         }
         val uri: Uri? = when (intent?.action) {
@@ -96,12 +85,16 @@ class MainActivity : ComponentActivity() {
             Intent.ACTION_SEND -> intent.parcelableExtra(Intent.EXTRA_STREAM)
             else -> null
         }
-        if (uri != null) open(uri)
+        if (uri != null) arrive(listOf(uri))
     }
 
-    private fun open(uri: Uri) {
-        incoming = uri
-        openTicket += 1
+    private fun arrive(uris: List<Uri>) {
+        when {
+            uris.isEmpty() -> return
+            uris.size == 1 -> arrival = Arrival.One(uris.first())
+            else -> { studio.handoff.offer(uris); arrival = Arrival.Many }
+        }
+        ticket += 1
     }
 
     companion object {

@@ -83,7 +83,7 @@ abstract class PerFileOp : Op {
     override val arity: Op.Arity get() = Op.Arity.EachIndependently
 
     /** The outcome for one input. May throw; a throw becomes a Failed outcome for this file. */
-    protected abstract suspend fun one(input: StudioFile, context: OpContext): OpOutcome
+    internal abstract suspend fun one(input: StudioFile, context: OpContext): OpOutcome
 
     override suspend fun run(inputs: List<StudioFile>, context: OpContext, onProgress: (Progress) -> Unit): List<OpOutcome> {
         val outcomes = ArrayList<OpOutcome>(inputs.size)

@@ -529,4 +529,46 @@
     <string name="about_privacy">Privacy policy</string>
     <string name="about_made_by">Made by %1$s · %2$s</string>
     <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk is under the SIL Open Font Licence. No other third-party code is bundled.</string>
+
+    <!-- Home, one gesture -->
+    <string name="home_open_pictures">Open pictures</string>
+    <string name="home_open_pictures_body">One opens in the editor. Several go to a batch, where you switch on what to do to all of them.</string>
+    <string name="app_pill_originals">Originals untouched</string>
+    <string name="home_or">Or go straight to</string>
+    <string name="home_door_edit">Edit one picture</string>
+    <string name="home_door_edit_body">Crop, light, colour, curves, looks, retouch, layers, frame, export</string>
+    <string name="home_door_batch">Process many</string>
+    <string name="home_door_batch_body">Resize, under a size, format, enhance, look, watermark, frame, clean: all at once</string>
+    <string name="home_door_collage">Make a collage</string>
+    <string name="home_door_collage_body">Two to twelve pictures on one canvas</string>
+    <string name="home_quick">Quick</string>
+    <string name="home_quick_under">Photo under 50 KB</string>
+    <string name="home_quick_clean">Remove location</string>
+    <string name="home_quick_convert">Convert format</string>
+    <string name="home_promise">No internet permission. No account. Every tool free.</string>
+
+    <!-- Pipeline -->
+    <string name="tool_process_title">Process pictures</string>
+    <string name="tool_process_summary">Switch on the steps; one run does them all</string>
+    <string name="tool_process_action">Run</string>
+    <string name="pipeline_steps">Steps</string>
+    <string name="pipeline_steps_hint">Switch on what you need. Steps combine in one pass, so fifty pictures resized, put under 100 KB, watermarked and cleaned is one tap.</string>
+    <string name="pipeline_total">%1$d pictures, %2$s</string>
+    <string name="pipeline_run">Run on %1$d pictures</string>
+    <string name="pipeline_run_clean">Remove hidden data from %1$d pictures</string>
+    <string name="step_resize_detail">Longest edge, percent or exact pixels</string>
+    <string name="step_under_detail">Best quality that fits, then smaller only if it must</string>
+    <string name="step_format_detail">JPEG, PNG, WebP or lossless WebP; off keeps each picture\'s own</string>
+    <string name="step_enhance_detail">Levels and exposure from each picture\'s histogram</string>
+    <string name="step_look_detail">One of the looks, or a recipe you saved in the editor</string>
+    <string name="step_watermark_detail">Your name or © across every picture</string>
+    <string name="step_frame_detail">Pad to a shape, border, rounded corners</string>
+    <string name="step_clean_detail">Location, camera and everything hidden. Byte-for-byte lossless when it is the only step.</string>
+    <string name="step_always">Always</string>
+    <string name="step_passport">Passport</string>
+    <string name="step_enhance">Auto</string>
+    <string name="step_recipe">Recipe</string>
+    <string name="step_watermark">Watermark</string>
+    <string name="step_frame">Frame</string>
+    <string name="step_clean_only">Hidden data removed</string>
 </resources>

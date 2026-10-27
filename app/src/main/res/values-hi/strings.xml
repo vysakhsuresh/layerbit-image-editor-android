@@ -529,4 +529,46 @@
     <string name="about_privacy">निजता नीति</string>
     <string name="about_made_by">%1$s द्वारा निर्मित · %2$s</string>
     <string name="about_licences">Kotlin और AndroidX Apache-2.0 के तहत हैं. Space Grotesk SIL Open Font Licence के तहत है. कोई और तृतीय-पक्ष कोड शामिल नहीं है.</string>
+
+    <!-- Home, one gesture -->
+    <string name="home_open_pictures">तस्वीरें खोलें</string>
+    <string name="home_open_pictures_body">एक एडिटर में खुलती है. कई एक बैच में जाती हैं, जहां आप चुनते हैं कि सबके साथ क्या करना है.</string>
+    <string name="app_pill_originals">मूल अछूती</string>
+    <string name="home_or">या सीधे जाएं</string>
+    <string name="home_door_edit">एक तस्वीर संपादित करें</string>
+    <string name="home_door_edit_body">क्रॉप, रोशनी, रंग, कर्व, लुक, सुधार, परतें, फ़्रेम, निर्यात</string>
+    <string name="home_door_batch">कई तस्वीरें प्रोसेस करें</string>
+    <string name="home_door_batch_body">आकार, तय KB के नीचे, फ़ॉर्मैट, निखार, लुक, वॉटरमार्क, फ़्रेम, सफ़ाई: सब एक साथ</string>
+    <string name="home_door_collage">कोलाज बनाएं</string>
+    <string name="home_door_collage_body">दो से बारह तस्वीरें एक कैनवस पर</string>
+    <string name="home_quick">झटपट</string>
+    <string name="home_quick_under">फ़ोटो 50 KB के नीचे</string>
+    <string name="home_quick_clean">लोकेशन हटाएं</string>
+    <string name="home_quick_convert">फ़ॉर्मैट बदलें</string>
+    <string name="home_promise">इंटरनेट की अनुमति नहीं. खाता नहीं. हर टूल मुफ़्त.</string>
+
+    <!-- Pipeline -->
+    <string name="tool_process_title">तस्वीरें प्रोसेस करें</string>
+    <string name="tool_process_summary">चरण चालू करें; एक रन में सब हो जाता है</string>
+    <string name="tool_process_action">चलाएं</string>
+    <string name="pipeline_steps">चरण</string>
+    <string name="pipeline_steps_hint">जो चाहिए वह चालू करें. चरण एक ही बार में मिलकर चलते हैं, इसलिए पचास तस्वीरों का आकार बदलना, 100 KB के नीचे लाना, वॉटरमार्क लगाना और साफ़ करना एक टैप है.</string>
+    <string name="pipeline_total">%1$d तस्वीरें, %2$s</string>
+    <string name="pipeline_run">%1$d तस्वीरों पर चलाएं</string>
+    <string name="pipeline_run_clean">%1$d तस्वीरों से छिपा डेटा हटाएं</string>
+    <string name="step_resize_detail">सबसे लंबा किनारा, प्रतिशत या सटीक पिक्सेल</string>
+    <string name="step_under_detail">जो समाए उसमें सबसे अच्छी गुणवत्ता, फिर ज़रूरत हो तभी छोटा</string>
+    <string name="step_format_detail">JPEG, PNG, WebP या लॉसलेस WebP; बंद रहने पर हर तस्वीर का अपना फ़ॉर्मैट</string>
+    <string name="step_enhance_detail">हर तस्वीर के हिस्टोग्राम से लेवल और एक्सपोज़र</string>
+    <string name="step_look_detail">कोई लुक, या एडिटर में सहेजी आपकी रेसिपी</string>
+    <string name="step_watermark_detail">हर तस्वीर पर आपका नाम या ©</string>
+    <string name="step_frame_detail">आकार तक पैड, किनारा, गोल कोने</string>
+    <string name="step_clean_detail">लोकेशन, कैमरा और छिपा सब कुछ. अकेला चरण हो तो बाइट-दर-बाइट बिना हानि.</string>
+    <string name="step_always">हमेशा</string>
+    <string name="step_passport">पासपोर्ट</string>
+    <string name="step_enhance">ऑटो</string>
+    <string name="step_recipe">रेसिपी</string>
+    <string name="step_watermark">वॉटरमार्क</string>
+    <string name="step_frame">फ़्रेम</string>
+    <string name="step_clean_only">छिपा डेटा हटाया गया</string>
 </resources>

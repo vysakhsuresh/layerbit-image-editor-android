@@ -40,6 +40,8 @@ List<StudioFile> -> Op -> List<StudioFile>
 
 Resize is one-to-one, a collage is many-to-one, and a batch is the same operation handed more inputs. "Process fifty photos at once" is not a feature to charge for; it is what the type means.
 
+The front door is one gesture: open pictures. One picture opens the editor; several open the batch screen, where the steps are switches that compose into a single run: resize, keep under a size, format and quality, auto-enhance, a look or a saved recipe, a watermark, a frame. Hidden data is always removed, and when that is the only step a JPEG is cleaned by walking its segments, byte for byte. There is no catalogue of twenty tools to learn; there is one screen whose switches do what twenty apps sell separately.
+
 ## The engine is pure, and tested without a phone
 
 `app/src/main/java/com/layerbit/studio/engine/` imports nothing from `android.*`. Tone is a 3×4 matrix plus three 256-entry tables, decided once per recipe and applied per pixel; blur, sharpening, clarity, vignette and grain are sized to the picture so a 900-pixel preview and a 24-megapixel export agree; JPEG metadata is removed by walking the file's segments so the picture is kept byte for byte; a target size is found by halving against an injected encoder. `tools/jvm-check.sh` compiles that package with the standalone Kotlin compiler and runs its tests in seconds, on any machine with a JDK. CI runs it before Gradle.

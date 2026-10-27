@@ -228,7 +228,7 @@ fun ToolScreen(
 }
 
 @Composable
-private fun InputChip(f: StudioFile, thumbnail: suspend (StudioFile) -> Bitmap?, onRemove: () -> Unit) {
+fun InputChip(f: StudioFile, thumbnail: suspend (StudioFile) -> Bitmap?, onRemove: () -> Unit) {
     val image by produceState<Bitmap?>(null, f.file.path) { value = thumbnail(f) }
     Panel(inset = 6.dp, onClick = onRemove) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +244,7 @@ private fun InputChip(f: StudioFile, thumbnail: suspend (StudioFile) -> Bitmap?,
 }
 
 @Composable
-private fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StudioFile) -> Bitmap?, onSave: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit) {
+fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StudioFile) -> Bitmap?, onSave: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit) {
     val image by produceState<Bitmap?>(null, o.file.file.path) { value = thumbnail(o.file) }
     Panel(Modifier.fillMaxWidth(), inset = 12.dp) {
         Row(verticalAlignment = Alignment.Top) {

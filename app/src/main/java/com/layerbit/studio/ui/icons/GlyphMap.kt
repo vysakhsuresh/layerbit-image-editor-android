@@ -29,6 +29,7 @@ fun iconFor(tool: ToolId): Int = when (tool) {
     ToolId.ENHANCE -> R.drawable.ic_tool_enhance
     ToolId.APPLY_RECIPE -> R.drawable.ic_tool_recipe
     ToolId.COLLAGE -> R.drawable.ic_tool_collage
+    ToolId.PROCESS -> R.drawable.ic_tool_recipe
 }
 
 /** The panel's icon, for the strip under the editor canvas. */

@@ -6,6 +6,9 @@ import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
 import com.layerbit.studio.engine.Collage
+import com.layerbit.studio.engine.Frame
+import com.layerbit.studio.engine.JpegSegments
+import com.layerbit.studio.engine.Look
 import com.layerbit.studio.engine.Geometry
 import com.layerbit.studio.engine.Recipe
 import com.layerbit.studio.engine.RecipeJson
@@ -25,6 +28,8 @@ import com.layerbit.studio.ops.Op
 import com.layerbit.studio.ops.OpCancelled
 import com.layerbit.studio.ops.OpContext
 import com.layerbit.studio.ops.OpOutcome
+import com.layerbit.studio.ops.Pipeline
+import com.layerbit.studio.ops.PipelineOp
 import com.layerbit.studio.ops.ResizeOp
 import com.layerbit.studio.ops.StripMetadataOp
 import com.layerbit.studio.ops.ToolId
@@ -187,5 +192,44 @@ class OpsTest {
             assertTrue(tool.name, tool.title.isNotBlank() && tool.summary.isNotBlank() && tool.action.isNotBlank())
             com.layerbit.studio.ui.icons.iconFor(tool)
         }
+    }
+
+    @Test
+    fun pipelineWithOnlyCleaningKeepsJpegPixelsByteForByte() {
+        val tagged = picture(640, 480, jpeg = true, name = "tagged.jpg", gps = true)
+        val out = run(PipelineOp(Pipeline()), tagged).single() as OpOutcome.Produced
+        val before = tagged.file.readBytes()
+        val after = out.file.file.readBytes()
+        val scanBefore = before.copyOfRange(JpegSegments.segments(before)!!.last().offset, before.size)
+        val scanAfter = after.copyOfRange(JpegSegments.segments(after)!!.last().offset, after.size)
+        assertTrue("The picture from the start-of-scan marker on is kept byte for byte", scanBefore.contentEquals(scanAfter))
+        assertFalse(JpegSegments.hasGps(after))
+        assertTrue(after.size < before.size)
+        assertTrue(out.file.displayName.endsWith("-clean.jpg"))
+    }
+
+    @Test
+    fun pipelineComposesResizeSizeLimitLookWatermarkAndFrameInOneRun() {
+        val big = picture(1600, 1200, jpeg = true, name = "big.jpg", gps = true)
+        val p = Pipeline(resize = ResizeOp.Mode.LongEdge(800), underKb = 60f, look = Look.MONO, watermark = Pipeline.Watermark("© test"), frame = Frame(aspect = 1f, padding = 0.05f), pattern = "{name}-web")
+        assertTrue(p.changesPixels)
+        val out = run(PipelineOp(p), big).single() as OpOutcome.Produced
+        assertTrue("Under 60 KB, was ${out.file.sizeBytes}", out.file.sizeBytes <= 60_000)
+        assertEquals("Padded to a square", out.file.width, out.file.height)
+        assertTrue("Resized well below the source", out.file.width < big.width)
+        assertFalse(JpegSegments.hasGps(out.file.file.readBytes()))
+        assertEquals("big-web.jpg", out.file.displayName)
+        assertTrue(p.summary().contains("800 px"))
+    }
+
+    @Test
+    fun pipelineConvertsFormatWhenAskedAndKeepsItWhenNot() {
+        val png = picture(300, 200, jpeg = false, name = "shot.png")
+        val kept = run(PipelineOp(Pipeline(resize = ResizeOp.Mode.Percent(50))), png).single() as OpOutcome.Produced
+        assertEquals(StudioFile.MIME_PNG, kept.file.mimeType)
+        assertEquals(150, kept.file.width)
+        val converted = run(PipelineOp(Pipeline(format = OutputFormat.JPEG, quality = 80)), png).single() as OpOutcome.Produced
+        assertEquals(StudioFile.MIME_JPEG, converted.file.mimeType)
+        assertEquals(300, converted.file.width)
     }
 }

@@ -5,7 +5,7 @@
 1. **Engine, without an Android SDK.** `tools/jvm-check.sh` compiles `engine/` with the standalone Kotlin compiler, fails if anything there imports `android.*`, and runs its JUnit tests: tone identity and each slider's shape, saturation and vibrance, hue, levels, curves, every look, blur and unsharp behaviour, preview-versus-export agreement at two sizes, vignette and grain, crop and aspect arithmetic after turns, recipe round trips and tolerant reading including the 0.1 format, JPEG segment walking and stripping, size fitting, names and collage plans.
 2. **Android pipeline, on the JVM.** Robolectric with native graphics: export leaves the source byte for byte, EXIF orientation applied once and location never copied, preview predicts export through the real renderer, erase to PNG transparency, a target size measured after metadata, no partial file on failure or cancellation, lossless strip with identical decoded pixels, perspective and straighten sizes within budget, layers at two sizes, and the batch ops end to end through the store and workspace.
 3. **Lint, debug APK, release bundle**, then `tools/verify_manifest.py` against every merged manifest.
-4. **Emulator, API 35.** The real activity: a picture imported through the store appears on the home board, opens in the editor, exports with the measured dimensions, the source is unchanged, downloadable emoji fonts stay off. Screenshots of home, editor and export are uploaded with the run.
+4. **Emulator, API 35.** The real activity: a picture imported through the store appears under "Pick up" on the home screen, opens in the editor, exports with the measured dimensions, the source is unchanged, downloadable emoji fonts stay off. Screenshots of home, editor and export are uploaded with the run.
 
 A green run is evidence that these things hold on that revision. It is not a release.
 
@@ -21,7 +21,7 @@ The engine suite passed locally during the rebuild (59 tests) with no Android SD
 4. Share in from the gallery and from a camera app, "edit in" from a file manager, the three launcher shortcuts, a share of several pictures landing on Resize.
 5. Photo picker and document providers, single-file save and folder save with the folder remembered, denied and cancelled choices, a full card, sharing to common targets. Confirm source hashes unchanged.
 6. Inputs: eight EXIF orientations, transparent PNG and WebP, HEIC, wide-gamut and HDR photos, a 50 MP photo, a 10000×10 panorama, corrupt files, long names.
-7. TalkBack through the home board, the panel strip and every slider, 200% font scale, landscape and a tablet, both themes, animations off; brush tools need touch and the alternatives in Markup must each work.
+7. TalkBack through the home screen, the pipeline's switches, the panel strip and every slider, 200% font scale, landscape and a tablet, both themes, animations off; brush tools need touch and the alternatives in Markup must each work.
 8. Compare matched exports against two established editors on the same fixtures: edge quality, halos, colour, bytes, time. Publish the measurements before any comparison claim.
 9. Run the baseline profile generator and the startup benchmark; record the two medians.
 10. Select the source licence, configure the owner's signing key, verify the signed bundle, review the store assets.

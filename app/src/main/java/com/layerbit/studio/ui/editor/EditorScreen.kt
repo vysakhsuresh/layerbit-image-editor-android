@@ -205,6 +205,7 @@ fun EditorScreen(
 
         BoxWithConstraints(Modifier.weight(1f)) {
             val wide = maxWidth > 700.dp
+            val panelLimit = maxHeight * 0.5f
             @Composable fun canvasArea(modifier: Modifier) {
                 Column(modifier) {
                     EditorCanvas(
@@ -244,7 +245,7 @@ fun EditorScreen(
                 }
             }
             if (wide) Row(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1.3f).fillMaxHeight()); panelArea(Modifier.weight(1f).fillMaxHeight()) }
-            else Column(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1f).fillMaxWidth()); panelArea(Modifier.fillMaxWidth().heightIn(max = maxHeight * 0.5f)) }
+            else Column(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1f).fillMaxWidth()); panelArea(Modifier.fillMaxWidth().heightIn(max = panelLimit)) }
         }
     }
 
