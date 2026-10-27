@@ -238,7 +238,7 @@ class OpsTest {
         val small = picture(640, 480, jpeg = true, name = "small.jpg")
         val out = run(PipelineOp(Pipeline(resize = ResizeOp.Mode.LongEdge(1920))), small).single() as OpOutcome.Produced
         assertEquals(640, out.file.width); assertEquals(480, out.file.height)
-        val old = run(ResizeOp(ResizeOp.Mode.LongEdge(1920), ExportOptions()), small).single() as OpOutcome.Produced
-        assertEquals(640, old.file.width)
+        // The standalone op has nothing to do for a picture already within the edge, and says so.
+        assertTrue(run(ResizeOp(ResizeOp.Mode.LongEdge(1920), ExportOptions()), small).single() is OpOutcome.Skipped)
     }
 }

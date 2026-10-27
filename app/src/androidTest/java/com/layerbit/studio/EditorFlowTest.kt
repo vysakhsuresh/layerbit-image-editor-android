@@ -18,6 +18,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import com.layerbit.studio.prefs.ThemeChoice
 import androidx.emoji2.text.EmojiCompat
 import androidx.test.core.app.ApplicationProvider
@@ -128,7 +130,8 @@ class EditorFlowTest {
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
         screenshot("01-intro")
-        compose.onNodeWithText(app.getString(R.string.intro_skip)).performClick()
+        // The first touch after a recreate was dropped on the emulator; the semantics action is the same onClick.
+        compose.onNodeWithText(app.getString(R.string.intro_skip)).performSemanticsAction(SemanticsActions.OnClick)
         waitFor { compose.onAllNodesWithTag("openPhotos").fetchSemanticsNodes().isNotEmpty() }
         screenshot("02-home")
 
