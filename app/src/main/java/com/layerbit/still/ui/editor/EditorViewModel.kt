@@ -304,6 +304,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 throw c
             } catch (e: Exception) {
                 // The strip falls back to labels alone; the looks themselves are unaffected.
+                android.util.Log.w("Still", "look thumbnails", e)
             }
         }
     }

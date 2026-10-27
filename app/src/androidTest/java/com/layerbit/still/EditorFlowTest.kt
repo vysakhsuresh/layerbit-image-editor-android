@@ -179,6 +179,9 @@ class EditorFlowTest {
         screenshot("07-editor-light")
         compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.look_sepia)).fetchSemanticsNodes().isNotEmpty() }
+        // The strip shows every look on the picture itself; the thumbnails are rendered after the panel opens.
+        waitFor { compose.onAllNodesWithTag("lookThumb", useUnmergedTree = true).fetchSemanticsNodes().size >= 5 }
+        settle()
         screenshot("08-editor-looks")
         compose.onNodeWithTag("panelStrip").performScrollToNode(hasContentDescription(app.getString(R.string.panel_cutout)))
         compose.onNodeWithContentDescription(app.getString(R.string.panel_cutout)).tap()

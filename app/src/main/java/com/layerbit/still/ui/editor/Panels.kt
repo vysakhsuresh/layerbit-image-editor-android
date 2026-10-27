@@ -274,7 +274,7 @@ private fun LookStrip(selected: Look, thumbs: Map<Look, Bitmap>, onSelect: (Look
                 .clickable(interactionSource = interaction, indication = null, role = Role.RadioButton) { onSelect(look) }) {
                 Box(Modifier.size(72.dp).clip(shape).background(StillColors.SurfaceDim).border(if (active) 2.5.dp else 1.dp, frame, shape), contentAlignment = Alignment.Center) {
                     val bmp = thumbs[look]
-                    if (bmp != null) Image(bmp.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(shape))
+                    if (bmp != null) Image(bmp.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(shape).testTag("lookThumb"))
                 }
                 Text(lookLabel(look), style = MaterialTheme.typography.labelMedium, color = if (active) StillColors.Text else StillColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
             }

@@ -39,8 +39,11 @@ adb shell am start -W -n "$PKG/.MainActivity" >/dev/null
 sleep 3
 tap_text "Skip" && sleep 2
 record home 10 || { echo "screenrecord is not available here"; exit 0; }
-adb shell input swipe 540 1600 540 600 500; sleep 2
+adb shell input swipe 540 1700 540 300 400; sleep 1; adb shell input swipe 540 1700 540 700 400; sleep 2
 record home-quick 8
+adb shell input swipe 540 500 540 1700 400; sleep 1; adb shell input swipe 540 500 540 1700 400; sleep 1
+# The editor, on the picture the walk left behind, with the Looks strip open.
+tap_text "walk-1.jpg" && { sleep 4; tap_text "Looks" && sleep 3; record editor-looks 8; adb shell input keyevent KEYCODE_BACK; sleep 2; }
 tap_text "Every tool" && { sleep 2; record tools 8; adb shell input keyevent KEYCODE_BACK; sleep 1; }
 tap_text "Process many" && { sleep 2; record batch 8; adb shell input keyevent KEYCODE_BACK; sleep 1; }
 ls -la "$OUT"
