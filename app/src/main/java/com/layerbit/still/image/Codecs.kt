@@ -38,9 +38,16 @@ data class ExportOptions(
     /** When the target cannot be met at full size, let the picture shrink. */
     val allowShrink: Boolean = true,
     /** Copy make, model, date and exposure into a JPEG. Location never. */
-    val keepCameraFields: Boolean = false
+    val keepCameraFields: Boolean = false,
+    /** A 512 x 512 WebP with transparency under 100 KB, which is what chat apps take as a sticker. Overrides the format and the target. */
+    val sticker: Boolean = false
 ) {
-    val valid: Boolean get() = quality in 1..100 && targetBytes >= 0 && !(targetBytes > 0 && !format.lossy)
+    val valid: Boolean get() = quality in 1..100 && targetBytes >= 0 && (sticker || !(targetBytes > 0 && !format.lossy))
+
+    /** The options as the encoder sees them once a sticker has had its say. */
+    val effective: ExportOptions get() = if (!sticker) this else copy(format = OutputFormat.WEBP, targetBytes = if (targetBytes > 0) targetBytes else STICKER_BYTES, allowShrink = false, quality = quality.coerceAtLeast(60), keepCameraFields = false)
+
+    companion object { const val STICKER_BYTES = 100_000 }
 }
 
 /** What came out, measured on the file that was actually written. */
@@ -86,10 +93,11 @@ class Codecs(private val renderer: Renderer) {
      * Writes [picture] to [destination] under [options]. [sourceForExif] is the original the
      * camera fields may be copied from. The bitmap is not recycled.
      */
-    fun export(picture: Bitmap, options: ExportOptions, destination: File, sourceForExif: File?, scaledFromSource: Boolean, check: () -> Unit = {}): Exported {
-        require(options.valid) { Strings.get(R.string.engine_options_invalid) }
+    fun export(picture: Bitmap, requested: ExportOptions, destination: File, sourceForExif: File?, scaledFromSource: Boolean, check: () -> Unit = {}): Exported {
+        require(requested.valid) { Strings.get(R.string.engine_options_invalid) }
+        val options = requested.effective
         val format = options.format
-        var working = if (!format.alpha) renderer.flatten(picture) else picture
+        var working = if (options.sticker) renderer.stickerCanvas(picture) else if (!format.alpha) renderer.flatten(picture) else picture
         var shrunk = false
         try {
             var quality = if (format.lossy) options.quality else 100
@@ -130,6 +138,7 @@ class Codecs(private val renderer: Renderer) {
             check()
             if (options.targetBytes > 0) require(destination.length() <= options.targetBytes) { Strings.get(R.string.engine_target_unreachable_any, FitSize.sizeText(options.targetBytes.toLong())) }
             val notes = buildList {
+                if (options.sticker) add(Strings.get(R.string.engine_note_sticker))
                 if (!format.alpha) add(Strings.get(R.string.engine_note_flattened))
                 add(Strings.get(if (format.lossy) R.string.engine_note_lossy else R.string.engine_note_lossless))
                 add(Strings.get(if (format == OutputFormat.JPEG && options.keepCameraFields) R.string.engine_note_camera_kept else R.string.engine_note_metadata_removed))

@@ -180,6 +180,13 @@ class EditorFlowTest {
         compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.look_sepia)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("08-editor-looks")
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_cutout)).tap()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.cutout_apply)).fetchSemanticsNodes().isNotEmpty() }
+        settle()
+        screenshot("12-editor-cutout")
+        compose.onNodeWithContentDescription(app.getString(R.string.panel_scan)).tap()
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.scan_whiten)).fetchSemanticsNodes().isNotEmpty() || compose.onAllNodesWithText(app.getString(R.string.scan_off)).fetchSemanticsNodes().isNotEmpty() }
+        screenshot("13-editor-scan")
         back()
         compose.waitForIdle()
 

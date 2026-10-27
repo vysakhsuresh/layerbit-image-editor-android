@@ -61,6 +61,12 @@ The front door is one gesture: open pictures. One picture opens the editor; seve
 | Draw and write | Freehand, arrows, boxes, circles, movable wrapped text; every stroke a layer with opacity and order |
 | Hide and retouch | Blur, pixelate, opaque cover, erase to transparency, clone |
 | Frame and pad | Pad to an aspect, border, rounded corners, blurred fill |
+| Cut out the background | The subject found by colour and edges, shown under a red wash before anything is removed; a keep or remove stroke corrects it; transparent, a colour or a blurred copy behind; one decision scaled so the preview edge is the export edge |
+| Lift a signature | Ink and stamps off a photographed page, on transparent, with an automatic or chosen threshold |
+| Make a sticker | A cut-out as a 512 × 512 WebP under 100 KB, as chat apps take it |
+| Scan a page | The light across the page measured and divided out; paper white everywhere, ink kept; colour, grey or black and white |
+| Fix red eye | A tap per pupil; only red far beyond green and blue is darkened |
+| Tap a white | Tap a grey or white thing and the colour cast goes |
 | Watermark | Repeated text at an angle, batch |
 | Resize | Longest edge, percent or exact pixels, batch, halving pyramid so thin lines survive |
 | Photo under a size | Under 20 KB, 50 KB or whatever a form asks; best quality that fits first, shrink only if it must; passport shape; a JPEG already under is only cleaned, never re-encoded |

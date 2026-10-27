@@ -11,7 +11,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.layerbit.still.R
 import com.layerbit.still.StillApplication
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.Scan
+import com.layerbit.still.engine.ScanMode
 import com.layerbit.still.engine.Look
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.files.StillFile
@@ -39,10 +44,12 @@ data class Steps(
     val lookOn: Boolean = false, val look: Look = Look.NONE, val lookStrength: Float = 1f, val recipeName: String = "",
     val watermarkOn: Boolean = false, val watermarkText: String = "", val watermarkOpacity: Float = 0.35f, val watermarkAngle: Float = -30f, val watermarkSize: Float = 0.03f, val watermarkColor: Int = 0xFFFFFFFF.toInt(),
     val frameOn: Boolean = false, val frame: Frame = Frame(padding = 0.05f),
+    val cutoutOn: Boolean = false, val cutoutMode: CutoutMode = CutoutMode.SUBJECT, val cutoutBackdrop: Backdrop = Backdrop.TRANSPARENT, val cutoutColor: Int = 0xFFFFFFFF.toInt(), val cutoutBlur: Float = 0.03f,
+    val scanOn: Boolean = false, val scanMode: ScanMode = ScanMode.COLOUR, val scanStrength: Float = 1f, val scanWhiten: Float = 0.5f,
     val keepCamera: Boolean = false, val allowShrink: Boolean = true,
     val pattern: String = ""
 ) {
-    val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn
+    val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn || cutoutOn || scanOn
 }
 
 class PipelineViewModel(app: Application) : AndroidViewModel(app) {
@@ -65,6 +72,10 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
             "clean" -> steps = steps.copy()
             "resize" -> steps = steps.copy(resizeOn = true)
             "convert" -> steps = steps.copy(formatOn = true)
+            "passport" -> steps = steps.copy(underOn = true, passport = true)
+            "watermark" -> steps = steps.copy(watermarkOn = true)
+            "cutout" -> steps = steps.copy(cutoutOn = true)
+            "scan" -> steps = steps.copy(scanOn = true)
         }
         val waiting = still.handoff.take()
         if (waiting.isNotEmpty()) addPictures(waiting)
@@ -113,6 +124,8 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
             look = if (s.lookOn) s.look else Look.NONE, lookStrength = s.lookStrength, recipe = recipe,
             watermark = if (s.watermarkOn) Pipeline.Watermark(s.watermarkText, s.watermarkOpacity, s.watermarkAngle, s.watermarkSize, s.watermarkColor) else null,
             frame = if (s.frameOn) s.frame else null,
+            cutout = if (s.cutoutOn) Cutout(enabled = true, mode = s.cutoutMode, backdrop = s.cutoutBackdrop, color = s.cutoutColor, blur = s.cutoutBlur) else null,
+            scan = if (s.scanOn) Scan(s.scanMode, s.scanStrength, s.scanWhiten) else null,
             format = if (s.formatOn) s.format else null, quality = s.quality, keepCamera = s.keepCamera, allowShrink = s.allowShrink, pattern = s.pattern
         )
     }

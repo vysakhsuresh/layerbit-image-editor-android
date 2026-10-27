@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ui.Arrival
 import com.layerbit.still.ui.StillApp
 import com.layerbit.still.ui.components.ProvideLivelyClock
@@ -34,7 +35,9 @@ class MainActivity : ComponentActivity() {
     /** The front door: any number of pictures. One edits; several go to the pipeline. */
     private val pickPictures = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris -> arrive(uris) }
 
-    private val pickOne = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) arrive(listOf(uri)) }
+    /** The tool a quick-tool tap asked for, applied to the one picture that comes back from the picker. */
+    private var pendingTool: ToolId? = null
+    private val pickOne = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> val tool = pendingTool; pendingTool = null; if (uri != null) { arrival = Arrival.One(uri, tool); ticket += 1 } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +56,7 @@ class MainActivity : ComponentActivity() {
                         arrivalTicket = ticket,
                         arrival = arrival,
                         onPickPictures = { pickPictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                        onPickOne = { pickOne.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                        onPickOne = { tool -> pendingTool = tool; pickOne.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                     )
                 }
             }

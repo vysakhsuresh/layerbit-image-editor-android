@@ -193,7 +193,9 @@ enum class Look { NONE, MONO, NOIR, SEPIA, WARM, COOL, FADE, MATTE, VIVID, FILM,
 enum class MarkKind {
     DRAW, TEXT, ARROW, BOX, ELLIPSE, COVER, PIXELATE, BLUR, ERASE, CLONE,
     /** Text repeated across the whole picture at an angle. */
-    WATERMARK
+    WATERMARK,
+    /** A tap on a flash-red pupil: the point and a radius. */
+    REDEYE
 }
 
 /**
@@ -259,15 +261,19 @@ data class Recipe(
     /** 0..1; how much of the look is applied over the user's own tone. */
     val lookStrength: Float = 1f,
     val marks: List<Mark> = emptyList(),
-    val frame: Frame = Frame()
+    val frame: Frame = Frame(),
+    /** Paper cleanup, applied after tone and before detail. */
+    val scan: Scan = Scan(),
+    /** The subject or the ink lifted off its surroundings, applied after the layers and before the frame. */
+    val cutout: Cutout = Cutout()
 ) {
     val isIdentity: Boolean get() = this == Recipe()
     val valid: Boolean
         get() = geometry.valid && tone.valid && curves.valid && lookStrength in 0f..1f && marks.size <= MAX_MARKS &&
-            marks.all { it.valid } && frame.valid
+            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid
 
-    /** The recipe without the layers drawn on one particular picture: what a preset keeps. */
-    fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL))
+    /** The recipe without what belongs to one particular picture: what a preset keeps. */
+    fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout())
 
     companion object {
         const val MAX_MARKS = 400

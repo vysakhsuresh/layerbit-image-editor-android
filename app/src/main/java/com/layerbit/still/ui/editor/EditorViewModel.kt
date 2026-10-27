@@ -16,7 +16,14 @@ import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.Histogram
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.CutoutMode
+import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.Retouch
+import com.layerbit.still.engine.Scan
+import com.layerbit.still.engine.ScanMode
+import com.layerbit.still.engine.Scribble
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.Budget
@@ -76,6 +83,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val presets: List<ImageStore.Preset> = emptyList(),
         /** The canvas the preview stands for, in output pixels. */
         val canvasSize: Geometry2D.Size? = null,
+        /** On the cut-out panel: how much of the picture the current decision keeps. */
+        val cutoutKept: Float? = null,
         val loading: Boolean = true
     )
 
@@ -103,18 +112,18 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------------------------ opening
 
-    fun open(projectId: String, panel: ToolId.Panel) {
+    fun open(projectId: String, panel: ToolId.Panel, tool: ToolId? = null) {
         val p = store.project(projectId)
         if (p == null) { message(Strings.get(R.string.editor_project_gone)); return }
-        install(p, panel)
+        install(p, panel, tool)
     }
 
-    fun openUri(uri: Uri, panel: ToolId.Panel) {
+    fun openUri(uri: Uri, panel: ToolId.Panel, tool: ToolId? = null) {
         _ui.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {
                 val p = store.importProject(uri)
-                install(p, panel)
+                install(p, panel, tool)
             } catch (e: Exception) {
                 _ui.update { it.copy(loading = false, message = e.message ?: Strings.get(R.string.app_error_not_image, "")) }
             }
@@ -128,12 +137,44 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun install(p: ImageStore.Project, panel: ToolId.Panel) {
+    private fun install(p: ImageStore.Project, panel: ToolId.Panel, tool: ToolId? = null) {
         dropBase()
         undo.clear(); redo.clear()
         baseline = p.recipe
         _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
+        // A quick tool opens the editor already set for its job.
+        when (tool) {
+            ToolId.SIGNATURE -> if (p.recipe.cutout.isIdentity) change { it.copy(cutout = it.cutout.copy(enabled = true, mode = CutoutMode.INK)) }
+            ToolId.CUTOUT -> if (!p.recipe.cutout.enabled) change { it.copy(cutout = it.cutout.copy(enabled = true, mode = CutoutMode.SUBJECT)) }
+            ToolId.STICKER -> { if (!p.recipe.cutout.enabled) change { it.copy(cutout = it.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT)) }; options = options.copy(sticker = true) }
+            ToolId.SCAN -> if (p.recipe.scan.isIdentity) change { it.copy(scan = Scan(ScanMode.COLOUR)) }
+            else -> Unit
+        }
         requestRender()
+    }
+
+    // ------------------------------------------------------------------ cut out, neutral
+
+    fun addScribble(points: List<Pt>, width: Float, keep: Boolean) {
+        val s = Scribble(points, width, keep)
+        if (!s.valid) return
+        if (_ui.value.recipe.cutout.scribbles.size >= com.layerbit.still.engine.Cutout.MAX_SCRIBBLES) { message(Strings.get(R.string.cutout_full)); return }
+        change { it.copy(cutout = it.cutout.copy(scribbles = it.cutout.scribbles + s)) }
+    }
+
+    fun clearScribbles() = change { it.copy(cutout = it.cutout.copy(scribbles = emptyList())) }
+
+    /** Reads the colour under a tap on the geometry stage and sets temperature and tint to make it neutral. */
+    fun neutralAt(p: Pt) {
+        val b = base ?: return
+        val x = (p.x * (b.width - 1)).toInt().coerceIn(0, b.width - 1); val y = (p.y * (b.height - 1)).toInt().coerceIn(0, b.height - 1)
+        val x0 = (x - 2).coerceAtLeast(0); val y0 = (y - 2).coerceAtLeast(0)
+        val rw = (x + 3).coerceAtMost(b.width) - x0; val rh = (y + 3).coerceAtMost(b.height) - y0
+        val region = IntArray(rw * rh)
+        b.getPixels(region, 0, rw, x0, y0, rw, rh)
+        val c = Retouch.sample(region, rw, rh, x - x0, y - y0, half = 2)
+        change { it.copy(tone = Retouch.neutralise(c[0], c[1], c[2], it.tone)) }
+        message(Strings.get(R.string.colour_neutral_done))
     }
 
     // ------------------------------------------------------------------ recipe edits
@@ -239,8 +280,12 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame())
         ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame())
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS -> recipe.copy(frame = Frame())
+        // The cut-out panel shows the whole picture with what would go under a wash, whatever the switch says.
+        ToolId.Panel.CUTOUT -> recipe.copy(frame = Frame(), cutout = recipe.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT))
         else -> recipe
     }
+
+    private fun maskKey(geometry: Geometry): String = (_ui.value.project?.id ?: "") + "|" + geometry.hashCode()
 
     private fun requestRender() { renderRequests.value = System.nanoTime() }
 
@@ -262,7 +307,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
                     fresh.bitmap
                 }
-                val finished = renderer.finish(b, shown, check)
+                val cutoutPanel = state.panel == ToolId.Panel.CUTOUT
+                val finished = renderer.finish(b, shown, check, maskKey = maskKey(geometry), cutoutPreview = cutoutPanel)
+                val kept = if (cutoutPanel) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else null
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
                 val histogram = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)
@@ -272,7 +319,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
-                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas) }
+                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept) }
             } catch (c: CancellationException) {
                 throw c
             } catch (e: OutOfMemoryError) {
@@ -304,7 +351,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val check = { ctx.ensureActive() }
                 val result = withContext(Dispatchers.Default) {
                     val stage = renderer.geometry(project.file.file, recipe.geometry, Budget.exportPixels, check)
-                    val picture = try { renderer.finish(stage.bitmap, recipe, check) } finally { stage.bitmap.recycle() }
+                    val picture = try { renderer.finish(stage.bitmap, recipe, check, maskKey = maskKey(recipe.geometry)) } finally { stage.bitmap.recycle() }
                     try {
                         val out = still.workspace.newOutput(project.name, "export", settings.format.extension)
                         val exported = codecs.export(picture, settings, out, project.file.file, stage.scaled, check)

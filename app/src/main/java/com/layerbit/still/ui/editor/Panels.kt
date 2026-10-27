@@ -28,7 +28,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.layerbit.still.R
+import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Crop
+import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Curves
 import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.Geometry2D
@@ -39,6 +41,8 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Quad
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.Scan
+import com.layerbit.still.engine.ScanMode
 import com.layerbit.still.engine.Tone
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.image.Budget
@@ -181,6 +185,15 @@ fun ColourPanel(s: PanelScope) {
     }
 }
 
+/** Colour, plus the eyedropper: tap something that should be grey or white and the cast goes. */
+@Composable
+fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) -> Unit) {
+    PrimaryButton(stringResource(if (picking) R.string.colour_neutral_cancel else R.string.colour_neutral), onClick = { onPick(!picking) }, modifier = Modifier.fillMaxWidth(), tall = false, iconRes = R.drawable.ic_tool_neutral)
+    Hint(stringResource(if (picking) R.string.colour_neutral_tap else R.string.colour_neutral_hint))
+    Spacer(Modifier.height(4.dp))
+    ColourPanel(s)
+}
+
 @Composable
 fun CurvesPanel(s: PanelScope) {
     var channel by rememberSaveable { mutableStateOf("master") }
@@ -284,7 +297,7 @@ fun MarkupPanel(brush: Brush, onBrush: (Brush) -> Unit, onPlaceCentre: () -> Uni
 
 @Composable
 fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean) {
-    val kinds = listOf(MarkKind.BLUR to stringResource(R.string.retouch_blur), MarkKind.PIXELATE to stringResource(R.string.retouch_pixelate), MarkKind.COVER to stringResource(R.string.retouch_cover), MarkKind.ERASE to stringResource(R.string.retouch_erase), MarkKind.CLONE to stringResource(R.string.retouch_clone))
+    val kinds = listOf(MarkKind.BLUR to stringResource(R.string.retouch_blur), MarkKind.PIXELATE to stringResource(R.string.retouch_pixelate), MarkKind.COVER to stringResource(R.string.retouch_cover), MarkKind.ERASE to stringResource(R.string.retouch_erase), MarkKind.CLONE to stringResource(R.string.retouch_clone), MarkKind.REDEYE to stringResource(R.string.retouch_redeye))
     val kind = if (brush.kind in kinds.map { it.first }) brush.kind else MarkKind.BLUR
     ChipRow(kinds, kind, { onBrush(brush.copy(kind = it, pickingSource = it == MarkKind.CLONE && brush.cloneSource == null)) })
     if (kind == MarkKind.COVER) ColourRow(InkColours, brush.color, { onBrush(brush.copy(color = it)) }, Modifier.padding(top = 10.dp))
@@ -296,6 +309,7 @@ fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean) {
         }
         MarkKind.ERASE -> Hint(stringResource(R.string.retouch_erase_hint))
         MarkKind.COVER -> Hint(stringResource(R.string.retouch_cover_hint))
+        MarkKind.REDEYE -> Hint(stringResource(R.string.retouch_redeye_hint))
         else -> Hint(stringResource(R.string.retouch_blur_hint))
     }
 }
@@ -335,6 +349,7 @@ fun markLabel(kind: MarkKind): String = stringResource(
         MarkKind.DRAW -> R.string.mark_draw; MarkKind.TEXT -> R.string.mark_text; MarkKind.ARROW -> R.string.mark_arrow; MarkKind.BOX -> R.string.mark_box
         MarkKind.ELLIPSE -> R.string.mark_ellipse; MarkKind.COVER -> R.string.retouch_cover; MarkKind.PIXELATE -> R.string.retouch_pixelate
         MarkKind.BLUR -> R.string.retouch_blur; MarkKind.ERASE -> R.string.retouch_erase; MarkKind.CLONE -> R.string.retouch_clone; MarkKind.WATERMARK -> R.string.tool_watermark_title
+        MarkKind.REDEYE -> R.string.retouch_redeye
     }
 )
 
@@ -380,9 +395,11 @@ fun DetailsPanel(lines: List<Pair<String, String>>, onStrip: () -> Unit) {
 @Composable
 fun ExportPanel(options: ExportOptions, onOptions: (ExportOptions) -> Unit, canvas: Geometry2D.Size?, onPrepare: () -> Unit, haptics: Boolean) {
     val formats = OutputFormat.entries.filter { it.available }.map { it to it.label }
-    ChipRow(formats, options.format, { f -> onOptions(options.copy(format = f, targetBytes = if (f.lossy) options.targetBytes else 0)) })
-    Hint(stringResource(when (options.format) { OutputFormat.JPEG -> R.string.export_jpeg_note; OutputFormat.PNG -> R.string.export_png_note; OutputFormat.WEBP -> R.string.export_webp_note; OutputFormat.WEBP_LOSSLESS -> R.string.export_webp_lossless_note }))
-    if (options.format.lossy) {
+    if (!options.sticker) {
+        ChipRow(formats, options.format, { f -> onOptions(options.copy(format = f, targetBytes = if (f.lossy) options.targetBytes else 0)) })
+        Hint(stringResource(when (options.format) { OutputFormat.JPEG -> R.string.export_jpeg_note; OutputFormat.PNG -> R.string.export_png_note; OutputFormat.WEBP -> R.string.export_webp_note; OutputFormat.WEBP_LOSSLESS -> R.string.export_webp_lossless_note }))
+    }
+    if (options.format.lossy && !options.sticker) {
         Knob(stringResource(R.string.export_quality), options.quality / 100f, 0.4f..1f, onChange = { onOptions(options.copy(quality = (it * 100).roundToInt())) }, onDone = {}, onReset = { onOptions(options.copy(quality = 92)) }, haptics = haptics, format = { "${(it * 100).roundToInt()}" })
         var target by rememberSaveable { mutableStateOf(if (options.targetBytes > 0) (options.targetBytes / 1000).toString() else "") }
         var unit by rememberSaveable { mutableStateOf("KB") }
@@ -398,7 +415,58 @@ fun ExportPanel(options: ExportOptions, onOptions: (ExportOptions) -> Unit, canv
         ToggleRow(stringResource(R.string.export_allow_shrink), options.allowShrink, { onOptions(options.copy(allowShrink = it)) }, detail = stringResource(R.string.export_allow_shrink_detail))
     }
     if (options.format == OutputFormat.JPEG) ToggleRow(stringResource(R.string.export_keep_camera), options.keepCameraFields, { onOptions(options.copy(keepCameraFields = it)) }, detail = stringResource(R.string.export_keep_camera_detail))
-    if (canvas != null) Hint(stringResource(R.string.export_expected, canvas.width, canvas.height))
+    ToggleRow(stringResource(R.string.export_sticker), options.sticker, { onOptions(options.copy(sticker = it)) }, detail = stringResource(R.string.export_sticker_detail))
+    if (canvas != null && !options.sticker) Hint(stringResource(R.string.export_expected, canvas.width, canvas.height))
     PrimaryButton(stringResource(R.string.export_prepare), onClick = onPrepare, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), enabled = options.valid)
     Hint(stringResource(R.string.export_note))
+}
+
+// ------------------------------------------------------------------ cut out
+
+/**
+ * The cut-out panel. The canvas shows what would go under a red wash; a keep or remove stroke
+ * corrects the guess, and the numbers say how much of the picture stays.
+ */
+@Composable
+fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: Float, onWidth: (Float) -> Unit, kept: Float?, onClearStrokes: () -> Unit) {
+    val c = s.recipe.cutout
+    ChipRow(listOf(CutoutMode.SUBJECT to stringResource(R.string.cutout_subject), CutoutMode.INK to stringResource(R.string.cutout_ink)), c.mode, { m -> s.change { it.copy(cutout = it.cutout.copy(mode = m)) } })
+    if (c.mode == CutoutMode.SUBJECT) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            if (keep) PrimaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
+            else SecondaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
+            if (!keep) PrimaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
+            else SecondaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
+        }
+        Knob(stringResource(R.string.mark_size), width, 0.01f..0.2f, onChange = onWidth, onDone = {}, onReset = { onWidth(0.06f) }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+        Hint(stringResource(if (c.scribbles.isEmpty()) R.string.cutout_hint_first else R.string.cutout_hint_strokes, c.scribbles.size))
+        if (c.scribbles.isNotEmpty()) TextButton(onClick = onClearStrokes) { Text(stringResource(R.string.cutout_clear_strokes), color = StillColors.Muted) }
+    } else {
+        Knob(stringResource(R.string.cutout_threshold), c.threshold, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(threshold = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(threshold = 0f)) } }, haptics = s.haptics, format = { if (it == 0f) "auto" else "${(it * 100).roundToInt()}" })
+        Hint(stringResource(R.string.cutout_ink_hint))
+    }
+    if (kept != null) LabelledValue(stringResource(R.string.cutout_kept), stringResource(R.string.cutout_kept_value, (kept * 100).roundToInt()), Modifier.padding(top = 6.dp))
+    Knob(stringResource(R.string.cutout_feather), c.feather, 0f..0.05f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(feather = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(feather = 0.004f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+    ToggleRow(stringResource(R.string.cutout_invert), c.invert, { v -> s.change { it.copy(cutout = it.cutout.copy(invert = v)) } }, detail = stringResource(R.string.cutout_invert_detail))
+    SectionHeading(stringResource(R.string.cutout_behind), modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+    ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur)), c.backdrop, { b -> s.change { it.copy(cutout = it.cutout.copy(backdrop = b)) } })
+    when (c.backdrop) {
+        Backdrop.COLOUR -> ColourRow(listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt()), c.color, { col -> s.change { it.copy(cutout = it.cutout.copy(color = col)) } }, Modifier.padding(top = 8.dp))
+        Backdrop.BLUR -> Knob(stringResource(R.string.cutout_blur_amount), c.blur, 0.005f..0.1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(blur = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(blur = 0.03f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+        Backdrop.TRANSPARENT -> Hint(stringResource(R.string.cutout_transparent_hint))
+    }
+    ToggleRow(stringResource(R.string.cutout_apply), c.enabled, { v -> s.change { it.copy(cutout = it.cutout.copy(enabled = v)) } }, detail = stringResource(R.string.cutout_apply_detail), modifier = Modifier.padding(top = 8.dp))
+}
+
+// ------------------------------------------------------------------ scan
+
+@Composable
+fun ScanPanel(s: PanelScope) {
+    val sc = s.recipe.scan
+    ChipRow(listOf(ScanMode.OFF to stringResource(R.string.scan_off), ScanMode.COLOUR to stringResource(R.string.scan_colour), ScanMode.GREY to stringResource(R.string.scan_grey), ScanMode.INK to stringResource(R.string.scan_ink)), sc.mode, { m -> s.change { it.copy(scan = it.scan.copy(mode = m)) } })
+    if (sc.mode != ScanMode.OFF) {
+        Knob(stringResource(R.string.scan_strength), sc.strength, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(scan = sc.copy(strength = v))) }, onDone = s.commit, onReset = { s.change { it.copy(scan = it.scan.copy(strength = 1f)) } }, haptics = s.haptics, format = { "${(it * 100).roundToInt()}" })
+        Knob(stringResource(R.string.scan_whiten), sc.whiten, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(scan = sc.copy(whiten = v))) }, onDone = s.commit, onReset = { s.change { it.copy(scan = it.scan.copy(whiten = 0.5f)) } }, haptics = s.haptics, format = { "${(it * 100).roundToInt()}" })
+    }
+    Hint(stringResource(R.string.scan_hint))
 }

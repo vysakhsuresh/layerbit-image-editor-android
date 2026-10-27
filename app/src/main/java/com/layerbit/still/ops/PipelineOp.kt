@@ -2,6 +2,9 @@ package com.layerbit.still.ops
 
 import com.layerbit.still.R
 import com.layerbit.still.engine.AutoEnhance
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.Scan
 import com.layerbit.still.engine.FitSize
 import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.Geometry
@@ -42,6 +45,9 @@ data class Pipeline(
     val recipe: Recipe? = null,
     val watermark: Watermark? = null,
     val frame: Frame? = null,
+    /** The automatic cut-out, with its backdrop; strokes belong to the editor. */
+    val cutout: Cutout? = null,
+    val scan: Scan? = null,
     /** Null keeps each picture's own format where the platform can write it. */
     val format: OutputFormat? = null,
     val quality: Int = 90,
@@ -54,7 +60,7 @@ data class Pipeline(
 
     /** Whether anything changes the pixels; otherwise a picture is only cleaned. */
     val changesPixels: Boolean
-        get() = resize != null || underKb != null || passport || enhance || look != Look.NONE || recipe != null || watermark != null || frame != null
+        get() = resize != null || underKb != null || passport || enhance || look != Look.NONE || recipe != null || watermark != null || frame != null || cutout != null || scan != null
 
     /** The steps as a short sentence for the job title and the result list. */
     fun summary(): String = buildList {
@@ -66,6 +72,8 @@ data class Pipeline(
         recipe?.let { add(Strings.get(R.string.step_recipe)) }
         watermark?.let { add(Strings.get(R.string.step_watermark)) }
         frame?.let { add(Strings.get(R.string.step_frame)) }
+        cutout?.let { add(Strings.get(R.string.step_cutout)) }
+        scan?.let { add(Strings.get(R.string.step_scan)) }
         format?.let { add(it.label) }
         if (isEmpty()) add(Strings.get(R.string.step_clean_only))
     }.joinToString(" · ")
@@ -86,7 +94,9 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
         }
         val recipe = recipeFor(input, context)
         val limit = p.underKb?.let { FitSize.limitBytes(it, "KB") } ?: 0
-        val lossy = if (limit > 0 && !format.lossy) OutputFormat.JPEG else format
+        // A transparent cut-out with no format chosen goes out as PNG, so the transparency survives.
+        val keepsAlpha = p.cutout != null && p.cutout.backdrop == Backdrop.TRANSPARENT && p.format == null && limit == 0
+        val lossy = if (limit > 0 && !format.lossy) OutputFormat.JPEG else if (keepsAlpha && !format.alpha) OutputFormat.PNG else format
         val options = ExportOptions(lossy, p.quality, limit, p.allowShrink && !p.passport && p.resize !is ResizeOp.Mode.Exact, p.keepCamera)
         val (file, exported) = try {
             renderAndExport(input, recipe, options, context, "processed", p.pattern.ifBlank { "{name}" }, index)
@@ -97,7 +107,7 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
             append(dims(input.width, input.height)).append(" → ").append(dims(exported.width, exported.height))
             append(" · ").append(sizeChange(input.sizeBytes, exported.bytes))
             if (exported.shrunk) append(" · ").append(Strings.get(R.string.engine_made_smaller, dims(input.width, input.height)))
-            if (lossy != format) append(" · ").append(Strings.get(R.string.engine_now_jpeg))
+            if (lossy != format) append(" · ").append(Strings.get(if (lossy == OutputFormat.PNG) R.string.engine_now_png else R.string.engine_now_jpeg))
         }
         return OpOutcome.Produced(file, detail)
     }
@@ -144,6 +154,8 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
             r = r.copy(marks = r.marks + Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), color = w.color, width = w.size, text = w.text, opacity = w.opacity, angle = w.angle))
         }
         p.frame?.let { r = r.copy(frame = it) }
+        p.cutout?.let { r = r.copy(cutout = it.copy(enabled = true, scribbles = emptyList())) }
+        p.scan?.let { r = r.copy(scan = it) }
         return r
     }
 }

@@ -571,4 +571,89 @@
     <string name="step_watermark">वॉटरमार्क</string>
     <string name="step_frame">फ़्रेम</string>
     <string name="step_clean_only">छिपा डेटा हटाया गया</string>
+
+    <!-- Newer tools -->
+    <string name="tool_cutout_title">बैकग्राउंड हटाएं</string>
+    <string name="tool_cutout_summary">जो हटेगा वह दिखता है; एक स्ट्रोक उसे सुधारता है; पीछे पारदर्शी, रंग या धुंधला</string>
+    <string name="tool_cutout_action">हटाएं</string>
+    <string name="tool_signature_title">हस्ताक्षर उठाएं</string>
+    <string name="tool_signature_summary">फ़ोटो खींचे पन्ने से स्याही या मुहर, पारदर्शी पर</string>
+    <string name="tool_signature_action">उठाएं</string>
+    <string name="tool_sticker_title">स्टिकर बनाएं</string>
+    <string name="tool_sticker_summary">कट-आउट 512 × 512 WebP में, 100 KB से कम</string>
+    <string name="tool_sticker_action">बनाएं</string>
+    <string name="tool_scan_title">पन्ना स्कैन करें</string>
+    <string name="tool_scan_summary">एकसमान सफ़ेद कागज़ और साफ़ स्याही, रंगीन, ग्रे या काला-सफ़ेद</string>
+    <string name="tool_scan_action">स्कैन</string>
+    <string name="tool_redeye_title">लाल आंख ठीक करें</string>
+    <string name="tool_redeye_summary">फ़्लैश से लाल हुई हर पुतली पर टैप करें</string>
+    <string name="tool_redeye_action">ठीक करें</string>
+    <string name="tool_neutral_title">सफ़ेद पर टैप करें</string>
+    <string name="tool_neutral_summary">जो ग्रे या सफ़ेद होना चाहिए उस पर टैप करें और रंग की छाया चली जाती है</string>
+    <string name="tool_neutral_action">संतुलित करें</string>
+    <string name="tool_passport_title">पासपोर्ट फ़ोटो</string>
+    <string name="tool_passport_summary">35 × 45 मिमी, 300 dpi, फ़ॉर्म की मांगी सीमा से कम</string>
+    <string name="tool_passport_action">बनाएं</string>
+    <string name="panel_cutout">कट-आउट</string>
+    <string name="panel_scan">स्कैन</string>
+
+    <string name="cutout_subject">विषय</string>
+    <string name="cutout_ink">स्याही और मुहर</string>
+    <string name="cutout_keep_brush">रखें</string>
+    <string name="cutout_remove_brush">हटाएं</string>
+    <string name="cutout_hint_first">लाल धुलाई वह है जो हटेगा. गलती से लाल हुए हिस्से पर “रखें” से और गलती से रखे गए पर “हटाएं” से पेंट करें. हर स्ट्रोक पूर्ववत हो सकता है.</string>
+    <string name="cutout_hint_strokes">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है.</string>
+    <string name="cutout_clear_strokes">स्ट्रोक साफ़ करें</string>
+    <string name="cutout_threshold">स्याही की सीमा</string>
+    <string name="cutout_ink_hint">गहरे और तेज़ रंग के निशान रहते हैं; कागज़ हटता है. ऑटो पन्ने से तय करता है; हल्की स्याही रखने के लिए सीमा बढ़ाएं.</string>
+    <string name="cutout_kept">रखा गया</string>
+    <string name="cutout_kept_value">तस्वीर का %1$d%%</string>
+    <string name="cutout_feather">किनारे की कोमलता</string>
+    <string name="cutout_invert">इसके बजाय बैकग्राउंड रखें</string>
+    <string name="cutout_invert_detail">विषय हटाता है और उसके आसपास का सब रखता है.</string>
+    <string name="cutout_behind">इसके पीछे</string>
+    <string name="cutout_transparent">पारदर्शी</string>
+    <string name="cutout_colour">रंग</string>
+    <string name="cutout_blur">धुंधली तस्वीर</string>
+    <string name="cutout_blur_amount">धुंधलापन</string>
+    <string name="cutout_transparent_hint">पारदर्शिता रखने के लिए PNG या WebP में निर्यात करें; JPEG उसे सफ़ेद भर देता है.</string>
+    <string name="cutout_apply">यह कट-आउट इस्तेमाल करें</string>
+    <string name="cutout_apply_detail">बंद रहने पर आपके स्ट्रोक रहते हैं पर लागू नहीं होते; बाकी पैनल और निर्यात पूरी तस्वीर दिखाते हैं.</string>
+    <string name="cutout_full">एक कट-आउट में इतने ही स्ट्रोक समाते हैं. पहले कुछ साफ़ करें.</string>
+
+    <string name="scan_off">बंद</string>
+    <string name="scan_colour">रंगीन</string>
+    <string name="scan_grey">ग्रे</string>
+    <string name="scan_ink">काला-सफ़ेद</string>
+    <string name="scan_strength">मात्रा</string>
+    <string name="scan_whiten">कागज़ सफ़ेद करें</string>
+    <string name="scan_hint">पहले “सीधा” पैनल पर पन्ना सीधा करें. पन्ने पर पड़ी रोशनी नापकर हटाई जाती है, ताकि कागज़ हर जगह बराबर सफ़ेद हो और स्याही अपना वज़न रखे.</string>
+
+    <string name="colour_neutral">सफ़ेद पर टैप करें</string>
+    <string name="colour_neutral_cancel">टैप रद्द करें</string>
+    <string name="colour_neutral_tap">तस्वीर में किसी ऐसी चीज़ पर टैप करें जो ग्रे या सफ़ेद होनी चाहिए.</string>
+    <string name="colour_neutral_hint">ग्रे कार्ड, सफ़ेद दीवार, कागज़ की शीट: उस पर टैप करें और रंग की छाया चली जाती है.</string>
+    <string name="colour_neutral_done">टैप से तापमान और टिंट तय हुए.</string>
+    <string name="retouch_redeye">लाल आंख</string>
+    <string name="retouch_redeye_hint">फ़्लैश से लाल हुई हर पुतली पर टैप करें. सिर्फ़ हरे और नीले से कहीं ज़्यादा लाल को गहरा किया जाता है, इसलिए त्वचा और होंठ अछूते रहते हैं.</string>
+    <string name="export_sticker">स्टिकर</string>
+    <string name="export_sticker_detail">512 × 512 WebP, पारदर्शिता के साथ, 100 KB से कम, जैसा WhatsApp और Telegram लेते हैं.</string>
+    <string name="engine_note_sticker">स्टिकर: 512 × 512 WebP पारदर्शिता के साथ, 100 KB से कम.</string>
+    <string name="engine_now_png">अब PNG, ताकि पारदर्शिता बनी रहे</string>
+
+    <string name="step_cutout">कट-आउट</string>
+    <string name="step_scan">स्कैन</string>
+    <string name="step_cutout_detail">स्वचालित: आसपास से विषय, या कागज़ से स्याही</string>
+    <string name="step_cutout_hint">बैच सिर्फ़ स्वचालित फ़ैसला लेता है. किसी नतीजे को एडिटर में खोलकर स्ट्रोक से सुधारें.</string>
+    <string name="step_scan_detail">हर पन्ने पर बराबर सफ़ेद कागज़ और साफ़ स्याही</string>
+
+    <string name="home_quick_cutout">कट-आउट</string>
+    <string name="home_quick_scan">पन्ना स्कैन</string>
+    <string name="home_quick_signature">हस्ताक्षर उठाएं</string>
+    <string name="home_quick_passport">पासपोर्ट फ़ोटो</string>
+    <string name="home_quick_redeye">लाल आंख</string>
+    <string name="home_quick_neutral">सफ़ेद पर टैप</string>
+    <string name="home_quick_sticker">स्टिकर बनाएं</string>
+    <string name="home_quick_watermark">वॉटरमार्क</string>
+    <string name="home_quick_collage">कोलाज</string>
 </resources>

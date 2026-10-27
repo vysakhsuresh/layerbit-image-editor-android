@@ -5,7 +5,11 @@ import android.graphics.Color
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
+import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Collage
+import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.Scan
+import com.layerbit.still.engine.ScanMode
 import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.JpegSegments
 import com.layerbit.still.engine.Look
@@ -240,5 +244,18 @@ class OpsTest {
         assertEquals(640, out.file.width); assertEquals(480, out.file.height)
         // The standalone op has nothing to do for a picture already within the edge, and says so.
         assertTrue(run(ResizeOp(ResizeOp.Mode.LongEdge(1920), ExportOptions()), small).single() is OpOutcome.Skipped)
+    }
+
+    @Test
+    fun pipelineCutsOutAndScansAndKeepsTransparencyAsPng() {
+        val jpg = picture(640, 480, jpeg = true, name = "shot.jpg")
+        val cut = run(PipelineOp(Pipeline(cutout = Cutout())), jpg).single() as OpOutcome.Produced
+        assertEquals("a transparent cut-out of a JPEG goes out as PNG", StillFile.MIME_PNG, cut.file.mimeType)
+        assertTrue(cut.detail!!.contains("PNG"))
+        val flat = run(PipelineOp(Pipeline(cutout = Cutout(backdrop = Backdrop.COLOUR))), jpg).single() as OpOutcome.Produced
+        assertEquals("a colour behind it stays JPEG", StillFile.MIME_JPEG, flat.file.mimeType)
+        val scanned = run(PipelineOp(Pipeline(scan = Scan(ScanMode.GREY))), jpg).single() as OpOutcome.Produced
+        assertEquals(640, scanned.file.width)
+        assertTrue(Pipeline(scan = Scan(ScanMode.INK)).summary().isNotBlank())
     }
 }

@@ -47,7 +47,15 @@ enum class ToolId(
     APPLY_RECIPE(R.string.tool_recipe_title, R.string.tool_recipe_summary, R.string.tool_recipe_action, Group.BATCH, Mode.BATCH),
     COLLAGE(R.string.tool_collage_title, R.string.tool_collage_summary, R.string.tool_collage_action, Group.BATCH, Mode.BATCH),
     /** The one batch screen: every step composed into one run. */
-    PROCESS(R.string.tool_process_title, R.string.tool_process_summary, R.string.tool_process_action, Group.BATCH, Mode.BATCH);
+    PROCESS(R.string.tool_process_title, R.string.tool_process_summary, R.string.tool_process_action, Group.BATCH, Mode.BATCH),
+
+    CUTOUT(R.string.tool_cutout_title, R.string.tool_cutout_summary, R.string.tool_cutout_action, Group.MARK, Mode.EDITOR, Panel.CUTOUT),
+    SIGNATURE(R.string.tool_signature_title, R.string.tool_signature_summary, R.string.tool_signature_action, Group.MARK, Mode.EDITOR, Panel.CUTOUT),
+    STICKER(R.string.tool_sticker_title, R.string.tool_sticker_summary, R.string.tool_sticker_action, Group.MARK, Mode.EDITOR, Panel.CUTOUT),
+    SCAN(R.string.tool_scan_title, R.string.tool_scan_summary, R.string.tool_scan_action, Group.EDIT, Mode.EDITOR, Panel.SCAN),
+    RED_EYE(R.string.tool_redeye_title, R.string.tool_redeye_summary, R.string.tool_redeye_action, Group.MARK, Mode.EDITOR, Panel.RETOUCH),
+    WHITE_BALANCE(R.string.tool_neutral_title, R.string.tool_neutral_summary, R.string.tool_neutral_action, Group.EDIT, Mode.EDITOR, Panel.COLOUR),
+    PASSPORT(R.string.tool_passport_title, R.string.tool_passport_summary, R.string.tool_passport_action, Group.SIZE, Mode.BATCH);
 
     val title: String get() = Strings.get(titleRes)
     val summary: String get() = Strings.get(summaryRes)
@@ -56,7 +64,7 @@ enum class ToolId(
     enum class Mode { EDITOR, BATCH }
 
     /** The editor's panels. Order here is the order of the strip under the canvas. */
-    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
+    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, CUTOUT, SCAN, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
 
     /** How the home board groups the tools. Order here is the order on screen. */
     enum class Group(@StringRes val titleRes: Int) {

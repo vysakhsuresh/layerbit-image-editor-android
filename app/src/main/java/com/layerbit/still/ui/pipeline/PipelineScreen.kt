@@ -45,7 +45,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.layerbit.still.R
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.FitSize
+import com.layerbit.still.engine.ScanMode
 import com.layerbit.still.engine.Look
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.OutputFormat
@@ -251,6 +254,19 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
             Knob(stringResource(R.string.frame_border), s.frame.border, 0f..0.1f, onChange = { set(s.copy(frame = s.frame.copy(border = it))) }, onDone = {}, onReset = { set(s.copy(frame = s.frame.copy(border = 0f))) })
             Knob(stringResource(R.string.frame_corners), s.frame.cornerRadius, 0f..0.3f, onChange = { set(s.copy(frame = s.frame.copy(cornerRadius = it))) }, onDone = {}, onReset = { set(s.copy(frame = s.frame.copy(cornerRadius = 0f))) })
             ToggleRow(stringResource(R.string.frame_blurred), s.frame.blurredFill, { set(s.copy(frame = s.frame.copy(blurredFill = it))) })
+        }
+        Step("cutout", stringResource(R.string.tool_cutout_title), stringResource(R.string.step_cutout_detail), R.drawable.ic_tool_cutout, Color(0xFFB08CFF), s.cutoutOn, { set(s.copy(cutoutOn = it)) }) {
+            ChipRow(listOf(CutoutMode.SUBJECT to stringResource(R.string.cutout_subject), CutoutMode.INK to stringResource(R.string.cutout_ink)), s.cutoutMode, { set(s.copy(cutoutMode = it)) })
+            ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur)), s.cutoutBackdrop, { set(s.copy(cutoutBackdrop = it)) })
+            if (s.cutoutBackdrop == Backdrop.COLOUR) ColourRow(listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt()), s.cutoutColor, { set(s.copy(cutoutColor = it)) })
+            if (s.cutoutBackdrop == Backdrop.BLUR) Knob(stringResource(R.string.cutout_blur_amount), s.cutoutBlur, 0.005f..0.1f, onChange = { set(s.copy(cutoutBlur = it)) }, onDone = {}, onReset = { set(s.copy(cutoutBlur = 0.03f)) }, format = { "${(it * 1000).roundToInt()}" })
+            Hint(stringResource(R.string.step_cutout_hint))
+        }
+        Step("scan", stringResource(R.string.tool_scan_title), stringResource(R.string.step_scan_detail), R.drawable.ic_tool_scan, Color(0xFF5B9DFF), s.scanOn, { set(s.copy(scanOn = it)) }) {
+            ChipRow(listOf(ScanMode.COLOUR to stringResource(R.string.scan_colour), ScanMode.GREY to stringResource(R.string.scan_grey), ScanMode.INK to stringResource(R.string.scan_ink)), s.scanMode, { set(s.copy(scanMode = it)) })
+            Knob(stringResource(R.string.scan_strength), s.scanStrength, 0f..1f, onChange = { set(s.copy(scanStrength = it)) }, onDone = {}, onReset = { set(s.copy(scanStrength = 1f)) }, format = { "${(it * 100).roundToInt()}" })
+            Knob(stringResource(R.string.scan_whiten), s.scanWhiten, 0f..1f, onChange = { set(s.copy(scanWhiten = it)) }, onDone = {}, onReset = { set(s.copy(scanWhiten = 0.5f)) }, format = { "${(it * 100).roundToInt()}" })
+            Hint(stringResource(R.string.scan_hint))
         }
         Panel(Modifier.fillMaxWidth(), tint = StillColors.Done, inset = 14.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {

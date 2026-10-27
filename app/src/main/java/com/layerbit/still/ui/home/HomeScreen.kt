@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.layerbit.still.R
 import com.layerbit.still.brand.BrandLinks
 import com.layerbit.still.files.ImageStore
+import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ui.components.Panel
 import com.layerbit.still.ui.components.Pill
 import com.layerbit.still.ui.components.RoundIconButton
@@ -71,6 +72,7 @@ fun HomeScreen(
     onForgetProject: (ImageStore.Project) -> Unit,
     onEditOne: () -> Unit,
     onProcessMany: (String?) -> Unit,
+    onQuickTool: (ToolId) -> Unit,
     onCollage: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
@@ -97,10 +99,23 @@ fun HomeScreen(
         }
         item(key = "quick") {
             SectionHeading(stringResource(R.string.home_quick), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Quick(Glyph.RESIZE_KB, stringResource(R.string.home_quick_under), Modifier.weight(1f)) { onProcessMany("under") }
-                Quick(Glyph.STRIP, stringResource(R.string.home_quick_clean), Modifier.weight(1f)) { onProcessMany("clean") }
-                Quick(Glyph.CONVERT, stringResource(R.string.home_quick_convert), Modifier.weight(1f)) { onProcessMany("convert") }
+            // Each icon acts out its tool. One picture tools ask for the picture first; batch tools open the steps ready.
+            val quick = listOf(
+                Triple(Glyph.CUTOUT, R.string.home_quick_cutout) { onQuickTool(ToolId.CUTOUT) },
+                Triple(Glyph.SCAN, R.string.home_quick_scan) { onQuickTool(ToolId.SCAN) },
+                Triple(Glyph.SIGNATURE, R.string.home_quick_signature) { onQuickTool(ToolId.SIGNATURE) },
+                Triple(Glyph.RESIZE_KB, R.string.home_quick_under) { onProcessMany("under") },
+                Triple(Glyph.PASSPORT, R.string.home_quick_passport) { onProcessMany("passport") },
+                Triple(Glyph.STRIP, R.string.home_quick_clean) { onProcessMany("clean") },
+                Triple(Glyph.REDEYE, R.string.home_quick_redeye) { onQuickTool(ToolId.RED_EYE) },
+                Triple(Glyph.NEUTRAL, R.string.home_quick_neutral) { onQuickTool(ToolId.WHITE_BALANCE) },
+                Triple(Glyph.STICKER, R.string.home_quick_sticker) { onQuickTool(ToolId.STICKER) },
+                Triple(Glyph.CONVERT, R.string.home_quick_convert) { onProcessMany("convert") },
+                Triple(Glyph.WATERMARK, R.string.home_quick_watermark) { onProcessMany("watermark") },
+                Triple(Glyph.COLLAGE, R.string.home_quick_collage) { onCollage() }
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().testTag("quickTools")) {
+                items(quick.size) { i -> val (glyph, label, action) = quick[i]; Quick(glyph, stringResource(label), Modifier.width(96.dp), action) }
             }
         }
         item(key = "footer") {
@@ -171,7 +186,7 @@ private fun Door(glyph: Glyph, accent: Color, title: String, body: String, onCli
 private fun Quick(glyph: Glyph, label: String, modifier: Modifier, onClick: () -> Unit) {
     Panel(modifier = modifier, onClick = onClick, inset = 10.dp) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            AnimatedGlyph(glyph, StillColors.Muted, Modifier.size(26.dp), seed = glyph.ordinal * 11)
+            AnimatedGlyph(glyph, StillColors.Band, Modifier.size(34.dp), seed = glyph.ordinal * 11)
             Text(label, style = MaterialTheme.typography.labelSmall, color = StillColors.Text, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp), maxLines = 2)
         }
     }

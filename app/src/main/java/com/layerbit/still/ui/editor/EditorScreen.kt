@@ -85,6 +85,7 @@ fun EditorScreen(
     projectId: String?,
     uri: String?,
     startPanel: ToolId.Panel,
+    startTool: ToolId?,
     onBack: () -> Unit,
     onStripMetadata: (com.layerbit.still.files.StillFile) -> Unit,
     vm: EditorViewModel = viewModel()
@@ -95,8 +96,8 @@ fun EditorScreen(
     val ui by vm.ui.collectAsState()
 
     LaunchedEffect(projectId, uri) {
-        if (projectId != null) vm.open(projectId, startPanel)
-        else if (uri != null) vm.openUri(Uri.parse(uri), startPanel)
+        if (projectId != null) vm.open(projectId, startPanel, startTool)
+        else if (uri != null) vm.openUri(Uri.parse(uri), startPanel, startTool)
     }
 
     val transform = remember { CanvasTransform() }
@@ -108,6 +109,10 @@ fun EditorScreen(
     var editingText by remember { mutableIntStateOf(-1) }
     var presetDialog by remember { mutableStateOf(false) }
     var draggingText by remember { mutableIntStateOf(-1) }
+    var cutKeep by rememberSaveable { mutableStateOf(true) }
+    var cutWidth by rememberSaveable { mutableFloatStateOf(0.06f) }
+    var pickingNeutral by rememberSaveable { mutableStateOf(startTool == ToolId.WHITE_BALANCE) }
+    LaunchedEffect(startTool) { if (startTool == ToolId.RED_EYE) brush = brush.copy(kind = MarkKind.REDEYE, width = 0.03f) }
 
     val density = LocalDensity.current
     val reach = with(density) { 24.dp.toPx() }
@@ -140,6 +145,7 @@ fun EditorScreen(
         panel == ToolId.Panel.PERSPECTIVE -> Overlay.QuadOverlay(recipe.geometry.quad)
         panel == ToolId.Panel.MARKUP && brush.kind == MarkKind.TEXT -> if (strokePoints.isEmpty()) Overlay.Texts(recipe.marks.filter { it.kind == MarkKind.TEXT && it.visible }) else Overlay.None
         panel == ToolId.Panel.MARKUP || panel == ToolId.Panel.RETOUCH -> Overlay.Stroke(brush.kind, strokePoints, brush.color, brush.width, brush.cloneSource.takeIf { brush.kind == MarkKind.CLONE })
+        panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         else -> Overlay.None
     }
 
@@ -167,8 +173,16 @@ fun EditorScreen(
             onDrag = { corner, pt, _ -> val q = moveCorner(recipe.geometry.quad, corner, pt); if (q.valid) vm.draft(recipe.copy(geometry = recipe.geometry.copy(quad = q))) },
             onEnd = { vm.commit() }
         )
+        ToolId.Panel.CUTOUT -> if (recipe.cutout.mode == com.layerbit.still.engine.CutoutMode.SUBJECT) TouchMode.Draw(
+            onStart = { p -> strokePoints = listOf(p) },
+            onMove = { p -> if (strokePoints.size < Mark.MAX_POINTS) strokePoints = strokePoints + p },
+            onEnd = { val pts = strokePoints; strokePoints = emptyList(); if (pts.isNotEmpty()) vm.addScribble(pts, cutWidth, cutKeep) },
+            onCancel = { strokePoints = emptyList() }
+        ) else TouchMode.View
+        ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else TouchMode.View
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
             brush.pickingSource -> TouchMode.Tap { p -> brush = brush.copy(cloneSource = p, pickingSource = false) }
+            brush.kind == MarkKind.REDEYE && panel == ToolId.Panel.RETOUCH -> TouchMode.Tap { p -> addMark(listOf(p), MarkKind.REDEYE) }
             brush.kind == MarkKind.TEXT && panel == ToolId.Panel.MARKUP -> TouchMode.Handles(
                 hit = { at -> recipe.marks.indices.firstOrNull { i -> val m = recipe.marks[i]; m.kind == MarkKind.TEXT && m.visible && (transform.toOffset(m.points.first()) - at).getDistance() <= reach * 1.6f } },
                 onDrag = { i, pt, _ -> draggingText = i; vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).copy(points = listOf(pt))) })) },
@@ -230,12 +244,14 @@ fun EditorScreen(
                             ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it })
                             ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope)
                             ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto)
-                            ToolId.Panel.COLOUR -> ColourPanel(scope)
+                            ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it })
+                            ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles)
+                            ToolId.Panel.SCAN -> ScanPanel(scope)
                             ToolId.Panel.CURVES -> CurvesPanel(scope)
                             ToolId.Panel.LOOKS -> LooksPanel(scope, ui.presets, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset)
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
-                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics)
+                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> FramePanel(scope)
                             ToolId.Panel.DETAILS -> DetailsPanel(remember(project) { project?.let { still.store.details(it.file) } ?: emptyList() }, onStrip = { project?.let { onStripMetadata(it.file) } })
@@ -363,6 +379,7 @@ fun panelLabel(p: ToolId.Panel): String = stringResource(
         ToolId.Panel.COLOUR -> R.string.panel_colour; ToolId.Panel.CURVES -> R.string.panel_curves; ToolId.Panel.LOOKS -> R.string.panel_looks; ToolId.Panel.DETAIL -> R.string.panel_detail
         ToolId.Panel.MARKUP -> R.string.panel_markup; ToolId.Panel.RETOUCH -> R.string.panel_retouch; ToolId.Panel.LAYERS -> R.string.panel_layers; ToolId.Panel.FRAME -> R.string.panel_frame
         ToolId.Panel.DETAILS -> R.string.panel_details; ToolId.Panel.EXPORT -> R.string.panel_export
+        ToolId.Panel.CUTOUT -> R.string.panel_cutout; ToolId.Panel.SCAN -> R.string.panel_scan
     }
 )
 

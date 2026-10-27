@@ -30,6 +30,13 @@ fun iconFor(tool: ToolId): Int = when (tool) {
     ToolId.APPLY_RECIPE -> R.drawable.ic_tool_recipe
     ToolId.COLLAGE -> R.drawable.ic_tool_collage
     ToolId.PROCESS -> R.drawable.ic_tool_recipe
+    ToolId.CUTOUT -> R.drawable.ic_tool_cutout
+    ToolId.SIGNATURE -> R.drawable.ic_tool_signature
+    ToolId.STICKER -> R.drawable.ic_tool_sticker
+    ToolId.SCAN -> R.drawable.ic_tool_scan
+    ToolId.RED_EYE -> R.drawable.ic_tool_redeye
+    ToolId.WHITE_BALANCE -> R.drawable.ic_tool_neutral
+    ToolId.PASSPORT -> R.drawable.ic_tool_passport
 }
 
 /** The panel's icon, for the strip under the editor canvas. */
@@ -48,6 +55,8 @@ fun iconFor(panel: ToolId.Panel): Int = when (panel) {
     ToolId.Panel.FRAME -> R.drawable.ic_tool_frame
     ToolId.Panel.DETAILS -> R.drawable.ic_tool_details
     ToolId.Panel.EXPORT -> R.drawable.ic_tool_export
+    ToolId.Panel.CUTOUT -> R.drawable.ic_tool_cutout
+    ToolId.Panel.SCAN -> R.drawable.ic_tool_scan
 }
 
 /** Which drawn, moving icon replaces each static one. A drawable with no entry stays still. */
@@ -80,6 +89,13 @@ fun glyphFor(@DrawableRes icon: Int): Glyph? = when (icon) {
     R.drawable.ic_redo -> Glyph.REDO
     R.drawable.ic_plus -> Glyph.PLUS
     R.drawable.ic_compare -> Glyph.COMPARE
+    R.drawable.ic_tool_cutout -> Glyph.CUTOUT
+    R.drawable.ic_tool_signature -> Glyph.SIGNATURE
+    R.drawable.ic_tool_sticker -> Glyph.STICKER
+    R.drawable.ic_tool_scan -> Glyph.SCAN
+    R.drawable.ic_tool_redeye -> Glyph.REDEYE
+    R.drawable.ic_tool_neutral -> Glyph.NEUTRAL
+    R.drawable.ic_tool_passport -> Glyph.PASSPORT
     else -> null
 }
 

@@ -38,7 +38,8 @@ import kotlin.math.sin
 enum class Glyph {
     EDIT, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, MARKUP, RETOUCH, FRAME, WATERMARK,
     RESIZE, RESIZE_KB, COMPRESS, CONVERT, STRIP, DETAILS, ENHANCE, RECIPE, COLLAGE, LAYERS, EXPORT,
-    GEAR, STAR, SEARCH, INFO, SHARE, SEND, MAIL, HEART, CHECK, PLUS, LOCK, UNDO, REDO, COMPARE
+    GEAR, STAR, SEARCH, INFO, SHARE, SEND, MAIL, HEART, CHECK, PLUS, LOCK, UNDO, REDO, COMPARE,
+    CUTOUT, SIGNATURE, STICKER, SCAN, REDEYE, NEUTRAL, PASSPORT
 }
 
 private const val PLAYS = 4f
@@ -94,6 +95,13 @@ fun DrawScope.drawGlyph(glyph: Glyph, c: Color, x: Float, lap: Float = x) {
         Glyph.UNDO -> undo(c, x, false)
         Glyph.REDO -> undo(c, x, true)
         Glyph.COMPARE -> compare(c, x)
+        Glyph.CUTOUT -> cutout(c, x, lap)
+        Glyph.SIGNATURE -> signature(c, x)
+        Glyph.STICKER -> sticker(c, x)
+        Glyph.SCAN -> scan(c, x)
+        Glyph.REDEYE -> redEye(c, x)
+        Glyph.NEUTRAL -> neutral(c, x)
+        Glyph.PASSPORT -> passport(c, x)
     }
 }
 
@@ -578,4 +586,123 @@ private fun DrawScope.label(text: String, c: Color, at: Offset, size: Float, alp
         typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
     }
     drawContext.canvas.nativeCanvas.drawText(text, at.x, at.y + size * 0.35f, paint)
+}
+
+// ---------------------------------------------------------------- the newer tools
+
+/** The subject's outline marches round it and the background fades away behind. */
+private fun DrawScope.cutout(c: Color, x: Float, lap: Float) {
+    val f = hold(x, 0.12f, 0.45f, 0.75f, 0.98f)
+    val l = 0.1f; val t = 0.14f; val w = 0.8f; val h = 0.64f
+    // The frame and sky go first; the hill and sun stay.
+    drawRoundRect(c.copy(alpha = 0.16f * (1f - f)), p(l, t), sz(w, h), CornerRadius(s() * 0.04f))
+    drawRoundRect(c.copy(alpha = 1f - 0.85f * f), p(l, t), sz(w, h), CornerRadius(s() * 0.04f), style = stroke(thin()))
+    val hill = Path().apply {
+        moveTo(l * s(), (t + h) * s()); lineTo((l + w * 0.38f) * s(), (t + h * 0.5f) * s()); lineTo((l + w * 0.62f) * s(), (t + h * 0.74f) * s())
+        lineTo((l + w * 0.8f) * s(), (t + h * 0.6f) * s()); lineTo((l + w) * s(), (t + h) * s()); close()
+    }
+    drawPath(hill, c.copy(alpha = 0.85f))
+    drawCircle(c, w * 0.1f * s(), p(l + w * 0.72f, t + h * 0.3f))
+    val dash = s() * 0.07f
+    drawPath(hill, c.copy(alpha = 0.35f + 0.65f * f), style = Stroke(thin(), cap = StrokeCap.Round, join = StrokeJoin.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash * 0.8f), -lap * dash * 18f)))
+    drawLine(c, p(0.14f, 0.9f), p(0.86f, 0.9f), thin(), StrokeCap.Round)
+}
+
+/** A pen signs its flourish, then the paper fades and only the ink is left. */
+private fun DrawScope.signature(c: Color, x: Float) {
+    val write = seg(x, 0.05f, 0.55f)
+    val lift = seg(x, 0.6f, 0.9f)
+    drawRoundRect(c.copy(alpha = 0.16f * (1f - 0.9f * lift)), p(0.08f, 0.2f), sz(0.84f, 0.6f), CornerRadius(s() * 0.04f))
+    drawRoundRect(c.copy(alpha = 1f - 0.85f * lift), p(0.08f, 0.2f), sz(0.84f, 0.6f), CornerRadius(s() * 0.04f), style = stroke(thin()))
+    val flourish = Path().apply {
+        moveTo(0.16f * s(), 0.6f * s())
+        cubicTo(0.26f * s(), 0.3f * s(), 0.34f * s(), 0.3f * s(), 0.34f * s(), 0.5f * s())
+        cubicTo(0.34f * s(), 0.68f * s(), 0.44f * s(), 0.66f * s(), 0.5f * s(), 0.42f * s())
+        cubicTo(0.54f * s(), 0.28f * s(), 0.6f * s(), 0.3f * s(), 0.6f * s(), 0.5f * s())
+        cubicTo(0.6f * s(), 0.66f * s(), 0.7f * s(), 0.64f * s(), 0.78f * s(), 0.4f * s())
+        cubicTo(0.82f * s(), 0.3f * s(), 0.86f * s(), 0.36f * s(), 0.88f * s(), 0.44f * s())
+    }
+    drawPath(partial(flourish, write), c, style = stroke(line()))
+}
+
+/** A sticker peels up at the corner and shows its white backing. */
+private fun DrawScope.sticker(c: Color, x: Float) {
+    val peel = bump(seg(x, 0.1f, 0.9f)) * 0.14f
+    drawRoundRect(c.copy(alpha = 0.18f), p(0.14f, 0.14f), sz(0.72f, 0.72f), CornerRadius(s() * 0.1f))
+    drawRoundRect(c, p(0.14f, 0.14f), sz(0.72f, 0.72f), CornerRadius(s() * 0.1f), style = stroke(thin()))
+    // The face: two eyes and a smile that widens as it peels.
+    drawCircle(c, s() * 0.035f, p(0.38f, 0.42f)); drawCircle(c, s() * 0.035f, p(0.62f, 0.42f))
+    val smile = Path().apply { moveTo(0.36f * s(), 0.58f * s()); quadraticBezierTo(0.5f * s(), (0.64f + peel * 0.8f) * s(), 0.64f * s(), 0.58f * s()) }
+    drawPath(smile, c, style = stroke(thin()))
+    // The lifted corner, white underneath.
+    val k = 0.2f + peel
+    val corner = Path().apply { moveTo((0.86f - k) * s(), 0.86f * s()); lineTo(0.86f * s(), (0.86f - k) * s()); lineTo((0.86f - k * 0.1f) * s(), (0.86f - k * 0.1f) * s()); close() }
+    drawPath(corner, Color.White.copy(alpha = 0.9f))
+    drawPath(corner, c, style = stroke(thin()))
+}
+
+/** A photographed page squares up and a scan line whitens it as it passes. */
+private fun DrawScope.scan(c: Color, x: Float) {
+    val square = seg(x, 0.08f, 0.4f)
+    val sweep = seg(x, 0.42f, 0.86f)
+    val skew = 0.1f * (1f - square)
+    val page = Path().apply {
+        moveTo((0.22f + skew) * s(), 0.1f * s()); lineTo((0.78f - skew) * s(), 0.1f * s()); lineTo(0.84f * s(), 0.9f * s()); lineTo(0.16f * s(), 0.9f * s()); close()
+    }
+    drawPath(page, c.copy(alpha = 0.12f + 0.1f * sweep))
+    drawPath(page, c, style = stroke(thin()))
+    for (i in 0 until 4) {
+        val y = 0.28f + i * 0.16f
+        val lit = if (sweep > 0f && y < 0.12f + sweep * 0.8f) 1f else 0.45f
+        val inset = 0.3f + skew * (1f - i / 3f) * 0.5f
+        drawLine(c.copy(alpha = lit), p(inset, y), p(1f - inset + 0.04f * (i % 2), y), thin(), StrokeCap.Round)
+    }
+    if (sweep > 0f && sweep < 1f) drawLine(c, p(0.1f, 0.12f + sweep * 0.8f), p(0.9f, 0.12f + sweep * 0.8f), line(), StrokeCap.Round)
+}
+
+/** An eye whose flash-red pupil goes back to black. */
+private fun DrawScope.redEye(c: Color, x: Float) {
+    val fix = seg(x, 0.3f, 0.7f)
+    val eye = Path().apply {
+        moveTo(0.06f * s(), 0.5f * s()); cubicTo(0.26f * s(), 0.16f * s(), 0.74f * s(), 0.16f * s(), 0.94f * s(), 0.5f * s())
+        cubicTo(0.74f * s(), 0.84f * s(), 0.26f * s(), 0.84f * s(), 0.06f * s(), 0.5f * s()); close()
+    }
+    drawPath(eye, c.copy(alpha = 0.12f))
+    drawPath(eye, c, style = stroke(thin()))
+    drawCircle(c, s() * 0.2f, p(0.5f, 0.5f), style = stroke(thin()))
+    val red = Color(0xFFE63946)
+    drawCircle(red.copy(alpha = 1f - fix), s() * 0.1f, p(0.5f, 0.5f))
+    drawCircle(c.copy(alpha = fix), s() * 0.1f, p(0.5f, 0.5f))
+    drawCircle(Color.White.copy(alpha = 0.9f), s() * 0.035f, p(0.56f, 0.44f))
+}
+
+/** An eyedropper taps the picture and the cast drains out of the frame. */
+private fun DrawScope.neutral(c: Color, x: Float) {
+    val tap = bump(seg(x, 0.2f, 0.5f))
+    val drain = seg(x, 0.45f, 0.85f)
+    photo(c, 0.08f, 0.2f, 0.56f, 0.46f, alpha = 0.6f + 0.4f * drain, sun = 0.5f)
+    val dy = -0.06f * tap
+    val dropper = Path().apply {
+        moveTo(0.58f * s(), (0.7f + dy) * s()); lineTo(0.76f * s(), (0.52f + dy) * s()); lineTo(0.86f * s(), (0.62f + dy) * s()); lineTo(0.68f * s(), (0.8f + dy) * s()); close()
+    }
+    drawPath(dropper, c)
+    drawLine(c, p(0.86f, 0.62f + dy), p(0.92f, 0.56f + dy), line(), StrokeCap.Round)
+    drawLine(c, p(0.58f, 0.7f + dy), p(0.5f, 0.78f + dy), thin(), StrokeCap.Round)
+    drawCircle(c.copy(alpha = 0.5f * tap), s() * 0.12f * (0.4f + tap), p(0.44f, 0.52f), style = stroke(thin()))
+}
+
+/** A portrait frame snaps to the passport size and its dimensions are ticked off. */
+private fun DrawScope.passport(c: Color, x: Float) {
+    val snap = seg(x, 0.1f, 0.4f)
+    val tick = seg(x, 0.5f, 0.75f)
+    val inset = lerp(0.04f, 0.16f, snap)
+    drawRect(c.copy(alpha = 0.12f), p(inset, 0.08f), sz(1f - 2 * inset, 0.84f))
+    drawRect(c, p(inset, 0.08f), sz(1f - 2 * inset, 0.84f), style = stroke(thin()))
+    drawCircle(c, s() * 0.14f, p(0.5f, 0.4f), style = stroke(line()))
+    val shoulders = Path().apply { moveTo((inset + 0.08f) * s(), 0.86f * s()); quadraticBezierTo(0.5f * s(), 0.56f * s(), (1f - inset - 0.08f) * s(), 0.86f * s()) }
+    drawPath(shoulders, c, style = stroke(line()))
+    if (tick > 0f) {
+        val check = Path().apply { moveTo(0.74f * s(), 0.16f * s()); lineTo(0.8f * s(), 0.22f * s()); lineTo(0.9f * s(), 0.1f * s()) }
+        drawPath(partial(check, tick), c, style = stroke(line()))
+    }
 }

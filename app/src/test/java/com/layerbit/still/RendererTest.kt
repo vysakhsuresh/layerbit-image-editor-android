@@ -6,7 +6,13 @@ import android.graphics.Color
 import androidx.exifinterface.media.ExifInterface
 import com.layerbit.still.engine.Crop
 import com.layerbit.still.engine.Curves
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.Scan
+import com.layerbit.still.engine.ScanMode
+import com.layerbit.still.engine.Scribble
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.JpegSegments
 import com.layerbit.still.engine.Look
@@ -243,5 +249,60 @@ class RendererTest {
         // SDK 28 in this test: lossless WebP is not available, and the format list says so.
         assertFalse(OutputFormat.WEBP_LOSSLESS.available)
         assertNotNull(OutputFormat.fromMime("image/webp"))
+    }
+
+    @Test
+    fun cutoutRemovesTheSceneEdgeKeepsTheMiddleAndSurvivesAPngExport() = runBlocking {
+        // A dark square in the middle of a light field: the subject every guess should find.
+        val w = 300; val h = 220
+        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        for (y in 0 until h) for (x in 0 until w) b.setPixel(x, y, if (x in 100..200 && y in 60..160) Color.rgb(30, 40, 120) else Color.rgb(225 - (x % 5), 220, 205))
+        val src = File(dir, "square.png"); src.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle()
+        val cut = Recipe(cutout = Cutout(enabled = true))
+        val out = renderer.render(src, cut)
+        assertEquals(0, Color.alpha(out.getPixel(10, 10)))
+        assertEquals(255, Color.alpha(out.getPixel(150, 110)))
+        // The export keeps the transparency in PNG and fills it in JPEG.
+        val png = export(src, cut, ExportOptions(OutputFormat.PNG), File(dir, "cut.png"))
+        val back = renderer.decode(png.file, 2_000_000)
+        assertEquals(0, Color.alpha(back.getPixel(10, 10))); back.recycle()
+        val jpg = export(src, cut, ExportOptions(OutputFormat.JPEG), File(dir, "cut.jpg"))
+        val flat = renderer.decode(jpg.file, 2_000_000)
+        assertTrue(Color.red(flat.getPixel(10, 10)) > 240); flat.recycle()
+        // Preview and export decide the same edge: the mask is one decision scaled.
+        val small = renderer.render(src, cut, maxPixels = 150 * 110)
+        assertEquals(0, Color.alpha(small.getPixel(5, 5))); assertEquals(255, Color.alpha(small.getPixel(75, 55)))
+        // A colour behind, a blur behind, and the inverse.
+        val coloured = renderer.render(src, Recipe(cutout = Cutout(enabled = true, backdrop = Backdrop.COLOUR, color = Color.rgb(10, 200, 10))))
+        assertEquals(Color.rgb(10, 200, 10), coloured.getPixel(10, 10))
+        val blurred = renderer.render(src, Recipe(cutout = Cutout(enabled = true, backdrop = Backdrop.BLUR)))
+        assertEquals(255, Color.alpha(blurred.getPixel(10, 10)))
+        val inverted = renderer.render(src, Recipe(cutout = Cutout(enabled = true, invert = true)))
+        assertEquals(255, Color.alpha(inverted.getPixel(10, 10))); assertEquals(0, Color.alpha(inverted.getPixel(150, 110)))
+        // A remove stroke across the square takes it out.
+        val struck = renderer.render(src, Recipe(cutout = Cutout(enabled = true, scribbles = listOf(Scribble(listOf(Pt(0.4f, 0.5f), Pt(0.6f, 0.5f)), 0.2f, keep = false)))))
+        assertEquals(0, Color.alpha(struck.getPixel(150, 110)))
+        out.recycle(); small.recycle(); coloured.recycle(); blurred.recycle(); inverted.recycle(); struck.recycle()
+    }
+
+    @Test
+    fun inkCutoutScanAndStickerExport() = runBlocking {
+        val w = 240; val h = 180
+        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        for (y in 0 until h) for (x in 0 until w) {
+            val light = 230 - x * 100 / w
+            b.setPixel(x, y, if (y in 80..90 && x in 20..200) Color.rgb(20, 20, 30) else Color.rgb(light, light - 4, light - 12))
+        }
+        val src = File(dir, "page.png"); src.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle()
+        val ink = renderer.render(src, Recipe(cutout = Cutout(enabled = true, mode = CutoutMode.INK)))
+        assertEquals(255, Color.alpha(ink.getPixel(100, 85))); assertEquals(0, Color.alpha(ink.getPixel(100, 30))); ink.recycle()
+        val scanned = renderer.render(src, Recipe(scan = Scan(ScanMode.COLOUR)))
+        assertTrue(Color.red(scanned.getPixel(230, 30)) > 235); assertTrue(Color.red(scanned.getPixel(230, 85)) < 90); scanned.recycle()
+        val sticker = export(src, Recipe(cutout = Cutout(enabled = true, mode = CutoutMode.INK)), ExportOptions(OutputFormat.JPEG, sticker = true), File(dir, "sticker.webp"))
+        assertEquals(512, sticker.width); assertEquals(512, sticker.height)
+        assertEquals(OutputFormat.WEBP, sticker.format)
+        assertTrue(sticker.bytes <= ExportOptions.STICKER_BYTES)
+        val decoded = renderer.decode(sticker.file, 2_000_000)
+        assertEquals(0, Color.alpha(decoded.getPixel(2, 2))); decoded.recycle()
     }
 }

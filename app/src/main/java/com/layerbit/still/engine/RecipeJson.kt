@@ -30,6 +30,13 @@ object RecipeJson {
             "aspect" to r.frame.aspect.json(), "padding" to r.frame.padding.json(), "border" to r.frame.border.json(),
             "borderColor" to r.frame.borderColor.json(), "background" to r.frame.background.json(),
             "cornerRadius" to r.frame.cornerRadius.json(), "blurredFill" to r.frame.blurredFill.json()
+        ),
+        "scan" to if (r.scan.isIdentity) null else jsonOf("mode" to r.scan.mode.name.json(), "strength" to r.scan.strength.json(), "whiten" to r.scan.whiten.json()),
+        "cutout" to if (r.cutout.isIdentity) null else jsonOf(
+            "enabled" to r.cutout.enabled.json(), "mode" to r.cutout.mode.name.json(),
+            "scribbles" to r.cutout.scribbles.map { jsonOf("points" to points(it.points), "width" to it.width.json(), "keep" to it.keep.json()) }.json(),
+            "feather" to r.cutout.feather.json(), "threshold" to r.cutout.threshold.json(), "invert" to r.cutout.invert.json(),
+            "backdrop" to r.cutout.backdrop.name.json(), "color" to r.cutout.color.json(), "blur" to r.cutout.blur.json()
         )
     )
 
@@ -72,6 +79,8 @@ object RecipeJson {
         val t = o["tone"]
         val c = o["curves"]
         val f = o["frame"]
+        val sc = o["scan"]
+        val cu = o["cutout"]
         val d = Recipe()
         return Recipe(
             geometry = Geometry(
@@ -104,6 +113,18 @@ object RecipeJson {
                 borderColor = f["borderColor"]?.num()?.toLong()?.toInt() ?: d.frame.borderColor,
                 background = f["background"]?.num()?.toLong()?.toInt() ?: d.frame.background,
                 cornerRadius = f.f("cornerRadius"), blurredFill = f["blurredFill"]?.bool() ?: false
+            ),
+            scan = if (sc == null) Scan() else Scan(
+                mode = sc["mode"]?.str()?.let { name -> ScanMode.entries.firstOrNull { it.name == name } } ?: ScanMode.OFF,
+                strength = sc["strength"]?.num()?.toFloat() ?: 1f, whiten = sc["whiten"]?.num()?.toFloat() ?: 0.5f
+            ),
+            cutout = if (cu == null) Cutout() else Cutout(
+                enabled = cu["enabled"]?.bool() ?: false,
+                mode = cu["mode"]?.str()?.let { name -> CutoutMode.entries.firstOrNull { it.name == name } } ?: CutoutMode.SUBJECT,
+                scribbles = cu["scribbles"]?.arr()?.map { sb -> Scribble(sb["points"]?.let { pts(it) } ?: emptyList(), sb["width"]?.num()?.toFloat() ?: 0.03f, sb["keep"]?.bool() ?: true) } ?: emptyList(),
+                feather = cu["feather"]?.num()?.toFloat() ?: 0.004f, threshold = cu.f("threshold"), invert = cu["invert"]?.bool() ?: false,
+                backdrop = cu["backdrop"]?.str()?.let { name -> Backdrop.entries.firstOrNull { it.name == name } } ?: Backdrop.TRANSPARENT,
+                color = cu["color"]?.num()?.toLong()?.toInt() ?: d.cutout.color, blur = cu["blur"]?.num()?.toFloat() ?: 0.03f
             )
         )
     }

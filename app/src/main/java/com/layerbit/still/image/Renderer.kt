@@ -25,6 +25,11 @@ import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.Backdrop
+import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.Retouch
+import com.layerbit.still.engine.ScanMath
+import com.layerbit.still.engine.Segment
 import com.layerbit.still.engine.Spatial
 import com.layerbit.still.engine.TonePipeline
 import kotlinx.coroutines.Dispatchers
@@ -220,7 +225,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * Tone, detail, layers and frame on a copy of [base]; [base] is left intact for the cache.
      * Suspends so the per-pixel stages can run across the cores.
      */
-    suspend fun finish(base: Bitmap, r: Recipe, check: () -> Unit = {}): Bitmap = withContext(Dispatchers.Default) {
+    suspend fun finish(base: Bitmap, r: Recipe, check: () -> Unit = {}, maskKey: String? = null, cutoutPreview: Boolean = false): Bitmap = withContext(Dispatchers.Default) {
         val w = base.width; val h = base.height
         val pixels = IntArray(w * h)
         base.getPixels(pixels, 0, w, 0, 0, w, h)
@@ -230,6 +235,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (!pipeline.isIdentity) parallelRows(h) { from, to -> pipeline.apply(pixels, w, from, to) }
         check()
         var working = pixels
+        // Paper cleanup before detail, so sharpening works on clean ink.
+        if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
             working = Spatial.detail(working, w, h, tone, check)
         }
@@ -243,10 +250,116 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                 check()
                 if (mark.visible && mark.points.isNotEmpty()) drawMark(out, mark, check)
             }
-            if (r.frame.isIdentity) out else frame(out, r.frame, check).also { out.recycle() }
+            var picture = out
+            if (r.cutout.enabled || cutoutPreview) {
+                val cut = cutoutStage(picture, base, r.cutout, maskKey, cutoutPreview, check)
+                picture.recycle(); picture = cut
+            }
+            if (r.frame.isIdentity) picture else frame(picture, r.frame, check).also { picture.recycle() }
         } catch (t: Throwable) {
             out.recycle(); throw t
         }
+    }
+
+    // ------------------------------------------------------------------ cut-out
+
+    private class MaskEntry(val key: String, val width: Int, val height: Int, val mask: IntArray)
+    private val maskCache = ArrayDeque<MaskEntry>()
+
+    /**
+     * The mask decided at the analysis size from the geometry stage [base], remembered under
+     * [key] so the export reuses the preview's decision pixel for pixel. The caller's key must
+     * change with the picture and its geometry; the cut-out's own parameters are added here.
+     */
+    private fun maskFor(base: Bitmap, cut: Cutout, key: String?, check: () -> Unit): MaskEntry {
+        val size = Segment.analysisSize(base.width, base.height)
+        val cacheKey = "${key ?: ""}|${cut.maskKey}|${size.width}x${size.height}"
+        synchronized(maskCache) { maskCache.firstOrNull { it.key == cacheKey }?.let { return it } }
+        val small = scale(base, size.width, size.height)
+        val px = IntArray(size.width * size.height)
+        small.getPixels(px, 0, size.width, 0, 0, size.width, size.height)
+        if (small !== base) small.recycle()
+        check()
+        val entry = MaskEntry(cacheKey, size.width, size.height, Segment.mask(px, size.width, size.height, cut, check))
+        if (key != null) synchronized(maskCache) { maskCache.removeAll { it.key == cacheKey }; maskCache.addFirst(entry); while (maskCache.size > 3) maskCache.removeLast() }
+        return entry
+    }
+
+    /** Hard numbers about a cut-out for the panel: how much of the picture is kept. */
+    fun cutoutCoverage(base: Bitmap, cut: Cutout, key: String?, check: () -> Unit = {}): Float {
+        val e = maskFor(base, cut, key, check)
+        return if (cut.invert) 1f - Segment.coverage(e.mask) else Segment.coverage(e.mask)
+    }
+
+    /**
+     * The picture with its background removed, or shown under a red wash while the user is
+     * deciding ([preview]); then transparent, a flat colour, or a blur of the picture behind it.
+     */
+    private fun cutoutStage(picture: Bitmap, base: Bitmap, cut: Cutout, key: String?, preview: Boolean, check: () -> Unit): Bitmap {
+        val w = picture.width; val h = picture.height
+        val analysis = maskFor(base, cut, key, check)
+        var mask = Segment.resample(analysis.mask, analysis.width, analysis.height, w, h)
+        val featherPx = (cut.feather * min(w, h)).roundToInt()
+        if (featherPx > 0) mask = Segment.feather(mask, w, h, featherPx)
+        check()
+        val px = IntArray(w * h)
+        picture.getPixels(px, 0, w, 0, 0, w, h)
+        if (preview) {
+            for (i in px.indices) {
+                val m = if (cut.invert) 255 - mask[i] else mask[i]
+                val f = (255 - m) * 0.62f / 255f
+                if (f > 0f) {
+                    val c = px[i]
+                    px[i] = Argb.pack(Argb.alpha(c), (Argb.red(c) + (235 - Argb.red(c)) * f).roundToInt(), (Argb.green(c) + (40 - Argb.green(c)) * f).roundToInt(), (Argb.blue(c) + (70 - Argb.blue(c)) * f).roundToInt())
+                }
+            }
+        } else {
+            val behind: IntArray? = if (cut.backdrop == Backdrop.BLUR) blurredCopy(picture, cut.blur, check) else null
+            Segment.applyAlpha(px, mask, cut.invert)
+            if (cut.backdrop != Backdrop.TRANSPARENT) {
+                for (i in px.indices) {
+                    val top = px[i]; val a = Argb.alpha(top)
+                    if (a == 255) continue
+                    val under = behind?.get(i) ?: cut.color
+                    val ua = Argb.alpha(under)
+                    val outA = a + ua * (255 - a) / 255
+                    fun ch(t: Int, u: Int) = (t * a + u * (255 - a)) / 255
+                    px[i] = Argb.pack(outA, ch(Argb.red(top), Argb.red(under)), ch(Argb.green(top), Argb.green(under)), ch(Argb.blue(top), Argb.blue(under)))
+                }
+            }
+        }
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        out.setPixels(px, 0, w, 0, 0, w, h)
+        return out
+    }
+
+    /** The picture blurred by [fraction] of its shorter edge, done small and scaled back, as pixels at full size. */
+    private fun blurredCopy(picture: Bitmap, fraction: Float, check: () -> Unit): IntArray {
+        val w = picture.width; val h = picture.height
+        val small = scale(picture, max(1, w / 4), max(1, h / 4))
+        val sp = IntArray(small.width * small.height)
+        small.getPixels(sp, 0, small.width, 0, 0, small.width, small.height)
+        val blurred = Spatial.boxBlur(sp, small.width, small.height, max(1, (fraction * min(w, h) / 4).roundToInt()), check = check)
+        val bb = Bitmap.createBitmap(blurred, small.width, small.height, Bitmap.Config.ARGB_8888)
+        if (small !== picture) small.recycle()
+        val big = scale(bb, w, h)
+        val out = IntArray(w * h)
+        big.getPixels(out, 0, w, 0, 0, w, h)
+        if (big !== bb) big.recycle()
+        bb.recycle()
+        return out
+    }
+
+    /** A 512 x 512 transparent canvas with the picture fitted inside, as sticker apps want it. */
+    fun stickerCanvas(picture: Bitmap): Bitmap {
+        val out = Bitmap.createBitmap(STICKER_EDGE, STICKER_EDGE, Bitmap.Config.ARGB_8888)
+        val inner = STICKER_EDGE - 2 * STICKER_MARGIN
+        val k = min(inner.toFloat() / picture.width, inner.toFloat() / picture.height)
+        val w = max(1, (picture.width * k).roundToInt()); val h = max(1, (picture.height * k).roundToInt())
+        val fitted = scale(picture, w, h)
+        Canvas(out).drawBitmap(fitted, (STICKER_EDGE - w) / 2f, (STICKER_EDGE - h) / 2f, Paint(Paint.FILTER_BITMAP_FLAG))
+        if (fitted !== picture) fitted.recycle()
+        return out
     }
 
     private suspend fun parallelRows(h: Int, block: (Int, Int) -> Unit) {
@@ -293,6 +406,16 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             }
             MarkKind.TEXT -> drawText(c, m, start, size, p)
             MarkKind.WATERMARK -> drawWatermark(c, m, size, p)
+            MarkKind.REDEYE -> {
+                val radius = Geometry2D.px(m.width, size)
+                val x0 = (start[0] - radius - 1).toInt().coerceIn(0, b.width - 1); val y0 = (start[1] - radius - 1).toInt().coerceIn(0, b.height - 1)
+                val x1 = (start[0] + radius + 1).toInt().coerceIn(0, b.width - 1); val y1 = (start[1] + radius + 1).toInt().coerceIn(0, b.height - 1)
+                val rw = x1 - x0 + 1; val rh = y1 - y0 + 1
+                val region = IntArray(rw * rh)
+                b.getPixels(region, 0, rw, x0, y0, rw, rh)
+                Retouch.redEye(region, rw, rh, start[0] - x0, start[1] - y0, radius)
+                b.setPixels(region, 0, rw, x0, y0, rw, rh)
+            }
             MarkKind.ERASE -> { p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT); c.drawPath(path, p) }
             MarkKind.CLONE -> {
                 val src = m.source ?: return
@@ -424,7 +547,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     suspend fun render(file: File, r: Recipe, maxPixels: Long = budget, check: () -> Unit = {}): Bitmap {
         val base = geometry(file, r.geometry, maxPixels, check)
         try {
-            return finish(base.bitmap, r, check)
+            return finish(base.bitmap, r, check, maskKey = file.path + "|" + r.geometry.hashCode())
         } finally {
             base.bitmap.recycle()
         }
@@ -450,6 +573,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     }
 
     companion object {
+        const val STICKER_EDGE = 512
+        const val STICKER_MARGIN = 8
         /** The most a preview decode may oversample to: 24 MB of pixels, passing, on any phone. */
         const val OVERSAMPLE_CAP = 6_000_000L
 

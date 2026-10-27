@@ -28,7 +28,9 @@ Recipes are JSON written and read by hand, with a default for every missing fiel
 
 `Renderer.geometry` decodes within the budget (a preview decodes at twice the sampling and is halved with the filter, so it is the export's own shrink rather than skipped pixels), turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
 
-`Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables, across the cores by rows), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas and the frame. Every pure step is the same at any size, which `RendererTest.previewPredictsExport` measures.
+`Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables, across the cores by rows), `ScanMath` (the paper's light divided out), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas, the cut-out, and the frame.
+
+The cut-out (`engine/Segment.kt`) is decided once at a fixed analysis size chosen from the aspect alone: background colours learnt from the border, a first guess from what looks unlike them, then a geodesic distance from each seed set where crossing an edge costs more than crossing flat colour. The user's strokes are the only hard decisions; the mask is cached by picture, geometry and strokes and scaled to the preview and to the export, so both share one edge. Every pure step is the same at any size, which `RendererTest.previewPredictsExport` measures.
 
 ## Order of geometry, and why the crop is where it is
 

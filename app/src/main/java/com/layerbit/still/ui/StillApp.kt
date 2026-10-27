@@ -55,14 +55,15 @@ object Routes {
     const val SETTINGS = "settings"
     const val COLLAGE = "collage"
     const val PIPELINE = "pipeline?preset={preset}"
-    const val EDITOR = "editor?project={project}&uri={uri}&panel={panel}"
+    const val EDITOR = "editor?project={project}&uri={uri}&panel={panel}&tool={tool}"
 
     fun pipeline(preset: String? = null) = if (preset == null) "pipeline" else "pipeline?preset=$preset"
-    fun editor(project: String? = null, uri: String? = null, panel: ToolId.Panel = ToolId.Panel.CROP): String {
+    fun editor(project: String? = null, uri: String? = null, panel: ToolId.Panel = ToolId.Panel.CROP, tool: ToolId? = null): String {
         val args = buildList {
             if (project != null) add("project=" + Uri.encode(project))
             if (uri != null) add("uri=" + Uri.encode(uri))
             add("panel=" + panel.name)
+            if (tool != null) add("tool=" + tool.name)
         }
         return "editor?" + args.joinToString("&")
     }
@@ -70,7 +71,8 @@ object Routes {
 
 /** What arrived from outside and where it goes. */
 sealed interface Arrival {
-    data class One(val uri: Uri) : Arrival
+    /** One picture for the editor, opened on a tool's panel when a quick tool asked for it. */
+    data class One(val uri: Uri, val tool: ToolId? = null) : Arrival
     /** Several pictures, already handed to the pipeline through Handoff. */
     data object Many : Arrival
     data class Shortcut(val preset: String?) : Arrival
@@ -87,7 +89,7 @@ fun StillApp(
     arrivalTicket: Int,
     arrival: Arrival?,
     onPickPictures: () -> Unit,
-    onPickOne: () -> Unit
+    onPickOne: (ToolId?) -> Unit
 ) {
     val navController = rememberNavController()
     val context = LocalContext.current
@@ -102,7 +104,7 @@ fun StillApp(
     LaunchedEffect(arrivalTicket) {
         if (arrivalTicket == 0) return@LaunchedEffect
         when (val a = arrival) {
-            is Arrival.One -> navController.navigate(Routes.editor(uri = a.uri.toString())) { launchSingleTop = true }
+            is Arrival.One -> navController.navigate(Routes.editor(uri = a.uri.toString(), panel = a.tool?.panel ?: ToolId.Panel.CROP, tool = a.tool)) { launchSingleTop = true }
             Arrival.Many -> navController.navigate(Routes.pipeline()) { launchSingleTop = true }
             is Arrival.Shortcut -> navController.navigate(Routes.pipeline(a.preset)) { launchSingleTop = true }
             null -> Unit
@@ -119,8 +121,9 @@ fun StillApp(
                     onOpenPictures = onPickPictures,
                     onOpenProject = { p -> navController.navigate(Routes.editor(project = p.id)) },
                     onForgetProject = { removing = it },
-                    onEditOne = onPickOne,
+                    onEditOne = { onPickOne(null) },
                     onProcessMany = { preset -> navController.navigate(Routes.pipeline(preset)) },
+                    onQuickTool = { tool -> onPickOne(tool) },
                     onCollage = { navController.navigate(Routes.COLLAGE) },
                     onSettings = { navController.navigate(Routes.SETTINGS) },
                     onAbout = { navController.navigate(Routes.ABOUT) }
@@ -131,7 +134,8 @@ fun StillApp(
                 arguments = listOf(
                     navArgument("project") { type = NavType.StringType; nullable = true; defaultValue = null },
                     navArgument("uri") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("panel") { type = NavType.StringType; defaultValue = ToolId.Panel.CROP.name }
+                    navArgument("panel") { type = NavType.StringType; defaultValue = ToolId.Panel.CROP.name },
+                    navArgument("tool") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )
             ) { entry ->
                 val panel = ToolId.Panel.entries.firstOrNull { it.name == entry.arguments?.getString("panel") } ?: ToolId.Panel.CROP
@@ -139,6 +143,7 @@ fun StillApp(
                     projectId = entry.arguments?.getString("project"),
                     uri = entry.arguments?.getString("uri"),
                     startPanel = panel,
+                    startTool = ToolId.byName(entry.arguments?.getString("tool")),
                     onBack = { navController.popBackStack() },
                     onStripMetadata = { file -> still.handoff.offer(listOf(Uri.fromFile(file.file))); navController.navigate(Routes.pipeline("clean")) }
                 )
