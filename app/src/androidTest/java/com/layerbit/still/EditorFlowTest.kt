@@ -205,6 +205,9 @@ class EditorFlowTest {
         back()
         compose.waitForIdle()
 
+        compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("quickTools"))
+        settle()
+        screenshot("14-home-quick")
         compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("openPhotos"))
         app.settings.update { it.copy(theme = ThemeChoice.DARK) }
         settle()

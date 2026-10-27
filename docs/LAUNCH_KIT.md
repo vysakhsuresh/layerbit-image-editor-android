@@ -13,7 +13,7 @@ Three pictures fanned up and to the right: the back one in navy, the middle in p
 **Description:**
 Crop and straighten with real handles. Fix the light and colour, or tap Auto and see which sliders it moved. Curves, fourteen looks, draw and write, blur or cover a detail, clone over a blemish, frame it for a post.
 
-Get a photo under 50 KB for a form, as a passport photo if you need one. Resize fifty pictures at once. Convert to JPEG, PNG or WebP. Remove the location and camera data from a photo without touching a single pixel of the picture. Make a collage.
+Cut out the background and see what will go before it goes, then correct it with a stroke; put a colour or a blur behind, or make a sticker. Lift a signature off a photographed page. Scan a page so the paper is white and the ink is clean. Fix red eye with a tap; tap a white to fix a colour cast. Get a photo under 50 KB for a form, as a passport photo if you need one. Resize fifty pictures at once. Convert to JPEG, PNG or WebP. Remove the location and camera data from a photo without touching a single pixel of the picture. Make a collage.
 
 Still has no internet permission. Your pictures cannot leave the phone. Every edit works on a private copy; saving makes a new file where you choose. No account, no ads, no subscription, no paywall on the second tool.
 
