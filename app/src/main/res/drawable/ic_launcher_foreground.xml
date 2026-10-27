@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The Studio mark: a photograph in paper tones, its corner lifted by a crop bracket, cinched by
-  the family's one band. On the 108dp adaptive grid, kept inside the 33dp safe radius from
-  centre so nothing clips under a circle, squircle or teardrop mask.
+  The Studio mark: three pictures fanned up and to the right, the back one in navy, the
+  middle in paper, the front in the band with its hills and sun. Layers, the thing the app
+  is named for, and the promise that the original stays underneath. Every corner is within
+  the 33dp safe radius, so no mask clips it. The About screen draws this layer on its own.
 -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.9" android:scaleY="0.9">
-        <!-- The picture -->
-        <path android:pathData="M31,30 H77 A5,5 0 0 1 82,35 V73 A5,5 0 0 1 77,78 H31 A5,5 0 0 1 26,73 V35 A5,5 0 0 1 31,30 Z"
-            android:fillColor="#FFC6D1E5" android:strokeColor="#FF0B1220" android:strokeWidth="2.6" android:strokeLineJoin="round" />
-        <!-- Hills and sun -->
-        <path android:pathData="M28,74 L44,52 L54,62 L62,54 L80,74 Z" android:fillColor="#FF93A4C2" />
-        <path android:pathData="M28.6,75 L79.4,75 L79.4,73 L28.6,73 Z" android:fillColor="#FF93A4C2" />
-        <path android:pathData="M68,42 m-5,0 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0" android:fillColor="#FFF7F5EF" />
-        <!-- Crop brackets, lifted off two corners -->
-        <path android:pathData="M20,40 V24 H36" android:fillColor="#00000000" android:strokeColor="#FFF7F5EF" android:strokeWidth="4.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
-        <path android:pathData="M88,68 V84 H72" android:fillColor="#00000000" android:strokeColor="#FFF7F5EF" android:strokeWidth="4.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
-        <!-- The band -->
-        <path android:pathData="M41.25,66 H66.75 A5.5,5.5 0 0 1 72.25,71.5 A5.5,5.5 0 0 1 66.75,77 H41.25 A5.5,5.5 0 0 1 35.75,71.5 A5.5,5.5 0 0 1 41.25,66 Z"
-            android:fillColor="#FFF2A531" />
+    <group android:rotation="-14" android:pivotX="51" android:pivotY="58">
+        <path android:pathData="M35,42 H67 A5,5 0 0 1 72,47 V69 A5,5 0 0 1 67,74 H35 A5,5 0 0 1 30,69 V47 A5,5 0 0 1 35,42 Z" android:fillColor="#FF2A3552" android:strokeColor="#FF4B5A80" android:strokeWidth="1.4" />
+    </group>
+    <group android:rotation="-6" android:pivotX="54" android:pivotY="55">
+        <path android:pathData="M38,39 H70 A5,5 0 0 1 75,44 V66 A5,5 0 0 1 70,71 H38 A5,5 0 0 1 33,66 V44 A5,5 0 0 1 38,39 Z" android:fillColor="#FFD7DEEC" android:strokeColor="#FFAEB9D1" android:strokeWidth="1" />
+    </group>
+    <group android:rotation="5" android:pivotX="57" android:pivotY="51">
+        <path android:pathData="M41,35 H73 A5,5 0 0 1 78,40 V62 A5,5 0 0 1 73,67 H41 A5,5 0 0 1 36,62 V40 A5,5 0 0 1 41,35 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="36" android:startY="35" android:endX="78" android:endY="67">
+                    <item android:offset="0" android:color="#FFFFBE5C" />
+                    <item android:offset="0.55" android:color="#FFF2A531" />
+                    <item android:offset="1" android:color="#FFD9730C" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M39,64 L49.5,50 L56.5,57.5 L63.5,47 L75,64 Z" android:fillColor="#FFFFF6E8" />
+        <path android:pathData="M64.4,43.5 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z" android:fillColor="#FFFFF6E8" />
+        <path android:pathData="M41,38.5 H73" android:fillColor="#00000000" android:strokeColor="#47FFFFFF" android:strokeWidth="1.4" android:strokeLineCap="round" />
     </group>
 </vector>

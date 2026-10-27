@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  Deep navy, lit from the lower right by the band's warmth. The whole 108dp canvas: masks
+  take the outer third, so nothing here is a shape.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:pathData="M0,0 H108 V108 H0 Z" android:fillColor="@color/ic_launcher_background" />
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="108" android:endY="108">
+                <item android:offset="0" android:color="#FF1B2438" />
+                <item android:offset="1" android:color="#FF0A0F1B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="78" android:centerY="84" android:gradientRadius="60">
+                <item android:offset="0" android:color="#52F2A531" />
+                <item android:offset="1" android:color="#00F2A531" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

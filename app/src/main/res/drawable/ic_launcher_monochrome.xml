@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon silhouette: the two back pictures as outlines, the front one solid with its
+  hills and sun cut out. One colour; the launcher tints it.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.9" android:scaleY="0.9">
-        <path android:pathData="M31,30 H77 A5,5 0 0 1 82,35 V73 A5,5 0 0 1 77,78 H31 A5,5 0 0 1 26,73 V35 A5,5 0 0 1 31,30 Z"
-            android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="3.2" android:strokeLineJoin="round" />
-        <path android:pathData="M28,74 L44,52 L54,62 L62,54 L80,74 Z" android:fillColor="#FF000000" />
-        <path android:pathData="M68,42 m-5,0 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0" android:fillColor="#FF000000" />
-        <path android:pathData="M20,40 V24 H36" android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="4.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
-        <path android:pathData="M88,68 V84 H72" android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="4.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <group android:rotation="-14" android:pivotX="51" android:pivotY="58">
+        <path android:pathData="M35,42 H67 A5,5 0 0 1 72,47 V69 A5,5 0 0 1 67,74 H35 A5,5 0 0 1 30,69 V47 A5,5 0 0 1 35,42 Z" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" />
+    </group>
+    <group android:rotation="-6" android:pivotX="54" android:pivotY="55">
+        <path android:pathData="M38,39 H70 A5,5 0 0 1 75,44 V66 A5,5 0 0 1 70,71 H38 A5,5 0 0 1 33,66 V44 A5,5 0 0 1 38,39 Z" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" />
+    </group>
+    <group android:rotation="5" android:pivotX="57" android:pivotY="51">
+        <path android:pathData="M41,35 H73 A5,5 0 0 1 78,40 V62 A5,5 0 0 1 73,67 H41 A5,5 0 0 1 36,62 V40 A5,5 0 0 1 41,35 Z M39,64 L49.5,50 L56.5,57.5 L63.5,47 L75,64 Z M64.4,43.5 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
     </group>
 </vector>
