@@ -198,10 +198,9 @@ private fun InputRow(files: List<StillFile>, thumbnail: suspend (StillFile) -> a
     }
 }
 
-/** One panel per step: a switch in its header, the options under it when it is on. */
-@Composable
 private val STEP_ORDER = listOf("resize", "under", "format", "enhance", "look", "watermark", "frame", "cutout", "scan")
 
+/** One panel per step: a switch in its header, the options under it when it is on. */
 @Composable
 private fun Step(key: String, title: String, detail: String, iconRes: Int, accent: Color, on: Boolean, onToggle: (Boolean) -> Unit, content: @Composable () -> Unit) {
     Panel(rise(STEP_ORDER.indexOf(key) + 2).fillMaxWidth().padding(bottom = 10.dp), tint = if (on) accent else null, inset = 14.dp) {
