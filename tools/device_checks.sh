@@ -11,4 +11,6 @@ if ! adb exec-out run-as com.layerbit.still tar -cf - -C files screenshots | tar
     echo "Screenshot collection failed. Inspect device test outputs."
     test_status=1
 fi
+# A few clips of the app moving, for the docs; never a reason to fail the job.
+bash tools/motion_capture.sh || echo "motion capture skipped"
 exit "$test_status"

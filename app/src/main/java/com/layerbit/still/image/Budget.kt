@@ -21,6 +21,8 @@ object Budget {
 
     /** Thumbnails for lists. */
     const val THUMB_PIXELS = 60_000L
+    /** One look thumbnail in the editor's Looks strip. */
+    const val LOOK_THUMB_PIXELS = 24_000L
 
     const val MAX_EDGE = Geometry.MAX_EDGE
 

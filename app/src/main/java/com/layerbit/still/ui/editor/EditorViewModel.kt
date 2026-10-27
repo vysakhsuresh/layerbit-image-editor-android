@@ -20,6 +20,7 @@ import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.Look
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.Scan
 import com.layerbit.still.engine.ScanMode
@@ -85,6 +86,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val canvasSize: Geometry2D.Size? = null,
         /** On the cut-out panel: how much of the picture the current decision keeps. */
         val cutoutKept: Float? = null,
+        /** The picture under each look, small, for the Looks strip. Filled the first time the panel opens. */
+        val lookThumbs: Map<Look, Bitmap> = emptyMap(),
         val loading: Boolean = true
     )
 
@@ -283,6 +286,26 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         // The cut-out panel shows the whole picture with what would go under a wash, whatever the switch says.
         ToolId.Panel.CUTOUT -> recipe.copy(frame = Frame(), cutout = recipe.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT))
         else -> recipe
+    }
+
+    private var thumbJob: Job? = null
+
+    /** Renders every look over a small copy of the picture, once per project, for the Looks strip. */
+    fun ensureLookThumbs() {
+        if (_ui.value.lookThumbs.isNotEmpty() || thumbJob?.isActive == true) return
+        thumbJob = viewModelScope.launch {
+            val project = _ui.value.project ?: return@launch
+            try {
+                val small = withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }
+                val thumbs = LinkedHashMap<Look, Bitmap>()
+                for (look in Look.entries) thumbs[look] = renderer.finish(small, Recipe(look = look))
+                _ui.update { it.copy(lookThumbs = thumbs) }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (e: Exception) {
+                // The strip falls back to labels alone; the looks themselves are unaffected.
+            }
+        }
     }
 
     private fun maskKey(geometry: Geometry): String = (_ui.value.project?.id ?: "") + "|" + geometry.hashCode()

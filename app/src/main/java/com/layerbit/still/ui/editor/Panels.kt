@@ -1,5 +1,24 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.ui.components.pressScale
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.Image
+import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -214,9 +233,8 @@ fun CurvesPanel(s: PanelScope) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit) {
-    val labels = Look.entries.map { it to lookLabel(it) }
-    ChipRow(labels, s.recipe.look, { look -> s.change { it.copy(look = look, lookStrength = if (it.lookStrength == 0f) 1f else it.lookStrength) } })
+fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look, Bitmap>, onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit) {
+    LookStrip(s.recipe.look, thumbs, onSelect = { look -> s.change { it.copy(look = look, lookStrength = if (it.lookStrength == 0f) 1f else it.lookStrength) } })
     if (s.recipe.look != Look.NONE) {
         Knob(stringResource(R.string.looks_strength), s.recipe.lookStrength, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(lookStrength = v)) }, onDone = s.commit, onReset = { s.change { it.copy(lookStrength = 1f) } }, haptics = s.haptics)
         val moved = Looks.recipeFor(s.recipe.look).tone
@@ -234,6 +252,28 @@ fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, onSavePreset: ()
         if (presets.isNotEmpty()) {
             var confirm by remember { mutableStateOf(false) }
             SecondaryButton(stringResource(if (confirm) R.string.looks_remove_last_confirm else R.string.looks_remove_last), onClick = { if (confirm) { onRemovePreset(presets.last()); confirm = false } else confirm = true }, modifier = Modifier.weight(1f), tall = false)
+        }
+    }
+}
+
+/** Every look shown on the picture itself, in a strip; the chosen one framed in the band colour. */
+@Composable
+private fun LookStrip(selected: Look, thumbs: Map<Look, Bitmap>, onSelect: (Look) -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(vertical = 2.dp), modifier = Modifier.fillMaxWidth().testTag("lookStrip")) {
+        items(Look.entries.size) { i ->
+            val look = Look.entries[i]
+            val active = look == selected
+            val frame by animateColorAsState(if (active) StillColors.Band else StillColors.Border, label = "lookFrame")
+            val interaction = remember { MutableInteractionSource() }
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp).pressScale(interaction, 0.95f)
+                .clickable(interactionSource = interaction, indication = null, role = Role.RadioButton) { onSelect(look) }) {
+                Box(Modifier.size(72.dp).clip(shape).background(StillColors.SurfaceDim).border(if (active) 2.5.dp else 1.dp, frame, shape), contentAlignment = Alignment.Center) {
+                    val bmp = thumbs[look]
+                    if (bmp != null) Image(bmp.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(shape))
+                }
+                Text(lookLabel(look), style = MaterialTheme.typography.labelMedium, color = if (active) StillColors.Text else StillColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+            }
         }
     }
 }

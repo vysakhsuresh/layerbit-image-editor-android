@@ -83,11 +83,12 @@ jobs:
       - name: Keep the screenshots in docs/screenshots when the commit asks ([screens])
         if: github.event_name == 'push' && contains(github.event.head_commit.message, '[screens]')
         run: |
-          mkdir -p docs/screenshots
+          mkdir -p docs/screenshots docs/motion
           find device-screenshots -name '*.png' -exec cp {} docs/screenshots/ \;
+          find device-screenshots/motion -name '*.mp4' -exec cp {} docs/motion/ \; 2>/dev/null || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/screenshots
+          git add docs/screenshots docs/motion
           git diff --cached --quiet && exit 0
           git commit -m "Screenshots from emulator run ${{ github.run_id }} [skip ci]"
           git pull --rebase origin "${{ github.ref_name }}"

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -225,26 +226,34 @@ fun formatBytes(bytes: Long): String = when {
     else -> String.format(Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024 * 1024))
 }
 
-/** A row of mutually exclusive choices, as chips. One definition for the whole app. */
+/**
+ * Mutually exclusive choices as a grid of equal cells: every row the same width, every cell
+ * the same height, short labels four to a row, long ones two. One definition for the whole app.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier.fillMaxWidth()) {
+    val longest = options.maxOfOrNull { it.second.length } ?: 0
+    val columns = minOf(options.size, when { longest <= 5 -> 4; longest <= 11 -> 3; else -> 2 }).coerceAtLeast(1)
+    val blanks = (columns - options.size % columns) % columns
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = columns, modifier = modifier.fillMaxWidth()) {
         options.forEach { (value, label) ->
             val active = value == selected
-            val shape = RoundedCornerShape(999.dp)
+            val shape = RoundedCornerShape(12.dp)
             val fill by animateColorAsState(if (active) StillColors.Band else StillColors.SurfaceDim, label = "chip")
             val ink by animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "chipInk")
             val interaction = remember { MutableInteractionSource() }
-            Row(
-                modifier = Modifier.pressScale(interaction, 0.95f).background(fill, shape)
+            Box(
+                modifier = Modifier.weight(1f).height(40.dp).pressScale(interaction, 0.95f).background(fill, shape)
                     .border(1.dp, if (active) StillColors.Band else StillColors.Border, shape)
                     .clickable(interactionSource = interaction, indication = null, role = Role.RadioButton) { onSelect(value) }
-                    .padding(horizontal = 14.dp, vertical = 9.dp)
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(label, style = MaterialTheme.typography.bodyMedium, color = ink)
+                Text(label, style = MaterialTheme.typography.bodyMedium, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+        repeat(blanks) { Spacer(Modifier.weight(1f)) }
     }
 }
 

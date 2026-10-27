@@ -248,7 +248,10 @@ fun EditorScreen(
                             ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles)
                             ToolId.Panel.SCAN -> ScanPanel(scope)
                             ToolId.Panel.CURVES -> CurvesPanel(scope)
-                            ToolId.Panel.LOOKS -> LooksPanel(scope, ui.presets, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset)
+                            ToolId.Panel.LOOKS -> {
+                                LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
+                                LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset)
+                            }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics)
