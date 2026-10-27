@@ -94,7 +94,7 @@ class OpsTest {
     @Test
     fun passportCropsToTheRightShape() {
         val wide = picture(1200, 600, jpeg = true, name = "wide.jpg")
-        val out = run(FitKbOp(50f, FitKbOp.Pixels.Passport), wide).single() as OpOutcome.Produced
+        val out = run(FitKbOp(500f, FitKbOp.Pixels.Passport), wide).single() as OpOutcome.Produced
         assertEquals(FitKbOp.PASSPORT_W, out.file.width)
         assertEquals(FitKbOp.PASSPORT_H, out.file.height)
     }

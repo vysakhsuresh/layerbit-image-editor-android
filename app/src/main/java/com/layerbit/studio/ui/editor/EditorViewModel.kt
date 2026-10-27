@@ -132,7 +132,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         dropBase()
         undo.clear(); redo.clear()
         baseline = p.recipe
-        _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false, original = it.original?.takeIf { _ -> false }) }
+        _ui.update { u -> u.original?.recycle(); u.preview?.recycle(); Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
         requestRender()
     }
 
