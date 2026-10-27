@@ -7,7 +7,7 @@ import kotlin.math.*
 data class Point(val x: Float, val y: Float)
 data class Crop(val left: Float = 0f, val top: Float = 0f, val right: Float = 1f, val bottom: Float = 1f) {
     fun valid() = left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite() &&
-        left >= 0f && top >= 0f && right <= 1f && bottom <= 1f && right-left >= .01f && bottom-top >= .01f
+        left >= 0f && top >= 0f && right <= 1f && bottom <= 1f && right-left >= .009999f && bottom-top >= .009999f
 }
 data class Tone(val brightness: Float = 0f, val contrast: Float = 0f, val shadows: Float = 0f,
     val highlights: Float = 0f, val saturation: Float = 0f, val warmth: Float = 0f,

@@ -6,3 +6,4 @@ local.properties
 *.keystore
 keystore.properties
 captures/
+__pycache__/

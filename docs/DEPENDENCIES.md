@@ -15,7 +15,7 @@ Runtime dependencies are deliberately small:
 
 Build/test only: Gradle and AGP (Apache-2.0); JUnit 4 (EPL-1.0), Hamcrest (BSD-3-Clause), Robolectric (MIT), AndroidX Test (Apache-2.0). GitHub Actions are build infrastructure and are not bundled in the APK. Transitive versions are visible with `./gradlew :app:dependencies`.
 
-Apache-2.0 license text is included in the app assets and available in Settings. No custom fonts, stock images, external icon packs, native image libraries or ML models are bundled. The launcher art and tool animations are original vector/Canvas code.
+Apache-2.0 license text is included in the app assets and available in Settings. No custom fonts, stock images, external icon packs, additional image-processing SDKs or ML models are bundled. Encoding uses Android platform codecs; AndroidX may include native graphics helpers. The launcher art and tool animations are original vector/Canvas code.
 
 Before adding a dependency: inspect its license, transitive dependencies, merged permissions, reflection/native code, telemetry and model-download behavior. Pin a reviewed version. Reject network, tracking or server requirements. Do not silently substitute an unbundled model.
 
@@ -25,3 +25,5 @@ Official implementation references:
 - https://developer.android.com/reference/androidx/exifinterface/media/ExifInterface
 - https://developer.android.com/training/data-storage/shared/photopicker
 - https://developer.android.com/training/secure-file-sharing/setup-sharing
+
+Private data is explicitly excluded from cloud backups and device transfers using the [Android backup rules](https://developer.android.com/identity/data/autobackup), alongside `allowBackup=false`. CI records the resolved release runtime dependencies and checks the debug/release merged manifests.

@@ -52,6 +52,7 @@ class StudioViewModel(app:Application):AndroidViewModel(app) {
     fun change(block:(Recipe)->Recipe) { state.current?.let {
         val next=block(it.recipe)
         if(!next.crop.valid()) { message("This crop is too narrow. Keep at least 1% of each image dimension.");return }
+        if(next.marks.size>300) { message("This project has reached 300 layers.");return }
         draft(next); commit()
     } }
     fun undo() { if(undo.isNotEmpty()) { val r=undo.removeLast(); redo.addLast(baseline); baseline=r; draft(r); state.current?.let(::persist); state=state.copy(canUndo=undo.isNotEmpty(),canRedo=true) } }

@@ -11,4 +11,5 @@ class GeometryTest {
         for(ratio in listOf(1f,16f/9,9f/16)) {val c=Geometry.aspectCrop(4000,3000,ratio);assertTrue(c.valid());assertEquals(ratio,4000*(c.right-c.left)/(3000*(c.bottom-c.top)),.0001f)}
     }
     @Test fun exportNamesCannotEscapeDestination(){assertFalse(Geometry.safeName("../../photo.jpg").contains('/'));assertTrue(Geometry.safeName(".jpg").isNotBlank())}
+    @Test fun cropAtSliderBoundaryToleratesFloatRounding(){assertTrue(Crop(.99f,.99f,1f,1f).valid());assertFalse(Crop(.995f,0f,1f,1f).valid())}
 }

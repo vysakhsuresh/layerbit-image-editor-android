@@ -125,7 +125,7 @@ import kotlin.math.*
         if(clearExports) AlertDialog(onDismissRequest={clearExports=false},title={Text("Clear prepared exports?")},text={Text("Deletes private encoded outputs, including files offered to other apps through Share. Save important results first. Projects and copies saved to your chosen destination are kept.")},confirmButton={TextButton(onClick={vm.clearOutputs();clearExports=false}){Text("Clear outputs")}},dismissButton={TextButton(onClick={clearExports=false}){Text("Cancel")}})
         if(settings) AlertDialog(onDismissRequest={settings=false},title={Text("Your studio")},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             Text("Appearance"); Choices(listOf("System","Light","Dark"),theme) { theme=it; prefs.edit().putString("theme",it).apply() }
-            Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(motion,{motion=it;prefs.edit().putBoolean("motion",it).apply()},modifier=Modifier.testTag("motionSwitch"));Text("Lively tool icons") }
+            Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(motion,{motion=it;prefs.edit().putBoolean("motion",it).apply()},modifier=Modifier.testTag("motionSwitch").semantics{contentDescription="Lively tool icons"});Text("Lively tool icons") }
             Text("Animations pause when the app is backgrounded and follow Android's Remove animations setting.",style=MaterialTheme.typography.bodySmall)
             Text("Privacy by construction",fontWeight=FontWeight.Bold)
             Text("No network permission, accounts, ads, or telemetry. Imports are private copies. Exported images remove GPS. Other apps receive an image only when you choose Save or Share.")
@@ -166,7 +166,7 @@ import kotlin.math.*
     LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) { items(labels) { label -> FilterChip(selected==label,onClick={pick(label)},label={Text(label)}) } }
 }
 @Composable private fun Knob(label:String,value:Float,range:ClosedFloatingPointRange<Float>,change:(Float)->Unit,done:()->Unit,reset:()->Unit) {
-    Column { Row(verticalAlignment=Alignment.CenterVertically) { Text(label,Modifier.weight(1f));Text("%.2f".format(value),style=MaterialTheme.typography.labelSmall);TextButton(onClick=reset) {Text("Reset")} }
+    Column { Row(verticalAlignment=Alignment.CenterVertically) { Text(label,Modifier.weight(1f));Text("%.2f".format(value),style=MaterialTheme.typography.labelSmall);TextButton(onClick=reset,modifier=Modifier.semantics{contentDescription="Reset $label"}) {Text("Reset")} }
         Slider(value.coerceIn(range.start,range.endInclusive),change,valueRange=range,onValueChangeFinished=done,modifier=Modifier.semantics {contentDescription=label}) }
 }
 
@@ -287,7 +287,7 @@ import kotlin.math.*
     val aspect=naturalW.toDouble()/naturalH
     OutlinedTextField(width,{v->width=v;if(lock)v.toIntOrNull()?.let{height=(it/aspect).roundToInt().toString()}},label={Text("Width in pixels")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true,modifier=Modifier.fillMaxWidth())
     OutlinedTextField(height,{v->height=v;if(lock)v.toIntOrNull()?.let{width=(it*aspect).roundToInt().toString()}},label={Text("Height in pixels")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true,modifier=Modifier.fillMaxWidth())
-    Row(verticalAlignment=Alignment.CenterVertically){Checkbox(lock,{lock=it});Text("Lock aspect ratio")}
+    Row(verticalAlignment=Alignment.CenterVertically){Checkbox(lock,{lock=it},modifier=Modifier.semantics{contentDescription="Lock aspect ratio"});Text("Lock aspect ratio")}
     Choices(listOf("25%","50%","75%","100%","150%"),"") {v->val f=v.removeSuffix("%").toFloat()/100;width=max(1,(naturalW*f).roundToInt()).toString();height=max(1,(naturalH*f).roundToInt()).toString()}
     Text("Requested output: $width × $height. Larger than the source uses standard interpolation; it adds no new detail.",style=MaterialTheme.typography.bodySmall)
     Button(onClick={val w=width.toIntOrNull();val h=height.toIntOrNull();if(w!=null&&h!=null&&w in 1..8192&&h in 1..8192&&w.toLong()*h<=vm.engine.budget)vm.change{it.copy(width=w,height=h)} else vm.message("Enter positive dimensions up to 8192 pixels and within this device's ${"%.1f".format(vm.engine.budget/1_000_000f)} MP limit.")}){Text("Apply dimensions")}
@@ -306,9 +306,9 @@ import kotlin.math.*
         Slider(o.quality.toFloat(),{vm.options=vm.options.copy(quality=it.roundToInt())},valueRange=5f..100f,modifier=Modifier.semantics{contentDescription="Export quality"})
         OutlinedTextField(target,{v->target=v;val n=v.toDoubleOrNull();vm.options=vm.options.copy(targetBytes=if(n!=null&&n.isFinite()&&n>0&&n<=100000)(n*(if(unit=="KB")1024 else 1024*1024)).toLong() else 0)},label={Text("Maximum file size (optional)")},supportingText={Text(if(valid)"Blank keeps the selected quality." else "Enter a positive size.")},isError=!valid,singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Decimal),modifier=Modifier.fillMaxWidth())
         Choices(listOf("KB","MB"),unit){u->unit=u;vm.options=vm.options.copy(targetBytes=if(parsed!=null&&parsed.isFinite()&&parsed>0&&parsed<=100000)(parsed*(if(u=="KB")1024 else 1024*1024)).toLong() else 0)}
-        Row(verticalAlignment=Alignment.CenterVertically){Checkbox(o.allowShrink,{vm.options=vm.options.copy(allowShrink=it)});Text("Allow smaller dimensions to meet the limit")}
+        Row(verticalAlignment=Alignment.CenterVertically){Checkbox(o.allowShrink,{vm.options=vm.options.copy(allowShrink=it)},modifier=Modifier.semantics{contentDescription="Allow smaller dimensions to meet the limit"});Text("Allow smaller dimensions to meet the limit")}
     }
-    Row(verticalAlignment=Alignment.CenterVertically){Checkbox(o.keepCamera,{vm.options=vm.options.copy(keepCamera=it)},enabled=o.format==OutputFormat.JPEG);Text("Keep camera/date fields (JPEG only)")}
+    Row(verticalAlignment=Alignment.CenterVertically){Checkbox(o.keepCamera,{vm.options=vm.options.copy(keepCamera=it)},enabled=o.format==OutputFormat.JPEG,modifier=Modifier.semantics{contentDescription="Keep camera and date fields, JPEG only"});Text("Keep camera/date fields (JPEG only)")}
     Text("GPS is removed. Exact size and dimensions appear in the encoded preview before saving. PNG has no target-size control.",style=MaterialTheme.typography.bodySmall)
     Button(onClick=prepare,enabled=valid||o.format==OutputFormat.PNG,modifier=Modifier.fillMaxWidth().testTag("prepareOutput")){ToolGlyph(Tool.EXPORT,Modifier.size(24.dp));Text(" Prepare output")}
 }

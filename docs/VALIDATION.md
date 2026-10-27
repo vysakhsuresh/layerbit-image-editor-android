@@ -30,4 +30,4 @@ The emulator flow imports a generated fixture through the real ViewModel/store, 
 
 ## Evidence status
 
-Build and test results are being finalized on the review branch. Do not treat pending or failed workflow runs as passed checks.
+The [initial passing run](https://github.com/vysakhsuresh/layerbit-image-editor-android/actions/runs/40437573713), revision `5a2c26d`, passed 15 JVM/Robolectric tests, Android lint (zero errors, 23 warnings), the debug APK build, the merged debug privacy check and one API 35 emulator import/reopen/export test. Lint warnings included explicit removal declarations, newer available versions, Kotlin-style suggestions and backup rules. Backup-rule hardening, additional labels and a crop-boundary regression test are in the subsequent revision; its checks must also pass before using that build. Screenshot extraction is being corrected because Gradle removed the test installation before collection.
