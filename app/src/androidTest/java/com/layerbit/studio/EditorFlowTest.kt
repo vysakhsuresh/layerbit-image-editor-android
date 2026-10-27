@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.ViewModelProvider
 import com.layerbit.studio.core.ImageEngine
 import com.layerbit.studio.core.ProjectStore
 import org.junit.Assert.*
@@ -22,9 +23,9 @@ class EditorFlowTest {
     @get:Rule val compose=createAndroidComposeRule<MainActivity>()
     private fun screenshot(name:String) {
         val app=ApplicationProvider.getApplicationContext<Application>()
-        val folder=File(app.getExternalFilesDir(null),"screenshots").apply{mkdirs()}
-        val image=InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-        if(image!=null) { File(folder,"$name.png").outputStream().use{image.compress(Bitmap.CompressFormat.PNG,100,it)};image.recycle() }
+        val folder=File(app.filesDir,"screenshots").apply{mkdirs()}
+        val image=requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
+        File(folder,"$name.png").outputStream().use{image.compress(Bitmap.CompressFormat.PNG,100,it)};image.recycle()
     }
     @Test fun settingsHomeAndExportAreConnected() {
         val app=ApplicationProvider.getApplicationContext<Application>()
@@ -32,9 +33,12 @@ class EditorFlowTest {
         val f=File(app.cacheDir,"ui-fixture.png")
         Bitmap.createBitmap(320,240,Bitmap.Config.ARGB_8888).apply {eraseColor(Color.rgb(41,120,100));f.outputStream().use{compress(Bitmap.CompressFormat.PNG,100,it)};recycle()}
         val original=f.readBytes()
-        // Import into the same private project store before recreating the Activity.
-        ProjectStore(app).import(Uri.fromFile(f)){}
+        // Exercise the actual import flow. Activity recreation keeps this ViewModel.
+        lateinit var vm:StudioViewModel
+        compose.runOnIdle { vm=ViewModelProvider(compose.activity)[StudioViewModel::class.java];vm.import(listOf(Uri.fromFile(f))) }
+        compose.waitUntil(20000){vm.state.current!=null && vm.state.projects.isNotEmpty() && vm.state.busy==null}
         compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("Home").performClick()
         compose.onNodeWithTag("openPhotos").assertIsDisplayed().assertHasClickAction()
         screenshot("home")
         compose.onNodeWithText("Settings").performClick()

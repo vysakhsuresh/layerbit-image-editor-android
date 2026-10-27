@@ -3,6 +3,7 @@ package com.layerbit.studio
 import android.graphics.*
 import androidx.exifinterface.media.ExifInterface
 import com.layerbit.studio.core.*
+import com.layerbit.studio.core.Point
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith

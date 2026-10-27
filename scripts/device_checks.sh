@@ -3,5 +3,6 @@
 set -uo pipefail
 test_status=0
 ./gradlew connectedDebugAndroidTest --console plain || test_status=$?
-adb pull /sdcard/Android/data/com.layerbit.studio/files/screenshots device-screenshots || true
+mkdir -p device-screenshots
+adb exec-out run-as com.layerbit.studio tar -cf - -C files screenshots | tar -xf - -C device-screenshots || true
 exit "$test_status"
