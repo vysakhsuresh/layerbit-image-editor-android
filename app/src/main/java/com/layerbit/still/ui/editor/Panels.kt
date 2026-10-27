@@ -1,5 +1,9 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+import androidx.compose.foundation.layout.Box
+
 import com.layerbit.still.ui.components.pressScale
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.semantics.Role
