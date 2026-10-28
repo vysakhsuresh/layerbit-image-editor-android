@@ -11,7 +11,7 @@ A green run is evidence that these things hold on that revision. It is not a rel
 
 ## Evidence for this revision
 
-Green on `5ac3e9d`: https://github.com/vysakhsuresh/layerbit-image-editor-android/actions/runs/40718622344 (engine, build, device walk, and the release job that published v1.0.0-rc.1)
+Green on `ace9a40`'s parent: https://github.com/vysakhsuresh/layerbit-image-editor-android/actions/runs/40733615109 (engine, build, device walk, and the release job that published v1.0.0-rc.2)
 
 | Stage | Where | Result |
 | --- | --- | --- |
