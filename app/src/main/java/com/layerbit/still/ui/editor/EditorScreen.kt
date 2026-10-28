@@ -1,5 +1,9 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.ui.components.Celebrate
+import com.layerbit.still.ui.components.AmbientBackdrop
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.border
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,7 +73,6 @@ import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ui.components.IconTile
 import com.layerbit.still.ui.components.PrimaryButton
 import com.layerbit.still.ui.components.SecondaryButton
-import com.layerbit.still.ui.components.StillTopBar
 import com.layerbit.still.ui.components.RoundIconButton
 import com.layerbit.still.ui.icons.iconFor
 import com.layerbit.still.ui.theme.GroupAccents
@@ -112,6 +115,8 @@ fun EditorScreen(
     var cutKeep by rememberSaveable { mutableStateOf(true) }
     var cutWidth by rememberSaveable { mutableFloatStateOf(0.06f) }
     var pickingNeutral by rememberSaveable { mutableStateOf(startTool == ToolId.WHITE_BALANCE) }
+    var split by rememberSaveable { mutableStateOf(false) }
+    var splitAt by rememberSaveable { mutableFloatStateOf(0.5f) }
     LaunchedEffect(startTool) { if (startTool == ToolId.RED_EYE) brush = brush.copy(kind = MarkKind.REDEYE, width = 0.03f) }
 
     val density = LocalDensity.current
@@ -201,43 +206,53 @@ fun EditorScreen(
         else -> TouchMode.View
     }
 
-    Column(Modifier.fillMaxSize().background(StillColors.Background).imePadding()) {
-        StillTopBar(
-            title = project?.name ?: stringResource(R.string.tool_edit_title),
-            subtitle = ui.canvasSize?.let { "${it.width} × ${it.height}" },
-            onBack = { vm.commit(); onBack() },
-            iconRes = iconFor(ToolId.EDIT), accent = GroupAccents.of(ToolId.Group.EDIT)
-        ) {
-            UndoRedo(ui.canUndo, ui.canRedo, vm::undo, vm::redo)
-            RoundIconButton(iconRes = R.drawable.ic_tool_export, contentDescription = stringResource(R.string.tool_export), onClick = { vm.setPanel(ToolId.Panel.EXPORT) }, filled = panel == ToolId.Panel.EXPORT, modifier = Modifier.testTag("editorExport"))
-        }
-
+    Box(Modifier.fillMaxSize().background(StillColors.Background).imePadding()) {
+        AmbientBackdrop(strength = 0.5f)
         if (ui.loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LinearProgressIndicator(Modifier.width(160.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim) }
-            return@Column
+            return@Box
         }
 
-        BoxWithConstraints(Modifier.weight(1f)) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth > 700.dp
             val panelLimit = maxHeight * 0.5f
             @Composable fun canvasArea(modifier: Modifier) {
-                Column(modifier) {
-                    EditorCanvas(
-                        bitmap = ui.preview, original = ui.original, comparing = comparing, transform = transform,
-                        overlay = overlay, mode = mode, onCompare = { comparing = it },
-                        modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp)
-                    )
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (ui.previewBusy) LinearProgressIndicator(Modifier.width(60.dp).height(2.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim)
-                        Spacer(Modifier.weight(1f))
-                        ZoomBar(transform)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.editor_hold_to_compare), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim)
+                Box(modifier) {
+                    Column(Modifier.fillMaxSize()) {
+                        // The picture sits under the floating bar; the bar floats over the canvas's own ground, never the picture.
+                        EditorCanvas(
+                            bitmap = ui.preview, original = ui.original, comparing = comparing, transform = transform,
+                            overlay = overlay, mode = mode, onCompare = { comparing = it },
+                            split = if (split) splitAt else null, onSplit = { splitAt = it },
+                            modifier = Modifier.weight(1f).fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 64.dp)
+                        )
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            if (ui.previewBusy) LinearProgressIndicator(Modifier.width(60.dp).height(2.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim)
+                            Spacer(Modifier.weight(1f))
+                            ZoomBar(transform)
+                            Spacer(Modifier.width(8.dp))
+                            SplitToggle(split, onToggle = { split = !split })
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.editor_hold_to_compare), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim)
+                        }
                     }
+                    FloatingBar(
+                        title = project?.name ?: stringResource(R.string.tool_edit_title),
+                        subtitle = ui.canvasSize?.let { "${it.width} × ${it.height}" },
+                        onBack = { vm.commit(); onBack() },
+                        canUndo = ui.canUndo, canRedo = ui.canRedo, onUndo = vm::undo, onRedo = vm::redo,
+                        exporting = panel == ToolId.Panel.EXPORT, onExport = { vm.setPanel(ToolId.Panel.EXPORT) },
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
                 }
             }
             @Composable fun panelArea(modifier: Modifier) {
-                Column(modifier.background(StillColors.Surface)) {
+                val sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                Column(
+                    modifier.clip(sheet).background(StillColors.Glass)
+                        .border(1.dp, Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border, StillColors.Border)), sheet)
+                ) {
+                    Box(Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).size(width = 40.dp, height = 4.dp).background(StillColors.BorderStrong, RoundedCornerShape(2.dp)))
                     PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false })
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when (panel) {
@@ -266,6 +281,7 @@ fun EditorScreen(
             if (wide) Row(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1.3f).fillMaxHeight()); panelArea(Modifier.weight(1f).fillMaxHeight()) }
             else Column(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1f).fillMaxWidth()); panelArea(Modifier.fillMaxWidth().heightIn(max = panelLimit)) }
         }
+        Celebrate(key = ui.export, modifier = Modifier.fillMaxSize())
     }
 
     // ------------------------------------------------------------------ dialogs
@@ -340,10 +356,40 @@ fun EditorScreen(
     }
 }
 
+/** The bar floats over the canvas: round glass buttons and the name in a capsule, nothing solid across the top. */
 @Composable
-private fun UndoRedo(canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, onRedo: () -> Unit) {
-    RoundIconButton(iconRes = R.drawable.ic_undo, contentDescription = stringResource(R.string.editor_undo), onClick = onUndo, enabled = canUndo)
-    RoundIconButton(iconRes = R.drawable.ic_redo, contentDescription = stringResource(R.string.editor_redo), onClick = onRedo, enabled = canRedo)
+private fun FloatingBar(
+    title: String, subtitle: String?, onBack: () -> Unit,
+    canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, onRedo: () -> Unit,
+    exporting: Boolean, onExport: () -> Unit, modifier: Modifier = Modifier
+) {
+    Row(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        RoundIconButton(icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.app_back), onClick = onBack)
+        Column(
+            Modifier.weight(1f).clip(RoundedCornerShape(999.dp)).background(StillColors.Glass).border(1.dp, StillColors.Border, RoundedCornerShape(999.dp)).padding(horizontal = 14.dp, vertical = 6.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = StillColors.Text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, color = StillColors.Dim, maxLines = 1)
+        }
+        RoundIconButton(iconRes = R.drawable.ic_undo, contentDescription = stringResource(R.string.editor_undo), onClick = onUndo, enabled = canUndo)
+        RoundIconButton(iconRes = R.drawable.ic_redo, contentDescription = stringResource(R.string.editor_redo), onClick = onRedo, enabled = canRedo)
+        RoundIconButton(iconRes = R.drawable.ic_tool_export, contentDescription = stringResource(R.string.tool_export), onClick = onExport, filled = exporting, modifier = Modifier.testTag("editorExport"))
+    }
+}
+
+/** Split view on or off: a small capsule that lights up in the band colour. */
+@Composable
+private fun SplitToggle(on: Boolean, onToggle: () -> Unit) {
+    val fill by androidx.compose.animation.animateColorAsState(if (on) StillColors.Band else StillColors.Glass, label = "split")
+    Row(
+        Modifier.clip(RoundedCornerShape(999.dp)).background(fill).border(1.dp, if (on) StillColors.Band else StillColors.Border, RoundedCornerShape(999.dp))
+            .clickable(role = androidx.compose.ui.semantics.Role.Switch, onClick = onToggle).padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(iconRes = R.drawable.ic_compare, accent = if (on) StillColors.OnBand else StillColors.Muted, size = 18.dp, lively = false)
+        Spacer(Modifier.width(5.dp))
+        Text(stringResource(R.string.editor_split), style = MaterialTheme.typography.labelSmall, color = if (on) StillColors.OnBand else StillColors.Muted)
+    }
 }
 
 @Composable
@@ -363,14 +409,18 @@ private fun PanelStrip(current: ToolId.Panel, onPick: (ToolId.Panel) -> Unit) {
         items(panels, key = { it.name }) { p ->
             val active = p == current
             val label = panelLabel(p)
-            val tabColour by androidx.compose.animation.animateColorAsState(if (active) StillColors.BandDim else StillColors.SurfaceDim, label = "tab")
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(tabColour)
-                    .clickable(role = androidx.compose.ui.semantics.Role.Tab) { onPick(p) }.padding(horizontal = 10.dp, vertical = 6.dp).semantics { contentDescription = label }
+            val tabColour by androidx.compose.animation.animateColorAsState(if (active) StillColors.Band else StillColors.SurfaceDim, label = "tab")
+            val ink by androidx.compose.animation.animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "tabInk")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(tabColour)
+                    .then(if (active) Modifier else Modifier.border(1.dp, StillColors.Border, RoundedCornerShape(999.dp)))
+                    .clickable(role = androidx.compose.ui.semantics.Role.Tab) { onPick(p) }.padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp).semantics { contentDescription = label }
             ) {
-                IconTile(iconRes = iconFor(p), accent = if (active) StillColors.Band else StillColors.Muted, size = 30.dp, lively = active)
-                Text(label, style = MaterialTheme.typography.labelSmall, color = if (active) StillColors.Text else StillColors.Muted, modifier = Modifier.padding(top = 3.dp), maxLines = 1)
+                Box(Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(if (active) StillColors.OnBand.copy(alpha = 0.18f) else StillColors.Surface), contentAlignment = Alignment.Center) {
+                    IconTile(iconRes = iconFor(p), accent = ink, size = 28.dp, lively = active)
+                }
+                Text(label, style = MaterialTheme.typography.labelMedium, color = ink, modifier = Modifier.padding(start = 7.dp), maxLines = 1)
             }
         }
     }

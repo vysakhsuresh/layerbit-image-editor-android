@@ -53,6 +53,11 @@ object StillColors {
     var Skipped by mutableStateOf(Dark.skipped); private set
     var isDark by mutableStateOf(true); private set
 
+    /** A card's fill: the surface with the page showing through, so the colour behind it is felt. */
+    val Glass: Color get() = Surface.copy(alpha = if (isDark) 0.74f else 0.82f)
+    /** The light catching a card's top edge. */
+    val Edge: Color get() = if (isDark) Color.White.copy(alpha = 0.16f) else Color.White
+
     internal fun apply(p: Palette) {
         if (Background == p.background && isDark == p.dark) return
         Background = p.background; Surface = p.surface; SurfaceDim = p.surfaceDim; Border = p.border
@@ -70,11 +75,11 @@ internal data class Palette(
 
 internal val Dark = Palette(
     dark = true,
-    background = Color(0xFF0B1220), surface = Color(0xFF141E33), surfaceDim = Color(0xFF0F182A),
-    border = Color(0xFF223049), borderStrong = Color(0xFF34476A),
-    text = Color(0xFFF3F6FB), muted = Color(0xFFA3B1C8), dim = Color(0xFF6B7A93),
-    band = Color(0xFFF2A531), bandBright = Color(0xFFFFC15C), bandDim = Color(0xFF3A2A0C), onBand = Color(0xFF1A1200),
-    canvas = Color(0xFF1A2130),
+    background = Color(0xFF070A12), surface = Color(0xFF121828), surfaceDim = Color(0xFF0C1120),
+    border = Color(0xFF1F2940), borderStrong = Color(0xFF35425F),
+    text = Color(0xFFF6F7FB), muted = Color(0xFFA8B3C9), dim = Color(0xFF6F7B95),
+    band = Color(0xFFFFAD33), bandBright = Color(0xFFFFD36B), bandDim = Color(0xFF3A2708), onBand = Color(0xFF1A1000),
+    canvas = Color(0xFF10151F),
     running = Color(0xFF5BA9E8), done = Color(0xFF4CCB8F), failed = Color(0xFFE8705F), skipped = Color(0xFFF0A93D)
 )
 
@@ -88,6 +93,13 @@ internal val Light = Palette(
     running = Color(0xFF1C6FB8), done = Color(0xFF17784E), failed = Color(0xFFA83C27), skipped = Color(0xFF8A5C0B)
 )
 
+/** Syne, the loud one: display sizes and titles only, so a screen has one voice that carries. */
+val Syne = FontFamily(
+    Font(R.font.syne_variable, FontWeight.SemiBold),
+    Font(R.font.syne_variable, FontWeight.Bold),
+    Font(R.font.syne_variable, FontWeight.ExtraBold)
+)
+
 /** Space Grotesk, the family face. */
 val SpaceGrotesk = FontFamily(
     Font(R.font.space_grotesk_regular, FontWeight.Normal),
@@ -97,17 +109,29 @@ val SpaceGrotesk = FontFamily(
 )
 
 private val StillTypography = Typography(
-    displayLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 46.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.8).sp),
-    displayMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.4).sp),
-    headlineMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.0).sp),
-    headlineSmall = TextStyle(fontFamily = SpaceGrotesk, fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.7).sp),
-    titleLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp),
+    displayLarge = TextStyle(fontFamily = Syne, fontSize = 54.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.6).sp, lineHeight = 54.sp),
+    displayMedium = TextStyle(fontFamily = Syne, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.2).sp, lineHeight = 46.sp),
+    headlineMedium = TextStyle(fontFamily = Syne, fontSize = 32.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontFamily = Syne, fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, lineHeight = 30.sp),
+    titleLarge = TextStyle(fontFamily = Syne, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
     titleMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
     bodyLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 15.sp, fontWeight = FontWeight.Normal),
     bodyMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 13.5.sp, fontWeight = FontWeight.Normal),
     bodySmall = TextStyle(fontFamily = SpaceGrotesk, fontSize = 12.5.sp, fontWeight = FontWeight.Normal),
+    labelMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 12.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontFamily = SpaceGrotesk, fontSize = 11.sp, fontWeight = FontWeight.Medium)
 )
+
+/** The loud colours the tiles wear. Saturated on ink, deeper on paper, so each reads in both themes. */
+object Neon {
+    val Lime: Color get() = if (StillColors.isDark) Color(0xFFC8FF4D) else Color(0xFF5E9A00)
+    val Cyan: Color get() = if (StillColors.isDark) Color(0xFF4DE1FF) else Color(0xFF0A86A8)
+    val Magenta: Color get() = if (StillColors.isDark) Color(0xFFFF4DA6) else Color(0xFFC8186E)
+    val Violet: Color get() = if (StillColors.isDark) Color(0xFF9B6BFF) else Color(0xFF6A3FD6)
+    val Coral: Color get() = if (StillColors.isDark) Color(0xFFFF7A59) else Color(0xFFD1431F)
+    val Sky: Color get() = if (StillColors.isDark) Color(0xFF5B9DFF) else Color(0xFF2360C8)
+    val Mint: Color get() = if (StillColors.isDark) Color(0xFF3ED3C0) else Color(0xFF0E8C7D)
+}
 
 @Composable
 fun StillTheme(theme: ThemeChoice = ThemeChoice.SYSTEM, content: @Composable () -> Unit) {

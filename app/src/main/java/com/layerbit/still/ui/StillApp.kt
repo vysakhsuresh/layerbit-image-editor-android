@@ -2,6 +2,15 @@ package com.layerbit.still.ui
 
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +127,14 @@ fun StillApp(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(StillColors.Background).windowInsetsPadding(WindowInsets.systemBars)) {
-        NavHost(navController = navController, startDestination = Routes.HOME) {
+        // Screens arrive from a little below and settle; the one leaving fades. Reversed on the way back.
+        NavHost(
+            navController = navController, startDestination = Routes.HOME,
+            enterTransition = { fadeIn(tween(240)) + slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it / 12 } + scaleIn(tween(280), initialScale = 0.965f) },
+            exitTransition = { fadeOut(tween(180)) + scaleOut(tween(220), targetScale = 1.02f) },
+            popEnterTransition = { fadeIn(tween(240)) + scaleIn(tween(280), initialScale = 1.03f) },
+            popExitTransition = { fadeOut(tween(180)) + slideOutVertically(tween(240)) { it / 12 } + scaleOut(tween(220), targetScale = 0.965f) }
+        ) {
             composable(Routes.HOME) {
                 LaunchedEffect(Unit) { projectsStamp = System.nanoTime() }
                 HomeScreen(

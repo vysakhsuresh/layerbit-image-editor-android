@@ -27,14 +27,13 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.Parallel
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.ScanMath
 import com.layerbit.still.engine.Segment
 import com.layerbit.still.engine.Spatial
 import com.layerbit.still.engine.TonePipeline
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
@@ -307,7 +306,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         val px = IntArray(w * h)
         picture.getPixels(px, 0, w, 0, 0, w, h)
         if (preview) {
-            for (y in 0 until h) {
+            Parallel.bands(h) { from, to -> for (y in from until to) {
                 if (y and 0x3F == 0) check()
                 for (x in 0 until w) {
                     val i = y * w + x
@@ -318,10 +317,10 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                         px[i] = Argb.pack(Argb.alpha(c), (Argb.red(c) + (235 - Argb.red(c)) * f).roundToInt(), (Argb.green(c) + (40 - Argb.green(c)) * f).roundToInt(), (Argb.blue(c) + (70 - Argb.blue(c)) * f).roundToInt())
                     }
                 }
-            }
+            } }
         } else {
             val behind = if (cut.backdrop == Backdrop.BLUR) blurredCopy(picture, cut.blur, check) else null
-            for (y in 0 until h) {
+            Parallel.bands(h) { from, to -> for (y in from until to) {
                 if (y and 0x3F == 0) check()
                 for (x in 0 until w) {
                     val i = y * w + x
@@ -333,7 +332,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                         Backdrop.BLUR -> Segment.over(top, behind!!.at(x, y, w, h))
                     }
                 }
-            }
+            } }
         }
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         out.setPixels(px, 0, w, 0, 0, w, h)
@@ -373,16 +372,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         return out
     }
 
-    private suspend fun parallelRows(h: Int, block: (Int, Int) -> Unit) {
-        val workers = Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
-        if (workers == 1 || h < 256) { block(0, h); return }
-        val chunk = (h + workers - 1) / workers
-        coroutineScope {
-            (0 until workers).map { i ->
-                async { block(i * chunk, min(h, (i + 1) * chunk)) }
-            }.forEach { it.await() }
-        }
-    }
+    private fun parallelRows(h: Int, block: (Int, Int) -> Unit) = Parallel.bands(h, block = block)
 
     // ------------------------------------------------------------------ layers
 

@@ -1,5 +1,14 @@
 package com.layerbit.still.ui.editor
 
+import kotlin.math.min
+import kotlin.math.max
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.shadow
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.material3.SliderState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,7 +28,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +65,7 @@ import kotlin.math.roundToInt
  * resets on a double tap of its label, and ticks as it crosses zero. The value is announced
  * to TalkBack as a signed percentage rather than a float.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Knob(
     label: String,
@@ -73,10 +82,16 @@ fun Knob(
     var lastSign by remember { mutableIntStateOf(sign(value)) }
     val shown = format(value)
     val resetLabel = stringResource(R.string.editor_reset_slider, label)
+    val bipolar = range.start < 0f && range.endInclusive > 0f
+    val live = value != 0f
+    val valueFill by animateColorAsState(if (live) StillColors.Band else StillColors.SurfaceDim, label = "knobValue")
     Column(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().pointerInput(onReset) { detectTapGestures(onDoubleTap = { onReset() }) }.semantics { contentDescription = resetLabel }) {
             Text(label, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text, modifier = Modifier.weight(1f))
-            Text(shown, style = MaterialTheme.typography.labelSmall, color = if (value == 0f) StillColors.Dim else StillColors.BandBright)
+            Text(
+                shown, style = MaterialTheme.typography.labelMedium, color = if (live) StillColors.OnBand else StillColors.Dim,
+                modifier = Modifier.background(valueFill, RoundedCornerShape(999.dp)).padding(horizontal = 9.dp, vertical = 2.dp)
+            )
         }
         Slider(
             value = value.coerceIn(range.start, range.endInclusive),
@@ -89,9 +104,39 @@ fun Knob(
             },
             onValueChangeFinished = onDone,
             valueRange = range,
-            colors = SliderDefaults.colors(thumbColor = StillColors.Band, activeTrackColor = StillColors.Band, inactiveTrackColor = StillColors.SurfaceDim),
-            modifier = Modifier.fillMaxWidth().height(34.dp).semantics { this.contentDescription = label; stateDescription = shown }
+            thumb = { KnobThumb() },
+            track = { state -> KnobTrack(state, bipolar) },
+            modifier = Modifier.fillMaxWidth().height(36.dp).semantics { this.contentDescription = label; stateDescription = shown }
         )
+    }
+}
+
+/** The thumb: a lit disc with a white rim, big enough for a thumb. */
+@Composable
+private fun KnobThumb() {
+    Box(
+        Modifier.size(26.dp).shadow(8.dp, CircleShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.5f), spotColor = StillColors.Band.copy(alpha = 0.6f))
+            .background(Brush.radialGradient(listOf(StillColors.BandBright, StillColors.Band)), CircleShape)
+            .border(2.5.dp, Color.White.copy(alpha = 0.92f), CircleShape)
+    )
+}
+
+/** The track: thick, rounded, filled from zero to the value, with a notch at zero on two-sided ranges. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KnobTrack(state: SliderState, bipolar: Boolean) {
+    val start = state.valueRange.start; val end = state.valueRange.endInclusive
+    val span = (end - start).takeIf { it > 0f } ?: 1f
+    val at = ((state.value - start) / span).coerceIn(0f, 1f)
+    val zero = if (bipolar) ((0f - start) / span).coerceIn(0f, 1f) else 0f
+    val fill = Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright))
+    val rail = StillColors.SurfaceDim; val notch = StillColors.BorderStrong
+    Canvas(Modifier.fillMaxWidth().height(12.dp)) {
+        val r = size.height / 2
+        drawRoundRect(rail, cornerRadius = CornerRadius(r, r))
+        val a = min(at, zero) * size.width; val b = max(at, zero) * size.width
+        if (b - a > 0.5f) drawRoundRect(fill, topLeft = Offset(a, 0f), size = Size(max(b - a, r), size.height), cornerRadius = CornerRadius(r, r))
+        if (bipolar) drawCircle(notch, r * 0.4f, Offset(zero * size.width, r))
     }
 }
 

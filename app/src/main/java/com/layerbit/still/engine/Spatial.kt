@@ -31,7 +31,7 @@ object Spatial {
         val outer = if (horizontal) h else w
         val inner = if (horizontal) w else h
         val window = radius * 2 + 1
-        for (o in 0 until outer) {
+        Parallel.bands(outer) { bandFrom, bandTo -> for (o in bandFrom until bandTo) {
             if (o % 64 == 0) check()
             var sa = 0L; var sr = 0L; var sg = 0L; var sb = 0L
             fun idx(i: Int) = if (horizontal) o * w + i else i * w + o
@@ -50,7 +50,7 @@ object Spatial {
                 output[idx(i)] = p
                 add(i - radius, -1); add(i + radius + 1, 1)
             }
-        }
+        } }
     }
 
     /**
@@ -61,7 +61,7 @@ object Spatial {
         if (amount == 0f || radiusPx <= 0) return src.copyOf()
         val blurred = boxBlur(src, w, h, radiusPx, passes = 2, check = check)
         val out = IntArray(src.size)
-        for (i in src.indices) {
+        Parallel.bands(h) { from, to -> for (i in from * w until to * w) {
             val p = src[i]; val q = blurred[i]
             val a = p ushr 24
             fun ch(shift: Int): Int {
@@ -71,7 +71,7 @@ object Spatial {
                 return (v + d * amount).roundToInt().coerceIn(0, 255)
             }
             out[i] = (a shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
-        }
+        } }
         return out
     }
 
@@ -103,7 +103,7 @@ object Spatial {
         val cx = (w - 1) / 2f; val cy = (h - 1) / 2f
         val rmax = sqrt(cx * cx + cy * cy)
         val strength = amount.coerceIn(-1f, 1f)
-        for (y in 0 until h) {
+        Parallel.bands(h) { from, to -> for (y in from until to) {
             if (y % 64 == 0) check()
             val dy = (y - cy) / rmax
             for (x in 0 until w) {
@@ -122,7 +122,7 @@ object Spatial {
                 }
                 pixels[i] = (a shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
             }
-        }
+        } }
     }
 
     /**
@@ -135,7 +135,7 @@ object Spatial {
         val scale = Geometry2D.resolutionScale(Geometry2D.Size(w, h))
         val cell = max(1f, 1.4f * scale)
         val strength = 38f * amount
-        for (y in 0 until h) {
+        Parallel.bands(h) { from, to -> for (y in from until to) {
             if (y % 64 == 0) check()
             val gy = (y / cell).toInt()
             for (x in 0 until w) {
@@ -152,7 +152,7 @@ object Spatial {
                 val b = ((p and 0xFF) + delta).coerceIn(0, 255)
                 pixels[i] = (a shl 24) or (r shl 16) or (g shl 8) or b
             }
-        }
+        } }
     }
 
     private fun hash(x: Int, y: Int, seed: Int): Float {

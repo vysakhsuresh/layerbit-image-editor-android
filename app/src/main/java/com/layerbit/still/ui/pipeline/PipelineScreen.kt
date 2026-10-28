@@ -1,5 +1,12 @@
 package com.layerbit.still.ui.pipeline
 
+import com.layerbit.still.ui.components.Celebrate
+import com.layerbit.still.ui.components.ButtonShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.material3.CircularProgressIndicator
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -120,7 +127,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
 
     Box(Modifier.fillMaxSize()) {
         AmbientBackdrop(strength = 0.6f)
-        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize().testTag("pipelineList")) {
+        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 112.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize().testTag("pipelineList")) {
             if (shown is JobState.Finished) {
                 item {
                     Panel(Modifier.fillMaxWidth(), tint = if (shown.failed.isEmpty()) StillColors.Done else StillColors.Skipped) {
@@ -176,12 +183,29 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                         SecondaryButton(stringResource(R.string.app_cancel), onClick = vm::cancel, modifier = Modifier.padding(top = 10.dp), tall = false)
                     }
                 } else {
-                    val label = if (vm.steps.anyOn) stringResource(R.string.pipeline_run, ui.files.size) else stringResource(R.string.pipeline_run_clean, ui.files.size)
-                    PrimaryButton(label, onClick = vm::run, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                     Hint(stringResource(R.string.tools_run_note))
                 }
             }
         }
+        // The one button floats over the list, so it is there whatever is scrolled; a ring while the run is on.
+        if (shown !is JobState.Finished) {
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+                if (shown is JobState.Running) {
+                    Row(
+                        Modifier.align(Alignment.Center).clip(ButtonShape).background(StillColors.Glass).border(1.dp, StillColors.BorderStrong, ButtonShape).padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (shown.unitsTotal > 0) CircularProgressIndicator(progress = { shown.fraction }, modifier = Modifier.size(26.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim, strokeWidth = 4.dp)
+                        else CircularProgressIndicator(modifier = Modifier.size(26.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim, strokeWidth = 4.dp)
+                        Text(if (shown.unitsTotal > 0) "${shown.unitsDone} / ${shown.unitsTotal}" else shown.label, style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.padding(start = 12.dp))
+                    }
+                } else {
+                    val label = if (vm.steps.anyOn) stringResource(R.string.pipeline_run, ui.files.size) else stringResource(R.string.pipeline_run_clean, ui.files.size)
+                    PrimaryButton(label, onClick = vm::run, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
+                }
+            }
+        }
+        Celebrate(key = (shown as? JobState.Finished)?.let { it.opTitle + it.produced.size + it.outcomes.size }, modifier = Modifier.fillMaxSize())
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter)) { data -> Snackbar(snackbarData = data, containerColor = StillColors.Surface, contentColor = StillColors.Text, actionColor = StillColors.BandBright) }
     }
 }

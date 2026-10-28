@@ -157,6 +157,8 @@
     <!-- Editor -->
     <string name="editor_canvas_description">Picture. Pinch to zoom; press and hold to see the original.</string>
     <string name="editor_showing_original">Original</string>
+    <string name="editor_split">Split</string>
+    <string name="editor_split_description">Split view: the original on the left of the line, the edit on the right. Drag the line.</string>
     <string name="editor_hold_to_compare">Hold to compare</string>
     <string name="editor_undo">Undo</string>
     <string name="editor_redo">Redo</string>
@@ -528,7 +530,7 @@
     <string name="about_rate">Rate on Google Play</string>
     <string name="about_privacy">Privacy policy</string>
     <string name="about_made_by">Made by %1$s · %2$s</string>
-    <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk is under the SIL Open Font Licence. No other third-party code is bundled.</string>
+    <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk and Syne are under the SIL Open Font Licence. No other third-party code is bundled.</string>
 
     <!-- Home, one gesture -->
     <string name="home_open_pictures">Open pictures</string>

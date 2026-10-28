@@ -160,7 +160,7 @@ class EditorFlowTest {
         compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("step-under"))
         compose.waitForIdle()
         screenshot("04-batch-steps")
-        compose.onNodeWithTag("pipelineList").performScrollToNode(hasTestTag("pipelineRun"))
+        // The run button floats over the list, so it needs no scrolling to.
         compose.onNodeWithTag("pipelineRun").tap()
         compose.waitUntil(60_000) { compose.onAllNodesWithText(app.getString(R.string.tools_start_again)).fetchSemanticsNodes().isNotEmpty() }
         settle()

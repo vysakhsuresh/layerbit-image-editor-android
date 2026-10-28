@@ -62,8 +62,8 @@ import java.util.Locale
  * button and a chip, so the whole app changes character when one of these does.
  */
 
-val PanelShape = RoundedCornerShape(18.dp)
-val ButtonShape = RoundedCornerShape(14.dp)
+val PanelShape = RoundedCornerShape(24.dp)
+val ButtonShape = RoundedCornerShape(999.dp)
 
 /** A press that gives a little, which is most of what makes a surface feel like a button. */
 @Composable
@@ -99,11 +99,14 @@ fun Panel(
     if (onClick != null) base = base.pressScale(interaction)
     // Doors and tinted cards stand a little off the page in the light theme; a flat card there reads as a form.
     if (!StillColors.isDark && (onClick != null || tint != null)) {
-        base = base.shadow(if (onClick != null) 3.dp else 1.5.dp, PanelShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.22f), spotColor = StillColors.Band.copy(alpha = 0.28f))
+        base = base.shadow(if (onClick != null) 4.dp else 2.dp, PanelShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.22f), spotColor = StillColors.Band.copy(alpha = 0.28f))
     }
-    base = base.clip(PanelShape).background(StillColors.Surface)
+    // Glass: the page's colour shows through the card, and light catches its top edge.
+    val edge = if (onClick != null && focused) Brush.linearGradient(listOf(StillColors.Band, StillColors.Band))
+    else Brush.linearGradient(listOf(StillColors.Edge, border, border))
+    base = base.clip(PanelShape).background(StillColors.Glass)
         .then(if (tint != null) Modifier.background(Brush.verticalGradient(listOf(surface, surface.copy(alpha = surface.alpha * 0.35f)))) else Modifier)
-        .border(if (onClick != null && focused) 2.dp else 1.dp, border, PanelShape)
+        .border(if (onClick != null && focused) 2.dp else 1.dp, edge, PanelShape)
     val tappable = when {
         onClick == null -> base
         onLongClick == null -> base.clickable(interactionSource = interaction, indication = null, onClick = onClick)
@@ -147,8 +150,8 @@ fun PrimaryButton(
     val brush = if (enabled) Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright))
     else Brush.horizontalGradient(listOf(StillColors.SurfaceDim, StillColors.SurfaceDim))
     Row(
-        modifier = modifier.pressScale(interaction).height(if (tall) 52.dp else 40.dp)
-            .then(if (enabled && !StillColors.isDark) Modifier.shadow(4.dp, ButtonShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.3f), spotColor = StillColors.Band.copy(alpha = 0.4f)) else Modifier)
+        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 44.dp)
+            .then(if (enabled) Modifier.shadow(if (StillColors.isDark) 10.dp else 5.dp, ButtonShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.45f), spotColor = StillColors.Band.copy(alpha = 0.55f)) else Modifier)
             .clip(ButtonShape).background(brush)
             .drawWithContent { sheen(clock?.value, enabled) }
             .then(if (!enabled) Modifier.border(1.dp, StillColors.Border, ButtonShape) else Modifier)
@@ -175,8 +178,8 @@ fun SecondaryButton(
     val interaction = remember { MutableInteractionSource() }
     val tint = if (enabled) StillColors.Text else StillColors.Dim
     Row(
-        modifier = modifier.pressScale(interaction).height(if (tall) 52.dp else 40.dp).clip(ButtonShape).background(StillColors.Surface)
-            .border(1.dp, StillColors.BorderStrong, ButtonShape)
+        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 44.dp).clip(ButtonShape).background(StillColors.Glass)
+            .border(1.dp, Brush.linearGradient(listOf(StillColors.Edge, StillColors.BorderStrong, StillColors.BorderStrong)), ButtonShape)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 18.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
@@ -239,12 +242,12 @@ fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Un
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = columns, modifier = modifier.fillMaxWidth()) {
         options.forEach { (value, label) ->
             val active = value == selected
-            val shape = RoundedCornerShape(12.dp)
+            val shape = RoundedCornerShape(14.dp)
             val fill by animateColorAsState(if (active) StillColors.Band else StillColors.SurfaceDim, label = "chip")
             val ink by animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "chipInk")
             val interaction = remember { MutableInteractionSource() }
             Box(
-                modifier = Modifier.weight(1f).height(40.dp).pressScale(interaction, 0.95f).background(fill, shape)
+                modifier = Modifier.weight(1f).height(44.dp).pressScale(interaction, 0.95f).background(fill, shape)
                     .border(1.dp, if (active) StillColors.Band else StillColors.Border, shape)
                     .clickable(interactionSource = interaction, indication = null, role = Role.RadioButton) { onSelect(value) }
                     .padding(horizontal = 8.dp),

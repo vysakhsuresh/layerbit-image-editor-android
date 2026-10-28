@@ -33,7 +33,7 @@ object ScanMath {
         val out = IntArray(pixels.size)
         val thr = if (scan.mode == ScanMode.INK) inkThreshold(pixels, paper, w, h) else 0
         val lift = 1f / (1f - 0.18f * scan.whiten)
-        for (i in pixels.indices) {
+        Parallel.bands(h) { from, to -> for (i in from * w until to * w) {
             if (i and 0xFFFF == 0) check()
             val c = pixels[i]
             val p = max(24, paper.at(i % w, i / w, w, h))
@@ -57,7 +57,7 @@ object ScanMath {
                 (Argb.green(c) + (g - Argb.green(c)) * s).roundToInt().coerceIn(0, 255),
                 (Argb.blue(c) + (b - Argb.blue(c)) * s).roundToInt().coerceIn(0, 255)
             )
-        }
+        } }
         return out
     }
 

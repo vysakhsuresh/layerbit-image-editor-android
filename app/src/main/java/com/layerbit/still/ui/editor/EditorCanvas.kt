@@ -1,5 +1,13 @@
 package com.layerbit.still.ui.editor
 
+import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.Orientation
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -69,16 +77,21 @@ fun EditorCanvas(
     overlay: Overlay,
     mode: TouchMode,
     onCompare: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Where the split line sits, 0..1 of the width, or null for no split. */
+    split: Float? = null,
+    onSplit: (Float) -> Unit = {}
 ) {
     val density = LocalDensity.current
     val slop = with(density) { 6.dp.toPx() }
     val shown = if (comparing && original != null) original else bitmap
     val image = remember(shown) { shown?.asImageBitmap() }
+    val before = remember(original) { original?.asImageBitmap() }
     val label = stringResource(R.string.editor_canvas_description)
+    val splitLabel = stringResource(R.string.editor_split_description)
     Box(
         modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(Brush.radialGradient(listOf(StillColors.SurfaceDim, StillColors.Canvas)))
             .onSizeChanged { transform.box = it }
             .canvasGestures(transform, mode, onCompare, slop)
@@ -99,7 +112,32 @@ fun EditorCanvas(
                 dstSize = IntSize(max(1, r.width.toInt()), max(1, r.height.toInt())),
                 filterQuality = if (transform.zoomed) FilterQuality.High else FilterQuality.Medium
             )
+            // Split: the original over the left of the line, the edit on the right, the same geometry under both.
+            if (split != null && before != null && !comparing && before.width == image.width && before.height == image.height) {
+                val x = split * size.width
+                clipRect(right = x) {
+                    drawImage(before, dstOffset = IntOffset(r.left.toInt(), r.top.toInt()), dstSize = IntSize(max(1, r.width.toInt()), max(1, r.height.toInt())), filterQuality = if (transform.zoomed) FilterQuality.High else FilterQuality.Medium)
+                }
+                drawLine(Color.White, Offset(x, 0f), Offset(x, size.height), 2.dp.toPx())
+                drawCircle(Color.White, 15.dp.toPx(), Offset(x, size.height / 2))
+                drawCircle(StillColors.Band, 12.dp.toPx(), Offset(x, size.height / 2))
+                val k = 4.dp.toPx()
+                drawLine(Color.White, Offset(x - k * 1.6f, size.height / 2), Offset(x - k * 0.4f, size.height / 2 - k), 2.dp.toPx(), StrokeCap.Round)
+                drawLine(Color.White, Offset(x - k * 1.6f, size.height / 2), Offset(x - k * 0.4f, size.height / 2 + k), 2.dp.toPx(), StrokeCap.Round)
+                drawLine(Color.White, Offset(x + k * 1.6f, size.height / 2), Offset(x + k * 0.4f, size.height / 2 - k), 2.dp.toPx(), StrokeCap.Round)
+                drawLine(Color.White, Offset(x + k * 1.6f, size.height / 2), Offset(x + k * 0.4f, size.height / 2 + k), 2.dp.toPx(), StrokeCap.Round)
+            }
             if (!comparing) drawOverlay(overlay, transform, this)
+        }
+        if (split != null) {
+            // The line's handle: a strip the width of a thumb, dragged sideways.
+            val boxW = transform.box.width.toFloat().coerceAtLeast(1f)
+            Box(
+                Modifier.fillMaxHeight().width(44.dp)
+                    .offset { IntOffset((split * boxW - 22.dp.toPx()).roundToInt(), 0) }
+                    .draggable(rememberDraggableState { dx -> onSplit((split + dx / boxW).coerceIn(0.02f, 0.98f)) }, Orientation.Horizontal)
+                    .semantics { contentDescription = splitLabel }
+            )
         }
         if (comparing) {
             Text(
