@@ -1,8 +1,9 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.layerbit.still.ui.components.Celebrate
 import com.layerbit.still.ui.components.AmbientBackdrop
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.border
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -250,7 +251,7 @@ fun EditorScreen(
                 val sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                 Column(
                     modifier.clip(sheet).background(StillColors.Glass)
-                        .border(1.dp, Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border, StillColors.Border)), sheet)
+                        .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border, StillColors.Border)), sheet)
                 ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).size(width = 40.dp, height = 4.dp).background(StillColors.BorderStrong, RoundedCornerShape(2.dp)))
                     PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false })
@@ -364,7 +365,7 @@ private fun FloatingBar(
     exporting: Boolean, onExport: () -> Unit, modifier: Modifier = Modifier
 ) {
     Row(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        RoundIconButton(icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.app_back), onClick = onBack)
+        RoundIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.app_back), onClick = onBack)
         Column(
             Modifier.weight(1f).clip(RoundedCornerShape(999.dp)).background(StillColors.Glass).border(1.dp, StillColors.Border, RoundedCornerShape(999.dp)).padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
