@@ -61,7 +61,7 @@ The front door is one gesture: open pictures. One picture opens the editor; seve
 | Draw and write | Freehand, arrows, boxes, circles, movable wrapped text; every stroke a layer with opacity and order |
 | Hide and retouch | Blur, pixelate, opaque cover, erase to transparency, clone |
 | Frame and pad | Pad to an aspect, border, rounded corners, blurred fill |
-| Cut out the background | The subject found by colour and edges, shown under a red wash before anything is removed; a keep or remove stroke corrects it; transparent, a colour or a blurred copy behind; one decision scaled so the preview edge is the export edge |
+| Remove the background | The subject found by colour and edges, shown under a red wash with the question asked first; More and Less move the edge, a keep or remove stroke corrects it, the edge pixels are decided from the picture’s own colours with the fringe taken off; transparent, a colour, a blur or a colour-pop mono behind; an outline; a crop to the subject; one decision scaled so the preview edge is the export edge |
 | Lift a signature | Ink and stamps off a photographed page, on transparent, with an automatic or chosen threshold |
 | Make a sticker | A cut-out as a 512 × 512 WebP under 100 KB, as chat apps take it |
 | Scan a page | The light across the page measured and divided out; paper white everywhere, ink kept; colour, grey or black and white |

@@ -32,6 +32,16 @@ object Parallel {
         }
     }
 
+    /** Runs [a] and [b] side by side and returns both; inline when already inside the pool or when off. */
+    fun <A, B> both(a: () -> A, b: () -> B): Pair<A, B> {
+        val inside = Thread.currentThread().name.startsWith(THREAD_PREFIX)
+        if (!enabled || workers == 1 || inside) return a() to b()
+        val fb = pool.submit(Callable { b() })
+        val ra = a()
+        val rb = try { fb.get() } catch (e: ExecutionException) { throw e.cause ?: e }
+        return ra to rb
+    }
+
     /** Runs [block] over [from, to) bands that together cover [0, count); sequentially under [minimum] rows. */
     fun bands(count: Int, minimum: Int = 192, block: (from: Int, to: Int) -> Unit) {
         if (count <= 0) return

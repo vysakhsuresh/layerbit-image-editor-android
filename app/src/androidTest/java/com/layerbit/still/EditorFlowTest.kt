@@ -187,7 +187,7 @@ class EditorFlowTest {
         screenshot("08-editor-looks")
         compose.onNodeWithTag("panelStrip").performScrollToNode(hasContentDescription(app.getString(R.string.panel_cutout)))
         compose.onNodeWithContentDescription(app.getString(R.string.panel_cutout)).tap()
-        waitFor { compose.onAllNodesWithText(app.getString(R.string.cutout_apply)).fetchSemanticsNodes().isNotEmpty() }
+        waitFor { compose.onAllNodesWithText(app.getString(R.string.cutout_remove_it)).fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("12-editor-cutout")
         compose.onNodeWithTag("panelStrip").performScrollToNode(hasContentDescription(app.getString(R.string.panel_scan)))

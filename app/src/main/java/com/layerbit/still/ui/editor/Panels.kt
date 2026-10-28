@@ -1,5 +1,6 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.ui.components.Pill
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.foundation.layout.Box
@@ -475,32 +476,65 @@ fun ExportPanel(options: ExportOptions, onOptions: (ExportOptions) -> Unit, canv
 @Composable
 fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: Float, onWidth: (Float) -> Unit, kept: Float?, onClearStrokes: () -> Unit) {
     val c = s.recipe.cutout
+    val colours = listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt())
     ChipRow(listOf(CutoutMode.SUBJECT to stringResource(R.string.cutout_subject), CutoutMode.INK to stringResource(R.string.cutout_ink)), c.mode, { m -> s.change { it.copy(cutout = it.cutout.copy(mode = m)) } })
-    if (c.mode == CutoutMode.SUBJECT) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            if (keep) PrimaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
-            else SecondaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
-            if (!keep) PrimaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
-            else SecondaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
+    when {
+        c.mode == CutoutMode.SUBJECT && !c.enabled -> {
+            // The question first: the wash on the picture is what would go; nothing goes until the answer.
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                Text(stringResource(R.string.cutout_question), style = MaterialTheme.typography.headlineSmall, color = StillColors.Text, modifier = Modifier.weight(1f))
+                if (kept != null) Pill(stringResource(R.string.cutout_kept_value, (kept * 100).roundToInt()), StillColors.Band, filled = true)
+            }
+            PrimaryButton(stringResource(R.string.cutout_remove_it), onClick = { s.change { it.copy(cutout = it.cutout.copy(enabled = true)) } }, modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("cutoutRemove"), iconRes = R.drawable.ic_tool_cutout)
+            SectionHeading(stringResource(R.string.cutout_adjust), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                SecondaryButton(stringResource(R.string.cutout_less), onClick = { s.change { it.copy(cutout = it.cutout.copy(grow = (it.cutout.grow - 0.005f).coerceIn(-0.03f, 0.03f))) } }, modifier = Modifier.weight(1f), tall = false, iconRes = R.drawable.ic_minus)
+                SecondaryButton(stringResource(R.string.cutout_more), onClick = { s.change { it.copy(cutout = it.cutout.copy(grow = (it.cutout.grow + 0.005f).coerceIn(-0.03f, 0.03f))) } }, modifier = Modifier.weight(1f), tall = false, iconRes = R.drawable.ic_plus)
+            }
+            Hint(stringResource(R.string.cutout_more_less_hint))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                if (keep) PrimaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
+                else SecondaryButton(stringResource(R.string.cutout_keep_brush), onClick = { onKeep(true) }, modifier = Modifier.weight(1f), tall = false)
+                if (!keep) PrimaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
+                else SecondaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
+            }
+            Knob(stringResource(R.string.mark_size), width, 0.01f..0.2f, onChange = onWidth, onDone = {}, onReset = { onWidth(0.06f) }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+            Hint(stringResource(if (c.scribbles.isEmpty()) R.string.cutout_hint_first else R.string.cutout_hint_strokes, c.scribbles.size))
+            if (c.scribbles.isNotEmpty()) TextButton(onClick = onClearStrokes) { Text(stringResource(R.string.cutout_clear_strokes), color = StillColors.Muted) }
+            ToggleRow(stringResource(R.string.cutout_refine), c.refine, { v -> s.change { it.copy(cutout = it.cutout.copy(refine = v)) } }, detail = stringResource(R.string.cutout_refine_detail))
+            Knob(stringResource(R.string.cutout_feather), c.feather, 0f..0.05f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(feather = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(feather = 0.004f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+            ToggleRow(stringResource(R.string.cutout_invert), c.invert, { v -> s.change { it.copy(cutout = it.cutout.copy(invert = v)) } }, detail = stringResource(R.string.cutout_invert_detail))
         }
-        Knob(stringResource(R.string.mark_size), width, 0.01f..0.2f, onChange = onWidth, onDone = {}, onReset = { onWidth(0.06f) }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
-        Hint(stringResource(if (c.scribbles.isEmpty()) R.string.cutout_hint_first else R.string.cutout_hint_strokes, c.scribbles.size))
-        if (c.scribbles.isNotEmpty()) TextButton(onClick = onClearStrokes) { Text(stringResource(R.string.cutout_clear_strokes), color = StillColors.Muted) }
-    } else {
-        Knob(stringResource(R.string.cutout_threshold), c.threshold, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(threshold = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(threshold = 0f)) } }, haptics = s.haptics, format = { if (it == 0f) "auto" else "${(it * 100).roundToInt()}" })
-        Hint(stringResource(R.string.cutout_ink_hint))
+        c.mode == CutoutMode.SUBJECT -> {
+            // It is gone; now what stands behind, and how the result is dressed.
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                if (kept != null) Text(stringResource(R.string.cutout_kept_value, (kept * 100).roundToInt()), style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.weight(1f))
+                SecondaryButton(stringResource(R.string.cutout_edit_selection), onClick = { s.change { it.copy(cutout = it.cutout.copy(enabled = false)) } }, tall = false)
+            }
+            SectionHeading(stringResource(R.string.cutout_behind), modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+            ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur), Backdrop.MONO to stringResource(R.string.cutout_mono)), c.backdrop, { b -> s.change { it.copy(cutout = it.cutout.copy(backdrop = b)) } })
+            when (c.backdrop) {
+                Backdrop.COLOUR -> ColourRow(colours, c.color, { col -> s.change { it.copy(cutout = it.cutout.copy(color = col)) } }, Modifier.padding(top = 8.dp))
+                Backdrop.BLUR -> Knob(stringResource(R.string.cutout_blur_amount), c.blur, 0.005f..0.1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(blur = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(blur = 0.03f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+                Backdrop.TRANSPARENT -> Hint(stringResource(R.string.cutout_transparent_hint))
+                Backdrop.MONO -> Unit
+            }
+            Knob(stringResource(R.string.cutout_outline), c.outline, 0f..0.04f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(outline = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(outline = 0f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+            if (c.outline > 0f) ColourRow(colours, c.outlineColor, { col -> s.change { it.copy(cutout = it.cutout.copy(outlineColor = col)) } }, Modifier.padding(top = 4.dp))
+            ToggleRow(stringResource(R.string.cutout_trim), c.trim, { v -> s.change { it.copy(cutout = it.cutout.copy(trim = v)) } }, detail = stringResource(R.string.cutout_trim_detail))
+            Hint(stringResource(R.string.cutout_done_hint))
+        }
+        else -> {
+            Knob(stringResource(R.string.cutout_threshold), c.threshold, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(threshold = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(threshold = 0f)) } }, haptics = s.haptics, format = { if (it == 0f) "auto" else "${(it * 100).roundToInt()}" })
+            Hint(stringResource(R.string.cutout_ink_hint))
+            if (kept != null) LabelledValue(stringResource(R.string.cutout_kept), stringResource(R.string.cutout_kept_value, (kept * 100).roundToInt()), Modifier.padding(top = 6.dp))
+            Knob(stringResource(R.string.cutout_feather), c.feather, 0f..0.05f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(feather = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(feather = 0.004f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+            SectionHeading(stringResource(R.string.cutout_behind), modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+            ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour)), c.backdrop, { b -> s.change { it.copy(cutout = it.cutout.copy(backdrop = b)) } })
+            if (c.backdrop == Backdrop.COLOUR) ColourRow(colours, c.color, { col -> s.change { it.copy(cutout = it.cutout.copy(color = col)) } }, Modifier.padding(top = 8.dp))
+            ToggleRow(stringResource(R.string.cutout_use_ink), c.enabled, { v -> s.change { it.copy(cutout = it.cutout.copy(enabled = v)) } }, modifier = Modifier.padding(top = 8.dp))
+        }
     }
-    if (kept != null) LabelledValue(stringResource(R.string.cutout_kept), stringResource(R.string.cutout_kept_value, (kept * 100).roundToInt()), Modifier.padding(top = 6.dp))
-    Knob(stringResource(R.string.cutout_feather), c.feather, 0f..0.05f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(feather = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(feather = 0.004f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
-    ToggleRow(stringResource(R.string.cutout_invert), c.invert, { v -> s.change { it.copy(cutout = it.cutout.copy(invert = v)) } }, detail = stringResource(R.string.cutout_invert_detail))
-    SectionHeading(stringResource(R.string.cutout_behind), modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
-    ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur)), c.backdrop, { b -> s.change { it.copy(cutout = it.cutout.copy(backdrop = b)) } })
-    when (c.backdrop) {
-        Backdrop.COLOUR -> ColourRow(listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt()), c.color, { col -> s.change { it.copy(cutout = it.cutout.copy(color = col)) } }, Modifier.padding(top = 8.dp))
-        Backdrop.BLUR -> Knob(stringResource(R.string.cutout_blur_amount), c.blur, 0.005f..0.1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(blur = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(blur = 0.03f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
-        Backdrop.TRANSPARENT -> Hint(stringResource(R.string.cutout_transparent_hint))
-    }
-    ToggleRow(stringResource(R.string.cutout_apply), c.enabled, { v -> s.change { it.copy(cutout = it.cutout.copy(enabled = v)) } }, detail = stringResource(R.string.cutout_apply_detail), modifier = Modifier.padding(top = 8.dp))
 }
 
 // ------------------------------------------------------------------ scan

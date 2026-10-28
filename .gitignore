@@ -18,3 +18,5 @@ __pycache__/
 /keystore.properties
 *.jks
 *.keystore
+# The one exception: the release-candidate test key, which is not a secret (docs/RELEASE.md).
+!/release/rc-testing.jks

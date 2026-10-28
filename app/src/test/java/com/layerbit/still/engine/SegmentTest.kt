@@ -109,3 +109,82 @@ class SegmentTest {
         assertEquals(0, Argb.alpha(b[0])); assertEquals(255, Argb.alpha(b[1]))
     }
 }
+
+class SegmentEdgeTest {
+    /** A red square on a blue ground with a 10-pixel band where the two mix linearly, as a real edge does. */
+    private fun mixed(w: Int = 160, h: Int = 120): IntArray = IntArray(w * h) { i ->
+        val x = i % w; val y = i / w
+        val inside = x in 50..110 && y in 30..90
+        val edge = x in 40..49 && y in 30..90
+        when {
+            inside -> Argb.pack(255, 220, 30, 30)
+            edge -> { val t = (x - 39) / 11f; Argb.pack(255, (30 + 190 * t).toInt(), 30, (200 - 170 * t).toInt()) }
+            else -> Argb.pack(255, 30, 30, 200)
+        }
+    }
+
+    @Test
+    fun growAndShrinkMoveTheEdgeByTheRadius() {
+        val w = 50; val h = 40
+        val mask = IntArray(w * h) { i -> if (i % w in 20..29 && i / w in 15..24) 255 else 0 }
+        val grown = Segment.grow(mask, w, h, 3)
+        assertEquals(255, grown[20 * w + 17]); assertEquals(0, grown[20 * w + 16])
+        val shrunk = Segment.shrink(mask, w, h, 3)
+        assertEquals(0, shrunk[20 * w + 22]); assertEquals(255, shrunk[20 * w + 24])
+        assertEquals("shrink undoes grow on a block", mask.toList(), Segment.shrink(grown, w, h, 3).toList())
+    }
+
+    @Test
+    fun boundsWrapTheKeptAreaWithAMargin() {
+        val w = 100; val h = 50
+        val mask = IntArray(w * h) { i -> if (i % w in 30..59 && i / w in 10..29 ) 255 else 0 }
+        val b = Segment.bounds(mask, w, h, margin = 0f)!!
+        assertEquals(0.30f, b[0], 0.001f); assertEquals(0.20f, b[1], 0.001f); assertEquals(0.60f, b[2], 0.001f); assertEquals(0.60f, b[3], 0.001f)
+        assertEquals(null, Segment.bounds(IntArray(w * h), w, h))
+    }
+
+    @Test
+    fun theColoursDecideTheEdgeAndTheFringeComesOff() {
+        val fg = Argb.pack(255, 220, 30, 30); val bg = Argb.pack(255, 30, 30, 200)
+        assertEquals(255, Segment.colourAlpha(fg, fg, bg)); assertEquals(0, Segment.colourAlpha(bg, fg, bg))
+        val half = Argb.pack(255, 125, 30, 115)
+        val a = Segment.colourAlpha(half, fg, bg)
+        assertTrue("half way, got $a", a in 115..140)
+        val clean = Segment.decontaminate(half, bg, a)
+        assertTrue("the background's blue is taken out: red ${Argb.red(clean)} blue ${Argb.blue(clean)}", Argb.red(clean) > 190 && Argb.blue(clean) < 70)
+        assertEquals("alike colours say nothing", -1, Segment.colourAlpha(half, fg, Argb.pack(255, 215, 35, 35)))
+    }
+
+    @Test
+    fun localModelsReadTheSubjectAndTheGroundNearTheEdge() {
+        val w = 160; val h = 120
+        val px = mixed(w, h)
+        val mask = IntArray(w * h) { i -> if (i % w in 45..110 && i / w in 30..90) 255 else 0 }
+        val (fg, bg) = Segment.localModels(px, w, h, mask, radiusPx = 8)
+        val at = 60 * w + 45
+        assertTrue("subject model is red: ${Argb.red(fg[at])}", Argb.red(fg[at]) > 180 && Argb.blue(fg[at]) < 80)
+        assertTrue("ground model is blue: ${Argb.blue(bg[at])}", Argb.blue(bg[at]) > 150 && Argb.red(bg[at]) < 80)
+        // Across the mixed band the judged alpha climbs with the mix.
+        var last = -1
+        for (x in 40..49) { val a = Segment.colourAlpha(px[60 * w + x], fg[60 * w + x], bg[60 * w + x]); assertTrue("climbs at $x: $a after $last", a >= last); last = a }
+    }
+
+    @Test
+    fun theSubjectDecisionIsTheSameInBandsAndPrintsItsTime() {
+        val w = 462; val h = 346
+        val px = IntArray(w * h) { i ->
+            val x = i % w; val y = i / w
+            val tex = ((x * 7 + y * 3) % 9)
+            if ((x - 231) * (x - 231) + (y - 173) * (y - 173) < 100 * 100) Argb.pack(255, 30 + tex, 40, 120 + tex) else Argb.pack(255, 225 - tex, 220 - tex, 205 - tex)
+        }
+        Parallel.enabled = false
+        val t0 = System.nanoTime(); val one = Segment.subject(px, w, h, emptyList()); val t1 = System.nanoTime()
+        Parallel.enabled = true
+        val t2 = System.nanoTime(); val two = Segment.subject(px, w, h, emptyList()); val t3 = System.nanoTime()
+        assertEquals(one.toList(), two.toList())
+        println("segment: ${w}x$h subject sequential ${(t1 - t0) / 1_000_000} ms, side by side ${(t3 - t2) / 1_000_000} ms")
+        val mask = two
+        val tm0 = System.nanoTime(); Segment.localModels(px, w, h, mask, 20); Segment.grow(mask, w, h, 8); val tm1 = System.nanoTime()
+        println("segment: models and grow ${(tm1 - tm0) / 1_000_000} ms")
+    }
+}

@@ -579,8 +579,8 @@
     <string name="step_clean_only">Hidden data removed</string>
 
     <!-- Newer tools -->
-    <string name="tool_cutout_title">Cut out the background</string>
-    <string name="tool_cutout_summary">Shows what will go; a stroke corrects it; transparent, a colour or a blur behind</string>
+    <string name="tool_cutout_title">Remove the background</string>
+    <string name="tool_cutout_summary">Shows what will go and asks first; a swipe or a stroke corrects it; the edge is decided from the picture itself</string>
     <string name="tool_cutout_action">Cut out</string>
     <string name="tool_signature_title">Lift a signature</string>
     <string name="tool_signature_summary">Ink or a stamp off a photographed page, on transparent</string>
@@ -600,7 +600,7 @@
     <string name="tool_passport_title">Passport photo</string>
     <string name="tool_passport_summary">35 × 45 mm at 300 dpi, under the size a form asks for</string>
     <string name="tool_passport_action">Make</string>
-    <string name="panel_cutout">Cut out</string>
+    <string name="panel_cutout">Background</string>
     <string name="panel_scan">Scan</string>
 
     <string name="cutout_subject">Subject</string>
@@ -623,8 +623,21 @@
     <string name="cutout_blur">Blurred picture</string>
     <string name="cutout_blur_amount">Blur</string>
     <string name="cutout_transparent_hint">Export as PNG or WebP to keep the transparency; JPEG fills it white.</string>
-    <string name="cutout_apply">Use this cut-out</string>
-    <string name="cutout_apply_detail">Off keeps your strokes without applying them; the other panels and the export then show the whole picture.</string>
+    <string name="cutout_question">This is what will go. Right?</string>
+    <string name="cutout_remove_it">Remove it</string>
+    <string name="cutout_edit_selection">Edit the selection</string>
+    <string name="cutout_adjust">Adjust</string>
+    <string name="cutout_more">More</string>
+    <string name="cutout_less">Less</string>
+    <string name="cutout_more_less_hint">More takes a little more of the surroundings with it; Less keeps a little more of the subject.</string>
+    <string name="cutout_refine">Refine the edge</string>
+    <string name="cutout_refine_detail">Hair and soft edges are decided from the picture’s own colours, and the colour fringe comes off.</string>
+    <string name="cutout_mono">Colour pop</string>
+    <string name="cutout_outline">Outline</string>
+    <string name="cutout_trim">Crop to the subject</string>
+    <string name="cutout_trim_detail">The result is cut down to the subject with a small margin.</string>
+    <string name="cutout_done_hint">Then Export. PNG or WebP keeps the transparency; a sticker is 512 × 512 under 100 KB.</string>
+    <string name="cutout_use_ink">Use it</string>
     <string name="cutout_full">That is as many strokes as a cut-out holds. Clear some first.</string>
 
     <string name="scan_off">Off</string>
@@ -647,13 +660,13 @@
     <string name="engine_note_sticker">Sticker: 512 × 512 WebP with transparency, under 100 KB.</string>
     <string name="engine_now_png">now PNG, to keep the transparency</string>
 
-    <string name="step_cutout">Cut out</string>
+    <string name="step_cutout">Remove background</string>
     <string name="step_scan">Scan</string>
     <string name="step_cutout_detail">Automatic: the subject against its surroundings, or ink off paper</string>
     <string name="step_cutout_hint">A batch uses the automatic decision only. Open a result in the editor to correct it with a stroke.</string>
     <string name="step_scan_detail">Even white paper and clean ink on every page</string>
 
-    <string name="home_quick_cutout">Cut out</string>
+    <string name="home_quick_cutout">Remove background</string>
     <string name="home_quick_scan">Scan a page</string>
     <string name="home_quick_signature">Lift a signature</string>
     <string name="home_quick_passport">Passport photo</string>
@@ -679,7 +692,7 @@
     <string name="guide_edit_body">The strip under the picture is every panel: crop, square up, light, colour, curves, looks, detail, cut out, scan, draw, retouch, layers, frame, what is inside the file, and export. Hold the picture to see the original. Undo and redo keep a hundred steps. Auto on the Light panel reads the histogram and tells you which sliders it moved; a look is a set of slider moves you can see and change.</string>
     <string name="guide_batch_title">Process many</string>
     <string name="guide_batch_body">Add pictures, switch on steps, run. Resize, keep under a size, convert, enhance, a look or a saved recipe, watermark, frame, cut out, scan. The steps combine into one pass per picture. Hidden data is always removed; when that is the only step, a JPEG is cleaned byte for byte with nothing re-encoded, and its orientation is kept.</string>
-    <string name="guide_cutout_title">Cut out the background</string>
+    <string name="guide_cutout_title">Remove the background</string>
     <string name="guide_cutout_body">The red wash shows what will go before anything goes. Paint Keep over anything wrongly red and Remove over anything wrongly kept; the edge follows the picture’s own edges, so a short stroke usually does. Behind it: transparent, a colour, or a blur of the picture. Ink mode lifts a signature or a stamp off a photographed page. Export as PNG or WebP to keep transparency, or as a 512 × 512 sticker.</string>
     <string name="guide_scan_title">Scan a page</string>
     <string name="guide_scan_body">Square the page first on the Square panel. Scan then measures the light across the page and divides it out, so the paper goes white evenly and the ink keeps its weight. Colour keeps a stamp or a heading; black and white gives the smallest, clearest file.</string>

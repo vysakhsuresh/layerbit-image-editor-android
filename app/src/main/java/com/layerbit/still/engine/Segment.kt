@@ -23,7 +23,8 @@ enum class CutoutMode {
     INK
 }
 
-enum class Backdrop { TRANSPARENT, COLOUR, BLUR }
+/** What goes behind the subject: nothing, a flat colour, a blur of the picture, or the picture drained of colour (the subject stays in colour). */
+enum class Backdrop { TRANSPARENT, COLOUR, BLUR, MONO }
 
 /**
  * Which part of the picture to keep, and what to put behind it.
@@ -47,14 +48,24 @@ data class Cutout(
     val backdrop: Backdrop = Backdrop.TRANSPARENT,
     val color: Int = 0xFFFFFFFF.toInt(),
     /** Blur radius for a blurred backdrop, as a fraction of the shorter edge, 0..0.1. */
-    val blur: Float = 0.03f
+    val blur: Float = 0.03f,
+    /** Grows (positive) or shrinks (negative) the kept area, as a fraction of the shorter edge, -0.03..0.03. */
+    val grow: Float = 0f,
+    /** Decide the edge pixels from the picture's own colours, and clean the colour fringe off them. */
+    val refine: Boolean = true,
+    /** A sticker outline around the subject, as a fraction of the shorter edge, 0..0.04. 0 is none. */
+    val outline: Float = 0f,
+    val outlineColor: Int = 0xFFFFFFFF.toInt(),
+    /** Crop the result to the subject, with a small margin. */
+    val trim: Boolean = false
 ) {
     val isIdentity: Boolean get() = this == Cutout()
     val valid: Boolean
-        get() = scribbles.size <= MAX_SCRIBBLES && scribbles.all { it.valid } && feather in 0f..0.05f && threshold in 0f..1f && blur in 0f..0.1f
+        get() = scribbles.size <= MAX_SCRIBBLES && scribbles.all { it.valid } && feather in 0f..0.05f && threshold in 0f..1f && blur in 0f..0.1f &&
+            grow in -0.03f..0.03f && outline in 0f..0.04f
 
-    /** What decides the mask itself, as a key: the strokes, the mode and the threshold. */
-    val maskKey: String get() = "$mode|$threshold|" + scribbles.joinToString(";") { s -> (if (s.keep) "k" else "r") + s.width + ":" + s.points.joinToString(",") { "${it.x},${it.y}" } }
+    /** What decides the mask itself, as a key: the strokes, the mode, the threshold and the grow. */
+    val maskKey: String get() = "$mode|$threshold|$grow|" + scribbles.joinToString(";") { s -> (if (s.keep) "k" else "r") + s.width + ":" + s.points.joinToString(",") { "${it.x},${it.y}" } }
 
     companion object { const val MAX_SCRIBBLES = 200 }
 }
@@ -89,9 +100,131 @@ object Segment {
     }
 
     /** The mask for [cutout] on [pixels], 0..255 per pixel, before feathering and inversion. */
-    fun mask(pixels: IntArray, w: Int, h: Int, cutout: Cutout, check: () -> Unit = {}): IntArray = when (cutout.mode) {
-        CutoutMode.SUBJECT -> subject(pixels, w, h, cutout.scribbles, check)
-        CutoutMode.INK -> ink(pixels, w, h, cutout.threshold)
+    fun mask(pixels: IntArray, w: Int, h: Int, cutout: Cutout, check: () -> Unit = {}): IntArray {
+        val decided = when (cutout.mode) {
+            CutoutMode.SUBJECT -> subject(pixels, w, h, cutout.scribbles, check)
+            CutoutMode.INK -> ink(pixels, w, h, cutout.threshold)
+        }
+        val px = (cutout.grow * min(w, h)).roundToInt()
+        return when {
+            px > 0 -> grow(decided, w, h, px)
+            px < 0 -> shrink(decided, w, h, -px)
+            else -> decided
+        }
+    }
+
+    /** The mask widened by [radiusPx]: a kept pixel within reach makes a pixel kept (a separable max). */
+    fun grow(mask: IntArray, w: Int, h: Int, radiusPx: Int): IntArray = extremum(mask, w, h, radiusPx, wantMax = true)
+
+    /** The mask narrowed by [radiusPx]: a removed pixel within reach makes a pixel removed (a separable min). */
+    fun shrink(mask: IntArray, w: Int, h: Int, radiusPx: Int): IntArray = extremum(mask, w, h, radiusPx, wantMax = false)
+
+    private fun extremum(mask: IntArray, w: Int, h: Int, r: Int, wantMax: Boolean): IntArray {
+        if (r <= 0) return mask
+        val tmp = IntArray(mask.size); val out = IntArray(mask.size)
+        Parallel.bands(h, minimum = 64) { from, to -> for (y in from until to) for (x in 0 until w) {
+            var v = mask[y * w + x]
+            for (k in max(0, x - r)..min(w - 1, x + r)) { val m = mask[y * w + k]; v = if (wantMax) max(v, m) else min(v, m) }
+            tmp[y * w + x] = v
+        } }
+        Parallel.bands(h, minimum = 64) { from, to -> for (y in from until to) for (x in 0 until w) {
+            var v = tmp[y * w + x]
+            for (k in max(0, y - r)..min(h - 1, y + r)) { val m = tmp[k * w + x]; v = if (wantMax) max(v, m) else min(v, m) }
+            out[y * w + x] = v
+        } }
+        return out
+    }
+
+    /** The kept area's bounds as fractions of the picture, widened by [margin], or null when nothing is kept. */
+    fun bounds(mask: IntArray, w: Int, h: Int, margin: Float = 0.02f, threshold: Int = 16): FloatArray? {
+        var x0 = w; var y0 = h; var x1 = -1; var y1 = -1
+        for (y in 0 until h) for (x in 0 until w) if (mask[y * w + x] >= threshold) {
+            if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y
+        }
+        if (x1 < 0) return null
+        return floatArrayOf(
+            ((x0.toFloat() / w) - margin).coerceIn(0f, 1f), ((y0.toFloat() / h) - margin).coerceIn(0f, 1f),
+            (((x1 + 1).toFloat() / w) + margin).coerceIn(0f, 1f), (((y1 + 1).toFloat() / h) + margin).coerceIn(0f, 1f)
+        )
+    }
+
+    // ------------------------------------------------------------------ the edge, from the picture's own colours
+
+    /**
+     * Two colour maps the size of the mask: what the subject looks like near each pixel, and
+     * what the background looks like, each a box-weighted mean of the confident pixels on its
+     * side within [radiusPx]. Where a side is out of reach its global mean stands in.
+     */
+    fun localModels(pixels: IntArray, w: Int, h: Int, mask: IntArray, radiusPx: Int): Pair<IntArray, IntArray> {
+        val n = w * h
+        val fgW = FloatArray(n); val bgW = FloatArray(n)
+        val fr = FloatArray(n); val fg = FloatArray(n); val fb = FloatArray(n)
+        val br = FloatArray(n); val bgG = FloatArray(n); val bb = FloatArray(n)
+        var gfr = 0.0; var gfg = 0.0; var gfb = 0.0; var gfn = 0.0; var gbr = 0.0; var gbg = 0.0; var gbb = 0.0; var gbn = 0.0
+        for (i in 0 until n) {
+            val c = pixels[i]; val m = mask[i]
+            val r = Argb.red(c).toFloat(); val g = Argb.green(c).toFloat(); val b = Argb.blue(c).toFloat()
+            if (m >= 240) { fgW[i] = 1f; fr[i] = r; fg[i] = g; fb[i] = b; gfr += r; gfg += g; gfb += b; gfn++ }
+            else if (m <= 15) { bgW[i] = 1f; br[i] = r; bgG[i] = g; bb[i] = b; gbr += r; gbg += g; gbb += b; gbn++ }
+        }
+        val r = max(1, radiusPx)
+        for (a in listOf(fgW, fr, fg, fb, bgW, br, bgG, bb)) blurFloat(a, w, h, r)
+        val gFg = if (gfn > 0) Argb.pack(255, (gfr / gfn).toInt(), (gfg / gfn).toInt(), (gfb / gfn).toInt()) else Argb.pack(255, 128, 128, 128)
+        val gBg = if (gbn > 0) Argb.pack(255, (gbr / gbn).toInt(), (gbg / gbn).toInt(), (gbb / gbn).toInt()) else Argb.pack(255, 128, 128, 128)
+        val fgMap = IntArray(n); val bgMap = IntArray(n)
+        for (i in 0 until n) {
+            fgMap[i] = if (fgW[i] > 0.002f) Argb.pack(255, (fr[i] / fgW[i]).toInt().coerceIn(0, 255), (fg[i] / fgW[i]).toInt().coerceIn(0, 255), (fb[i] / fgW[i]).toInt().coerceIn(0, 255)) else gFg
+            bgMap[i] = if (bgW[i] > 0.002f) Argb.pack(255, (br[i] / bgW[i]).toInt().coerceIn(0, 255), (bgG[i] / bgW[i]).toInt().coerceIn(0, 255), (bb[i] / bgW[i]).toInt().coerceIn(0, 255)) else gBg
+        }
+        return fgMap to bgMap
+    }
+
+    /** Two passes of a separable box mean over a float map, in place. */
+    private fun blurFloat(a: FloatArray, w: Int, h: Int, r: Int) {
+        val tmp = FloatArray(a.size)
+        repeat(2) {
+            Parallel.bands(h, minimum = 64) { from, to -> for (y in from until to) {
+                var sum = 0f; var count = 0
+                for (i in 0..min(w - 1, r)) { sum += a[y * w + i]; count++ }
+                for (x in 0 until w) {
+                    tmp[y * w + x] = sum / count
+                    val add = x + r + 1; val drop = x - r
+                    if (add < w) { sum += a[y * w + add]; count++ }
+                    if (drop >= 0) { sum -= a[y * w + drop]; count-- }
+                }
+            } }
+            Parallel.bands(w, minimum = 64) { from, to -> for (x in from until to) {
+                var sum = 0f; var count = 0
+                for (i in 0..min(h - 1, r)) { sum += tmp[i * w + x]; count++ }
+                for (y in 0 until h) {
+                    a[y * w + x] = sum / count
+                    val add = y + r + 1; val drop = y - r
+                    if (add < h) { sum += tmp[add * w + x]; count++ }
+                    if (drop >= 0) { sum -= tmp[drop * w + x]; count-- }
+                }
+            } }
+        }
+    }
+
+    /**
+     * How much of [c] is subject, 0..255, judged from how close it is to the local subject colour
+     * [fg] against the local background colour [bg]; -1 when the two are too alike to say.
+     */
+    fun colourAlpha(c: Int, fg: Int, bg: Int): Int {
+        val dr = Argb.red(fg) - Argb.red(bg); val dg = Argb.green(fg) - Argb.green(bg); val db = Argb.blue(fg) - Argb.blue(bg)
+        val len2 = dr * dr + dg * dg + db * db
+        if (len2 < 40 * 40) return -1
+        // The pixel projected onto the line from background to subject: 0 at the background, 1 at the subject.
+        val t = ((Argb.red(c) - Argb.red(bg)) * dr + (Argb.green(c) - Argb.green(bg)) * dg + (Argb.blue(c) - Argb.blue(bg)) * db).toFloat() / len2
+        return (t * 255f).roundToInt().coerceIn(0, 255)
+    }
+
+    /** [c] with the background's share taken out, so a soft edge carries the subject's colour and not a fringe. */
+    fun decontaminate(c: Int, bg: Int, alpha: Int): Int {
+        if (alpha >= 250 || alpha <= 5) return c
+        val a = alpha / 255f
+        fun ch(v: Int, b: Int) = ((v - (1f - a) * b) / a).roundToInt().coerceIn(0, 255)
+        return Argb.pack(Argb.alpha(c), ch(Argb.red(c), Argb.red(bg)), ch(Argb.green(c), Argb.green(bg)), ch(Argb.blue(c), Argb.blue(bg)))
     }
 
     // ------------------------------------------------------------------ subject
@@ -106,8 +239,10 @@ object Segment {
         val hasKeep = scribbles.any { it.keep }; val hasRemove = scribbles.any { !it.keep }
         // How far each pixel is, through flat colour, from a keep stroke and from a remove stroke:
         // a guess near a stroke that says otherwise gives way to the stroke.
-        val fromKeep = if (hasKeep) geodesic(pixels, w, h, stroked, 1, null, towardsSubject = true, check) else null
-        val fromRemove = if (hasRemove) geodesic(pixels, w, h, stroked, 2, null, towardsSubject = false, check) else null
+        val (fromKeep, fromRemove) = Parallel.both(
+            { if (hasKeep) geodesic(pixels, w, h, stroked, 1, null, towardsSubject = true, check) else null },
+            { if (hasRemove) geodesic(pixels, w, h, stroked, 2, null, towardsSubject = false, check) else null }
+        )
         val seed = stroked.copyOf()
         // The border is background unless a keep stroke reaches it through flat colour.
         val band = max(2, (0.03f * shorter).roundToInt())
@@ -143,8 +278,11 @@ object Segment {
             }
         }
         check()
-        val toKeep = geodesic(pixels, w, h, seed, 1, bgDist, towardsSubject = true, check)
-        val toRemove = geodesic(pixels, w, h, seed, 2, bgDist, towardsSubject = false, check)
+        // The two searches never touch each other's answer, so they run side by side.
+        val (toKeep, toRemove) = Parallel.both(
+            { geodesic(pixels, w, h, seed, 1, bgDist, towardsSubject = true, check) },
+            { geodesic(pixels, w, h, seed, 2, bgDist, towardsSubject = false, check) }
+        )
         val mask = IntArray(n) { i ->
             when (stroked[i].toInt()) { 1 -> 255; 2 -> 0; else -> if (toKeep[i] < toRemove[i]) 255 else 0 }
         }
@@ -297,7 +435,7 @@ object Segment {
     private fun boxPass(input: IntArray, output: IntArray, w: Int, h: Int, r: Int, horizontal: Boolean) {
         val lines = if (horizontal) h else w
         val length = if (horizontal) w else h
-        for (o in 0 until lines) {
+        Parallel.bands(lines, minimum = 64) { from, to -> for (o in from until to) {
             fun idx(i: Int) = if (horizontal) o * w + i else i * w + o
             var sum = 0; var count = 0
             for (i in 0..min(length - 1, r)) { sum += input[idx(i)]; count++ }
@@ -307,7 +445,7 @@ object Segment {
                 if (add < length) { sum += input[idx(add)]; count++ }
                 if (drop >= 0) { sum -= input[idx(drop)]; count-- }
             }
-        }
+        } }
     }
 
     /** The mask at another size, bilinear, so a decision made small draws smooth large. */
@@ -327,8 +465,20 @@ object Segment {
         return out
     }
 
-    /** One value of a small map at a fractional position, bilinear. */
-    fun sample(map: IntArray, mw: Int, mh: Int, fx: Float, fy: Float): Int {
+    /** One value of a small map at a fractional position, bilinear; with [channels], the map holds ARGB and each channel is mixed. */
+    fun sample(map: IntArray, mw: Int, mh: Int, fx: Float, fy: Float, channels: Boolean = false): Int {
+        if (channels) {
+            val x0 = fx.toInt().coerceIn(0, mw - 1); val y0 = fy.toInt().coerceIn(0, mh - 1)
+            val x1 = min(mw - 1, x0 + 1); val y1 = min(mh - 1, y0 + 1)
+            val wx = (fx - x0).coerceIn(0f, 1f); val wy = (fy - y0).coerceIn(0f, 1f)
+            val a = map[y0 * mw + x0]; val b = map[y0 * mw + x1]; val c = map[y1 * mw + x0]; val d = map[y1 * mw + x1]
+            fun ch(shift: Int): Int {
+                val top = ((a shr shift) and 0xFF) * (1 - wx) + ((b shr shift) and 0xFF) * wx
+                val bottom = ((c shr shift) and 0xFF) * (1 - wx) + ((d shr shift) and 0xFF) * wx
+                return (top * (1 - wy) + bottom * wy).roundToInt().coerceIn(0, 255)
+            }
+            return Argb.pack(255, ch(16), ch(8), ch(0))
+        }
         val x0 = fx.toInt().coerceIn(0, mw - 1); val y0 = fy.toInt().coerceIn(0, mh - 1)
         val x1 = min(mw - 1, x0 + 1); val y1 = min(mh - 1, y0 + 1)
         val wx = (fx - x0).coerceIn(0f, 1f); val wy = (fy - y0).coerceIn(0f, 1f)

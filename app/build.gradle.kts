@@ -17,6 +17,10 @@ val hasKeystoreProperties = keystorePropertiesFile.exists()
 val keystoreProperties = Properties().apply {
     if (hasKeystoreProperties) load(keystorePropertiesFile.inputStream())
 }
+// Release candidates from CI are signed with release/rc-testing.jks, a key that exists only so a
+// tester can install an optimised build and update it. It is not the Play key: the Play build
+// is signed by the owner with keystore.properties (see docs/RELEASE.md). On only when asked.
+val rcSigning = !hasKeystoreProperties && System.getenv("STILL_RC_SIGNING") == "1"
 
 android {
     namespace = "com.layerbit.still"
@@ -29,8 +33,8 @@ android {
         // lossless is offered only from 30, and everything else is android.graphics.
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.0-rc.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -43,6 +47,14 @@ android {
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
         }
+        if (rcSigning) {
+            create("rc") {
+                storeFile = rootProject.file("release/rc-testing.jks")
+                storePassword = "still-rc-testing"
+                keyAlias = "rc"
+                keyPassword = "still-rc-testing"
+            }
+        }
     }
 
     buildTypes {
@@ -53,6 +65,7 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasKeystoreProperties) signingConfig = signingConfigs.getByName("release")
+            else if (rcSigning) signingConfig = signingConfigs.getByName("rc")
         }
     }
 

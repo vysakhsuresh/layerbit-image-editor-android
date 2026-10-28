@@ -36,7 +36,9 @@ object RecipeJson {
             "enabled" to r.cutout.enabled.json(), "mode" to r.cutout.mode.name.json(),
             "scribbles" to r.cutout.scribbles.map { jsonOf("points" to points(it.points), "width" to it.width.json(), "keep" to it.keep.json()) }.json(),
             "feather" to r.cutout.feather.json(), "threshold" to r.cutout.threshold.json(), "invert" to r.cutout.invert.json(),
-            "backdrop" to r.cutout.backdrop.name.json(), "color" to r.cutout.color.json(), "blur" to r.cutout.blur.json()
+            "backdrop" to r.cutout.backdrop.name.json(), "color" to r.cutout.color.json(), "blur" to r.cutout.blur.json(),
+            "grow" to r.cutout.grow.json(), "refine" to r.cutout.refine.json(), "outline" to r.cutout.outline.json(),
+            "outlineColor" to r.cutout.outlineColor.json(), "trim" to r.cutout.trim.json()
         )
     )
 
@@ -124,7 +126,9 @@ object RecipeJson {
                 scribbles = cu["scribbles"]?.arr()?.map { sb -> Scribble(sb["points"]?.let { pts(it) } ?: emptyList(), sb["width"]?.num()?.toFloat() ?: 0.03f, sb["keep"]?.bool() ?: true) } ?: emptyList(),
                 feather = cu["feather"]?.num()?.toFloat() ?: 0.004f, threshold = cu.f("threshold"), invert = cu["invert"]?.bool() ?: false,
                 backdrop = cu["backdrop"]?.str()?.let { name -> Backdrop.entries.firstOrNull { it.name == name } } ?: Backdrop.TRANSPARENT,
-                color = cu["color"]?.num()?.toLong()?.toInt() ?: d.cutout.color, blur = cu["blur"]?.num()?.toFloat() ?: 0.03f
+                color = cu["color"]?.num()?.toLong()?.toInt() ?: d.cutout.color, blur = cu["blur"]?.num()?.toFloat() ?: 0.03f,
+                grow = cu.f("grow"), refine = cu["refine"]?.bool() ?: true, outline = cu.f("outline"),
+                outlineColor = cu["outlineColor"]?.num()?.toLong()?.toInt() ?: d.cutout.outlineColor, trim = cu["trim"]?.bool() ?: false
             )
         )
     }

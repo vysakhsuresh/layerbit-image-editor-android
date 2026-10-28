@@ -158,7 +158,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         // A quick tool opens the editor already set for its job.
         when (tool) {
             ToolId.SIGNATURE -> if (p.recipe.cutout.isIdentity) change { it.copy(cutout = it.cutout.copy(enabled = true, mode = CutoutMode.INK)) }
-            ToolId.CUTOUT -> if (!p.recipe.cutout.enabled) change { it.copy(cutout = it.cutout.copy(enabled = true, mode = CutoutMode.SUBJECT)) }
+            // The remover opens on the wash and the question; nothing is removed until the user says so.
+            ToolId.CUTOUT -> if (p.recipe.cutout.isIdentity) change { it.copy(cutout = it.cutout.copy(enabled = false, mode = CutoutMode.SUBJECT)) }
             ToolId.STICKER -> { if (!p.recipe.cutout.enabled) change { it.copy(cutout = it.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT)) }; options = options.copy(sticker = true) }
             ToolId.SCAN -> if (p.recipe.scan.isIdentity) change { it.copy(scan = Scan(ScanMode.COLOUR)) }
             else -> Unit
@@ -299,7 +300,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame())
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS -> recipe.copy(frame = Frame())
         // The cut-out panel shows the whole picture with what would go under a wash, whatever the switch says.
-        ToolId.Panel.CUTOUT -> recipe.copy(frame = Frame(), cutout = recipe.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT))
+        // Until the user says "remove it", the panel shows the whole picture with what would go under a wash; after, the real result.
+        ToolId.Panel.CUTOUT -> if (recipe.cutout.enabled) recipe.copy(frame = Frame()) else recipe.copy(frame = Frame(), cutout = recipe.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT))
         else -> recipe
     }
 
@@ -346,7 +348,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
                     fresh.bitmap
                 }
-                val cutoutPanel = state.panel == ToolId.Panel.CUTOUT
+                val cutoutPanel = state.panel == ToolId.Panel.CUTOUT && !state.recipe.cutout.enabled
+                val onCutout = state.panel == ToolId.Panel.CUTOUT
                 // While a finger is on a slider the preview is rendered at half size: a quarter of the
                 // pixels, so it keeps up with the hand; the full one follows when the finger lifts.
                 val fast = dragging && b.width >= 400 && b.height >= 400
@@ -358,7 +361,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val started = System.nanoTime()
                 val finished = renderer.finish(source, shown, check, maskKey = maskKey(geometry), cutoutPreview = cutoutPanel)
                 if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
-                val kept = if (cutoutPanel && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
+                val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
                 val (histogram, palette) = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)

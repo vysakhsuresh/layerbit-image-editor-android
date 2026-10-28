@@ -286,7 +286,7 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
         }
         Step("cutout", stringResource(R.string.tool_cutout_title), stringResource(R.string.step_cutout_detail), R.drawable.ic_tool_cutout, Color(0xFFB08CFF), s.cutoutOn, { set(s.copy(cutoutOn = it)) }) {
             ChipRow(listOf(CutoutMode.SUBJECT to stringResource(R.string.cutout_subject), CutoutMode.INK to stringResource(R.string.cutout_ink)), s.cutoutMode, { set(s.copy(cutoutMode = it)) })
-            ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur)), s.cutoutBackdrop, { set(s.copy(cutoutBackdrop = it)) })
+            ChipRow(listOf(Backdrop.TRANSPARENT to stringResource(R.string.cutout_transparent), Backdrop.COLOUR to stringResource(R.string.cutout_colour), Backdrop.BLUR to stringResource(R.string.cutout_blur), Backdrop.MONO to stringResource(R.string.cutout_mono)), s.cutoutBackdrop, { set(s.copy(cutoutBackdrop = it)) })
             if (s.cutoutBackdrop == Backdrop.COLOUR) ColourRow(listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt()), s.cutoutColor, { set(s.copy(cutoutColor = it)) })
             if (s.cutoutBackdrop == Backdrop.BLUR) Knob(stringResource(R.string.cutout_blur_amount), s.cutoutBlur, 0.005f..0.1f, onChange = { set(s.copy(cutoutBlur = it)) }, onDone = {}, onReset = { set(s.copy(cutoutBlur = 0.03f)) }, format = { "${(it * 1000).roundToInt()}" })
             Hint(stringResource(R.string.step_cutout_hint))

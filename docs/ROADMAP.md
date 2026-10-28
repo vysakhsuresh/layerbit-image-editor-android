@@ -19,10 +19,9 @@ the reasoning stays with the code.
 
 ## Next, in order
 
-1. **Cut-out edge refinement.** Decide at the analysis size as now, then refine the band around
-   the edge at export resolution from colour against the two models, drop colour halos by
-   pulling edge pixels toward the kept side's colour, and add a magnified edge loupe to the
-   panel. Measure on a fixed set of hair, fur, glass and thin objects before and after.
+1. **Cut-out edge refinement, the rest.** The band is now decided from the picture's own colours
+   against two local models and the fringe comes off (done). Still to do: a magnified edge loupe
+   in the panel, and a fixed set of hair, fur, glass and thin objects measured before and after.
 2. **Recoverable batch jobs.** Write each produced file and its note to the workspace as it is
    made, so a cancelled or killed run keeps what it finished; offer "retry the failures" from the
    results; survive process death by reading the workspace back on open.

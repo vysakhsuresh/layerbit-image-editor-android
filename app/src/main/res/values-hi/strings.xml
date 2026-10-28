@@ -600,7 +600,7 @@
     <string name="tool_passport_title">पासपोर्ट फ़ोटो</string>
     <string name="tool_passport_summary">35 × 45 मिमी, 300 dpi, फ़ॉर्म की मांगी सीमा से कम</string>
     <string name="tool_passport_action">बनाएं</string>
-    <string name="panel_cutout">कट-आउट</string>
+    <string name="panel_cutout">बैकग्राउंड</string>
     <string name="panel_scan">स्कैन</string>
 
     <string name="cutout_subject">विषय</string>
@@ -623,8 +623,21 @@
     <string name="cutout_blur">धुंधली तस्वीर</string>
     <string name="cutout_blur_amount">धुंधलापन</string>
     <string name="cutout_transparent_hint">पारदर्शिता रखने के लिए PNG या WebP में निर्यात करें; JPEG उसे सफ़ेद भर देता है.</string>
-    <string name="cutout_apply">यह कट-आउट इस्तेमाल करें</string>
-    <string name="cutout_apply_detail">बंद रहने पर आपके स्ट्रोक रहते हैं पर लागू नहीं होते; बाकी पैनल और निर्यात पूरी तस्वीर दिखाते हैं.</string>
+    <string name="cutout_question">यही हटेगा. ठीक है?</string>
+    <string name="cutout_remove_it">हटा दें</string>
+    <string name="cutout_edit_selection">चयन बदलें</string>
+    <string name="cutout_adjust">समायोजित करें</string>
+    <string name="cutout_more">और</string>
+    <string name="cutout_less">कम</string>
+    <string name="cutout_more_less_hint">“और” आसपास का थोड़ा हिस्सा भी हटाता है; “कम” विषय का थोड़ा हिस्सा और रखता है.</string>
+    <string name="cutout_refine">किनारा निखारें</string>
+    <string name="cutout_refine_detail">बाल और नरम किनारे तस्वीर के अपने रंगों से तय होते हैं, और रंग की झालर हट जाती है.</string>
+    <string name="cutout_mono">कलर पॉप</string>
+    <string name="cutout_outline">आउटलाइन</string>
+    <string name="cutout_trim">विषय तक काटें</string>
+    <string name="cutout_trim_detail">नतीजा विषय तक, थोड़े हाशिये के साथ, काट दिया जाता है.</string>
+    <string name="cutout_done_hint">फिर निर्यात करें. PNG या WebP पारदर्शिता रखता है; स्टिकर 512 × 512, 100 KB से कम.</string>
+    <string name="cutout_use_ink">इस्तेमाल करें</string>
     <string name="cutout_full">एक कट-आउट में इतने ही स्ट्रोक समाते हैं. पहले कुछ साफ़ करें.</string>
 
     <string name="scan_off">बंद</string>
@@ -647,13 +660,13 @@
     <string name="engine_note_sticker">स्टिकर: 512 × 512 WebP पारदर्शिता के साथ, 100 KB से कम.</string>
     <string name="engine_now_png">अब PNG, ताकि पारदर्शिता बनी रहे</string>
 
-    <string name="step_cutout">कट-आउट</string>
+    <string name="step_cutout">बैकग्राउंड हटाएं</string>
     <string name="step_scan">स्कैन</string>
     <string name="step_cutout_detail">स्वचालित: आसपास से विषय, या कागज़ से स्याही</string>
     <string name="step_cutout_hint">बैच सिर्फ़ स्वचालित फ़ैसला लेता है. किसी नतीजे को एडिटर में खोलकर स्ट्रोक से सुधारें.</string>
     <string name="step_scan_detail">हर पन्ने पर बराबर सफ़ेद कागज़ और साफ़ स्याही</string>
 
-    <string name="home_quick_cutout">कट-आउट</string>
+    <string name="home_quick_cutout">बैकग्राउंड हटाएं</string>
     <string name="home_quick_scan">पन्ना स्कैन</string>
     <string name="home_quick_signature">हस्ताक्षर उठाएं</string>
     <string name="home_quick_passport">पासपोर्ट फ़ोटो</string>

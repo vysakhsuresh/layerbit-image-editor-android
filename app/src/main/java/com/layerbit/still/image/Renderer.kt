@@ -27,6 +27,7 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Parallel
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.ScanMath
@@ -280,6 +281,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (small !== base) small.recycle()
         check()
         val entry = MaskEntry(cacheKey, size.width, size.height, Segment.mask(px, size.width, size.height, cut, check))
+        entry.analysisPixels = px
         if (key != null) synchronized(maskCache) { maskCache.removeAll { it.key == cacheKey }; maskCache.addFirst(entry); while (maskCache.size > 3) maskCache.removeLast() }
         return entry
     }
@@ -298,10 +300,21 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         val w = picture.width; val h = picture.height
         val analysis = maskFor(base, cut, key, check)
         val mw = analysis.width; val mh = analysis.height
+        val shorter = min(mw, mh)
         // Feathered at the analysis size and read bilinearly: no mask buffer the size of the picture,
         // and the same softness relative to the picture at every size.
-        val featherPx = (cut.feather * min(mw, mh)).roundToInt()
+        val featherPx = (cut.feather * shorter).roundToInt()
         val mask = if (featherPx > 0) Segment.feather(analysis.mask, mw, mh, featherPx) else analysis.mask
+        // The band either side of the edge where the picture's own colours get the say, and the colours they are judged against.
+        val refine = cut.refine && cut.mode == CutoutMode.SUBJECT && !preview
+        val bandPx = max(2, (0.012f * shorter).roundToInt())
+        val band = if (refine) Segment.feather(analysis.mask, mw, mh, bandPx) else null
+        val models = if (refine) analysis.models ?: synchronized(analysis) {
+            analysis.models ?: analysis.analysisPixels?.let { ap -> Segment.localModels(ap, mw, mh, analysis.mask, max(3, (0.05f * shorter).roundToInt())).also { analysis.models = it } }
+        } else null
+        // The sticker outline: a ring just outside the kept area, at the analysis size.
+        val outlinePx = (cut.outline * shorter).roundToInt()
+        val ring = if (outlinePx > 0 && !preview) Segment.feather(Segment.grow(analysis.mask, mw, mh, outlinePx), mw, mh, 1) else null
         check()
         val px = IntArray(w * h)
         picture.getPixels(px, 0, w, 0, 0, w, h)
@@ -319,24 +332,68 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                 }
             } }
         } else {
-            val behind = if (cut.backdrop == Backdrop.BLUR) blurredCopy(picture, cut.blur, check) else null
+            val behind = when (cut.backdrop) {
+                Backdrop.BLUR -> blurredCopy(picture, cut.blur, check)
+                else -> null
+            }
+            val sx = (mw - 1).toFloat() / max(1, w - 1); val sy = (mh - 1).toFloat() / max(1, h - 1)
             Parallel.bands(h) { from, to -> for (y in from until to) {
                 if (y and 0x3F == 0) check()
+                val fy = y * sy
                 for (x in 0 until w) {
                     val i = y * w + x
-                    val m = Segment.maskAt(mask, mw, mh, x, y, w, h, cut.invert)
-                    val top = Argb.withAlpha(px[i], Argb.alpha(px[i]) * m / 255)
+                    val fx = x * sx
+                    val original = px[i]
+                    var m = Segment.sample(mask, mw, mh, fx, fy)
+                    var colour = original
+                    if (band != null && models != null) {
+                        val inBand = Segment.sample(band, mw, mh, fx, fy)
+                        if (inBand in 4..251) {
+                            val fg = Segment.sample(models.first, mw, mh, fx, fy, channels = true)
+                            val bg = Segment.sample(models.second, mw, mh, fx, fy, channels = true)
+                            val judged = Segment.colourAlpha(original, fg, bg)
+                            if (judged >= 0) {
+                                // The picture's colours decide, leaning on the mask where the colours are close.
+                                m = (judged * 3 + m) / 4
+                                colour = Segment.decontaminate(original, bg, m)
+                            }
+                        }
+                    }
+                    if (cut.invert) m = 255 - m
+                    var top = Argb.withAlpha(colour, Argb.alpha(colour) * m / 255)
+                    if (ring != null) {
+                        val o = Segment.sample(ring, mw, mh, fx, fy)
+                        if (o > 0 && m < 255) top = Segment.over(top, Argb.withAlpha(cut.outlineColor, o))
+                    }
                     px[i] = when (cut.backdrop) {
                         Backdrop.TRANSPARENT -> top
                         Backdrop.COLOUR -> Segment.over(top, cut.color)
                         Backdrop.BLUR -> Segment.over(top, behind!!.at(x, y, w, h))
+                        Backdrop.MONO -> Segment.over(top, mono(original))
                     }
                 }
             } }
         }
-        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        var out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         out.setPixels(px, 0, w, 0, 0, w, h)
+        if (cut.trim && !preview && !cut.invert) {
+            val b = Segment.bounds(analysis.mask, mw, mh)
+            if (b != null) {
+                val x0 = (b[0] * w).toInt().coerceIn(0, w - 1); val y0 = (b[1] * h).toInt().coerceIn(0, h - 1)
+                val x1 = (b[2] * w).roundToInt().coerceIn(x0 + 1, w); val y1 = (b[3] * h).roundToInt().coerceIn(y0 + 1, h)
+                if (x1 - x0 < w || y1 - y0 < h) {
+                    val trimmed = Bitmap.createBitmap(out, x0, y0, x1 - x0, y1 - y0)
+                    out.recycle(); out = trimmed
+                }
+            }
+        }
         return out
+    }
+
+    /** The picture drained of colour and a little darker, for the background behind a colour-pop subject. */
+    private fun mono(c: Int): Int {
+        val l = (Argb.luma(c) * 0.82f).roundToInt().coerceIn(0, 255)
+        return Argb.pack(Argb.alpha(c), l, l, l)
     }
 
     /** A blurred, quarter-size copy of the picture, read bilinearly where it is needed. */
