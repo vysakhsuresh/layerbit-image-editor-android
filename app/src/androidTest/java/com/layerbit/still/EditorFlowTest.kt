@@ -173,10 +173,12 @@ class EditorFlowTest {
         compose.waitUntil(20_000) { compose.onAllNodesWithText("640 × 480").fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("06-editor-crop")
+        compose.onNodeWithTag("panelStrip").performScrollToNode(hasContentDescription(app.getString(R.string.panel_light)))
         compose.onNodeWithContentDescription(app.getString(R.string.panel_light)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.light_auto)).fetchSemanticsNodes().isNotEmpty() }
         settle()
         screenshot("07-editor-light")
+        compose.onNodeWithTag("panelStrip").performScrollToNode(hasContentDescription(app.getString(R.string.panel_looks)))
         compose.onNodeWithContentDescription(app.getString(R.string.panel_looks)).tap()
         waitFor { compose.onAllNodesWithText(app.getString(R.string.look_sepia)).fetchSemanticsNodes().isNotEmpty() }
         // The strip shows every look on the picture itself; the thumbnails are rendered after the panel opens.
