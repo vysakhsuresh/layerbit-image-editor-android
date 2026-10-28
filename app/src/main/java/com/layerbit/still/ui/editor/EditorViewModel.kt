@@ -20,6 +20,8 @@ import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.BuildConfig
+import com.layerbit.still.engine.Palette
 import com.layerbit.still.engine.Look
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.Scan
@@ -88,6 +90,10 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val cutoutKept: Float? = null,
         /** The picture under each look, small, for the Looks strip. Filled the first time the panel opens. */
         val lookThumbs: Map<Look, Bitmap> = emptyMap(),
+        /** True while the preview is the quick half-size one shown during a slider move. */
+        val previewFast: Boolean = false,
+        /** The few colours that carry the picture, for the glow behind the editor. */
+        val palette: List<Int> = emptyList(),
         val loading: Boolean = true
     )
 
@@ -104,6 +110,10 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     private var base: Bitmap? = null
     private var baseGeometry: Geometry? = null
     private var baseScaled = false
+    /** The geometry stage at half size, for the preview that follows a finger. */
+    private var baseFast: Bitmap? = null
+    /** True from a draft until its commit: previews in between are the quick kind. */
+    @Volatile private var dragging = false
 
     private val renderRequests = MutableStateFlow(0L)
     private var persistJob: Job? = null
@@ -191,12 +201,17 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     /** A live change during a gesture: rendered, not yet undoable. */
     fun draft(recipe: Recipe) {
         if (!recipe.valid) return
+        dragging = true
         _ui.update { it.copy(recipe = recipe, export = null, exportFile = null, exportPreview = null) }
         requestRender()
     }
 
     /** Ends a gesture: the change becomes one undo step and is written to the project. */
     fun commit() {
+        val wasDragging = dragging
+        dragging = false
+        // The quick preview is replaced by the full one once the finger lifts.
+        if (wasDragging) requestRender()
         val recipe = _ui.value.recipe
         if (recipe != baseline) {
             undo.addLast(baseline)
@@ -332,18 +347,28 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     fresh.bitmap
                 }
                 val cutoutPanel = state.panel == ToolId.Panel.CUTOUT
-                val finished = renderer.finish(b, shown, check, maskKey = maskKey(geometry), cutoutPreview = cutoutPanel)
-                val kept = if (cutoutPanel) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else null
+                // While a finger is on a slider the preview is rendered at half size: a quarter of the
+                // pixels, so it keeps up with the hand; the full one follows when the finger lifts.
+                val fast = dragging && b.width >= 400 && b.height >= 400
+                val source = if (fast) {
+                    val cached = baseFast
+                    if (cached != null && !cached.isRecycled && cached.width == b.width / 2) cached
+                    else withContext(Dispatchers.Default) { renderer.scale(b, b.width / 2, b.height / 2) }.also { baseFast?.recycle(); baseFast = it }
+                } else b
+                val started = System.nanoTime()
+                val finished = renderer.finish(source, shown, check, maskKey = maskKey(geometry), cutoutPreview = cutoutPanel)
+                if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
+                val kept = if (cutoutPanel && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
-                val histogram = withContext(Dispatchers.Default) {
+                val (histogram, palette) = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)
                     finished.getPixels(px, 0, finished.width, 0, 0, finished.width, finished.height)
-                    Histogram.of(px)
+                    Histogram.of(px) to (if (fast) state.palette else Palette.of(px))
                 }
                 val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
-                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept) }
+                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, previewFast = fast, palette = palette) }
             } catch (c: CancellationException) {
                 throw c
             } catch (e: OutOfMemoryError) {
@@ -356,6 +381,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun dropBase() {
         base?.recycle(); base = null; baseGeometry = null
+        baseFast?.recycle(); baseFast = null
     }
 
     // ------------------------------------------------------------------ export

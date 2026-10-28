@@ -133,7 +133,7 @@ class EditorFlowTest {
             }
         }
         val project = runBlocking { app.store.importProject(Uri.fromFile(fixtures[0])) }
-        app.settings.update { it.copy(theme = ThemeChoice.LIGHT) }
+        app.settings.update { it.copy(theme = ThemeChoice.DARK) }
         app.prompts.introSeen = false
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
@@ -229,9 +229,9 @@ class EditorFlowTest {
         screenshot("17-contact")
         back()
         compose.onNodeWithTag("homeList").performScrollToNode(hasTestTag("openPhotos"))
-        app.settings.update { it.copy(theme = ThemeChoice.DARK) }
+        app.settings.update { it.copy(theme = ThemeChoice.LIGHT) }
         settle()
-        screenshot("11-home-dark")
-        app.settings.update { it.copy(theme = ThemeChoice.SYSTEM) }
+        screenshot("11-home-light")
+        app.settings.update { it.copy(theme = ThemeChoice.DARK) }
     }
 }

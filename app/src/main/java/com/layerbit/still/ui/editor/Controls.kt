@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.SideEffect
 import kotlin.math.min
 import kotlin.math.max
 import androidx.compose.ui.graphics.Brush
@@ -60,10 +62,17 @@ import com.layerbit.still.ui.theme.StillColors
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+/** What a sideways swipe on the picture moves: the chosen slider, read fresh each time it is drawn. */
+data class ScrubTarget(val label: String, val value: Float, val range: ClosedFloatingPointRange<Float>, val onChange: (Float) -> Unit, val onDone: () -> Unit, val format: (Float) -> String)
+
+/** The one slider the canvas is steering, if any. One per editor. */
+class ScrubHost { var target by mutableStateOf<ScrubTarget?>(null) }
+
 /**
  * A labelled slider that reports every move for the live preview and the release for undo,
  * resets on a double tap of its label, and ticks as it crosses zero. The value is announced
- * to TalkBack as a signed percentage rather than a float.
+ * to TalkBack as a signed percentage rather than a float. A tap on the label hands the slider
+ * to the canvas: a sideways swipe on the picture then moves it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +85,8 @@ fun Knob(
     onReset: () -> Unit,
     modifier: Modifier = Modifier,
     haptics: Boolean = true,
-    format: (Float) -> String = { v -> if (range.start < 0f) String.format(java.util.Locale.getDefault(), "%+d", (v * 100).roundToInt()) else "${(v * 100).roundToInt()}" }
+    format: (Float) -> String = { v -> if (range.start < 0f) String.format(java.util.Locale.getDefault(), "%+d", (v * 100).roundToInt()) else "${(v * 100).roundToInt()}" },
+    scrub: ScrubHost? = null
 ) {
     val haptic = LocalHapticFeedback.current
     var lastSign by remember { mutableIntStateOf(sign(value)) }
@@ -85,9 +95,22 @@ fun Knob(
     val bipolar = range.start < 0f && range.endInclusive > 0f
     val live = value != 0f
     val valueFill by animateColorAsState(if (live) StillColors.Band else StillColors.SurfaceDim, label = "knobValue")
+    val steering = scrub?.target?.label == label
+    val target = ScrubTarget(label, value, range, onChange, onDone, format)
+    // The canvas reads the slider's value through its target; keep the target as fresh as the slider.
+    if (steering) SideEffect { if (scrub?.target?.label == label && scrub.target != target) scrub.target = target }
+    val rowFill by animateColorAsState(if (steering) StillColors.BandDim else Color.Transparent, label = "knobRow")
     Column(modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().pointerInput(onReset) { detectTapGestures(onDoubleTap = { onReset() }) }.semantics { contentDescription = resetLabel }) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text, modifier = Modifier.weight(1f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().background(rowFill, RoundedCornerShape(10.dp))
+                .pointerInput(onReset, scrub) { detectTapGestures(onDoubleTap = { onReset() }, onTap = { if (scrub != null) scrub.target = if (steering) null else target }) }
+                .padding(horizontal = if (steering) 8.dp else 0.dp, vertical = if (steering) 4.dp else 0.dp)
+                .semantics { contentDescription = resetLabel }
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text)
+            if (steering) Text(stringResource(R.string.editor_scrub_hint), style = MaterialTheme.typography.labelSmall, color = StillColors.BandBright, modifier = Modifier.padding(start = 8.dp))
+            Spacer(Modifier.weight(1f))
             Text(
                 shown, style = MaterialTheme.typography.labelMedium, color = if (live) StillColors.OnBand else StillColors.Dim,
                 modifier = Modifier.background(valueFill, RoundedCornerShape(999.dp)).padding(horizontal = 9.dp, vertical = 2.dp)

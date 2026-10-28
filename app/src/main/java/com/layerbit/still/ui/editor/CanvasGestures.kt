@@ -90,6 +90,8 @@ sealed interface TouchMode {
     data class Tap(val onTap: (Pt) -> Unit) : TouchMode
     /** Drag a handle found by [hit] at the touch, in box coordinates; [onDrag] gets the delta in fractions. */
     data class Handles(val hit: (Offset) -> Int?, val onDrag: (Int, Pt, Offset) -> Unit, val onEnd: () -> Unit, val onTap: ((Pt) -> Unit)? = null) : TouchMode
+    /** A sideways swipe anywhere on the picture moves the chosen slider; [onDelta] gets the move as a fraction of the width. */
+    data class Scrub(val onDelta: (Float) -> Unit, val onEnd: () -> Unit) : TouchMode
 }
 
 /**
@@ -108,6 +110,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
             var comparing = false
             var drawing = false
             var handle: Int? = null
+            var scrubbing = false
             var lastPos = start
             var handleLast = start
             try {
@@ -147,6 +150,13 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
                                 }
                             }
                             is TouchMode.Tap -> Unit
+                            is TouchMode.Scrub -> {
+                                if (moved) {
+                                    scrubbing = true
+                                    mode.onDelta((pos.x - lastPos.x) / max(1f, t.box.width.toFloat()))
+                                    change.consume()
+                                }
+                            }
                             TouchMode.View -> {
                                 if (moved) {
                                     if (comparing) { onCompare(false); comparing = false }
@@ -161,6 +171,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
                     if (pressed.isEmpty()) break
                 }
             } finally {
+                if (scrubbing) (mode as TouchMode.Scrub).onEnd()
                 if (drawing) (mode as TouchMode.Draw).onEnd()
                 if (comparing) onCompare(false)
                 if (handle != null) (mode as TouchMode.Handles).onEnd()

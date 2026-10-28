@@ -1,5 +1,6 @@
 package com.layerbit.still.ui.home
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.layerbit.still.ui.components.pressScale
 import androidx.compose.runtime.remember
@@ -239,6 +240,8 @@ private fun Door(glyph: Glyph, accent: Color, title: String, body: String, onCli
             .shadow(if (dark) 10.dp else 6.dp, shape, clip = false, ambientColor = accent.copy(alpha = 0.4f), spotColor = accent.copy(alpha = 0.5f))
             .clip(shape)
             .background(Brush.linearGradient(listOf(accent.copy(alpha = if (dark) 0.95f else 1f), accent.copy(alpha = if (dark) 0.62f else 0.78f))))
+            // A light on the top-left corner, as on anything glossy.
+            .drawBehind { drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.26f), Color.Transparent), center = Offset(size.width * 0.18f, size.height * 0.12f), radius = size.width * 0.7f), size.width * 0.7f, Offset(size.width * 0.18f, size.height * 0.12f)) }
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(14.dp)
     ) {
@@ -262,8 +265,9 @@ private fun Quick(glyph: Glyph, accent: Color, label: String, modifier: Modifier
     ) {
         Box(
             Modifier.size(60.dp).clip(CircleShape)
-                .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.30f), accent.copy(alpha = 0.14f))))
-                .border(1.5.dp, accent.copy(alpha = 0.5f), CircleShape),
+                .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.34f), accent.copy(alpha = 0.14f))))
+                .drawBehind { drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.38f), Color.Transparent), center = Offset(size.width * 0.32f, size.height * 0.26f), radius = size.width * 0.5f), size.width * 0.5f, Offset(size.width * 0.32f, size.height * 0.26f)) }
+                .border(1.5.dp, accent.copy(alpha = 0.55f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             AnimatedGlyph(glyph, accent, Modifier.size(32.dp), seed = glyph.ordinal * 11)

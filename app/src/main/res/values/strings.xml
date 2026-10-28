@@ -157,6 +157,10 @@
     <!-- Editor -->
     <string name="editor_canvas_description">Picture. Pinch to zoom; press and hold to see the original.</string>
     <string name="editor_showing_original">Original</string>
+    <string name="editor_scrub_hint">Swipe on the picture</string>
+    <string name="export_ready_size">ready</string>
+    <string name="results_smaller">%1$d%% smaller</string>
+    <string name="results_larger">%1$d%% larger</string>
     <string name="editor_split">Split</string>
     <string name="editor_split_description">Split view: the original on the left of the line, the edit on the right. Drag the line.</string>
     <string name="editor_hold_to_compare">Hold to compare</string>

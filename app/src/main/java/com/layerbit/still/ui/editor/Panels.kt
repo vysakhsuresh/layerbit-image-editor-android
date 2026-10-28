@@ -88,7 +88,8 @@ class PanelScope(
     val commit: () -> Unit,
     val change: ((Recipe) -> Recipe) -> Unit,
     val haptics: Boolean,
-    val source: Geometry2D.Size
+    val source: Geometry2D.Size,
+    val scrub: ScrubHost = ScrubHost()
 ) {
     fun tone(block: (Tone) -> Tone) = draft(recipe.copy(tone = block(recipe.tone)))
     fun toneCommit(block: (Tone) -> Tone) = change { it.copy(tone = block(it.tone)) }
@@ -96,7 +97,7 @@ class PanelScope(
 
 @Composable
 private fun PanelScope.ToneKnob(label: String, value: Float, range: ClosedFloatingPointRange<Float> = -1f..1f, set: (Tone, Float) -> Tone) {
-    Knob(label, value, range, onChange = { v -> tone { set(it, v) } }, onDone = commit, onReset = { toneCommit { set(it, 0f) } }, haptics = haptics)
+    Knob(label, value, range, onChange = { v -> tone { set(it, v) } }, onDone = commit, onReset = { toneCommit { set(it, 0f) } }, haptics = haptics, scrub = scrub)
 }
 
 @Composable

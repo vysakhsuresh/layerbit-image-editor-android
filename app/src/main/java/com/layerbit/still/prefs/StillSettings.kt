@@ -51,7 +51,7 @@ class StillSettings(context: Context) {
     }
 
     private fun read(): Settings = Settings(
-        theme = prefs.getString(KEY_THEME, null)?.let { n -> ThemeChoice.entries.firstOrNull { it.name == n } } ?: ThemeChoice.SYSTEM,
+        theme = prefs.getString(KEY_THEME, null)?.let { n -> ThemeChoice.entries.firstOrNull { it.name == n } } ?: ThemeChoice.DARK,
         livelyIcons = prefs.getBoolean(KEY_LIVELY, true),
         askWhereToSave = prefs.getBoolean(KEY_ASK_SAVE, true),
         saveFolder = prefs.getString(KEY_SAVE_FOLDER, null),
@@ -81,7 +81,8 @@ class StillSettings(context: Context) {
 }
 
 data class Settings(
-    val theme: ThemeChoice = ThemeChoice.SYSTEM,
+    /** Ink by default; paper and match-the-phone are a tap away in Settings. */
+    val theme: ThemeChoice = ThemeChoice.DARK,
     /** Tool icons make their small movement now and then. */
     val livelyIcons: Boolean = true,
     /** Off means results go to the folder chosen once, which makes a batch one gesture. */

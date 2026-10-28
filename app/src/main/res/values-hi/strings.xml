@@ -157,6 +157,10 @@
     <!-- Editor -->
     <string name="editor_canvas_description">तस्वीर. ज़ूम के लिए पिंच करें; मूल देखने के लिए दबाकर रखें.</string>
     <string name="editor_showing_original">मूल</string>
+    <string name="editor_scrub_hint">तस्वीर पर स्वाइप करें</string>
+    <string name="export_ready_size">तैयार</string>
+    <string name="results_smaller">%1$d%% छोटा</string>
+    <string name="results_larger">%1$d%% बड़ा</string>
     <string name="editor_split">स्प्लिट</string>
     <string name="editor_split_description">स्प्लिट व्यू: रेखा के बाएँ मूल, दाएँ संपादन. रेखा खींचें.</string>
     <string name="editor_hold_to_compare">तुलना के लिए दबाकर रखें</string>

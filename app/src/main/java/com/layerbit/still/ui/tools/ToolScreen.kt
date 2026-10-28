@@ -253,6 +253,15 @@ fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StillFile) -> Bitmap?, 
             }
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(o.file.displayName, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text, maxLines = 2)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                    Text(FitSize.sizeText(o.file.sizeBytes), style = MaterialTheme.typography.titleLarge, color = StillColors.Text)
+                    val before = o.before
+                    if (before != null && before > 0 && before != o.file.sizeBytes) {
+                        val pct = ((o.file.sizeBytes - before) * 100 / before).toInt()
+                        if (pct < 0) Pill(stringResource(R.string.results_smaller, -pct), StillColors.Done, Modifier.padding(start = 8.dp), filled = true)
+                        else if (pct > 0) Pill(stringResource(R.string.results_larger, pct), StillColors.Skipped, Modifier.padding(start = 8.dp))
+                    }
+                }
                 o.detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = StillColors.Muted, modifier = Modifier.padding(top = 2.dp)) }
             }
         }

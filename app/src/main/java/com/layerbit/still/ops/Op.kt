@@ -62,7 +62,7 @@ class OpContext(
 
 sealed interface OpOutcome {
     /** @param detail what actually happened, in the user's terms: "4.2 MB to 48 KB, 1200 × 900". */
-    data class Produced(val file: StillFile, val detail: String? = null) : OpOutcome
+    data class Produced(val file: StillFile, val detail: String? = null, /** The input's bytes, when the step changed the size. */ val before: Long? = null) : OpOutcome
     data class Failed(val inputName: String, val reason: String) : OpOutcome
     data class Skipped(val inputName: String, val reason: String) : OpOutcome
 }

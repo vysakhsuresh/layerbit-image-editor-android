@@ -61,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.layerbit.still.R
@@ -142,7 +143,23 @@ fun EditorScreen(
     val recipe = ui.recipe
     val panel = ui.panel
     val source = project?.let { Geometry2D.Size(it.file.width, it.file.height) } ?: Geometry2D.Size(1, 1)
-    val scope = PanelScope(recipe, vm::draft, vm::commit, vm::change, settings.haptics, source)
+    val scrubHost = remember { ScrubHost() }
+    var scrubbing by remember { mutableStateOf(false) }
+    val scope = PanelScope(recipe, vm::draft, vm::commit, vm::change, settings.haptics, source, scrubHost)
+    // A chosen slider turns the whole picture into its track: a sideways swipe moves it.
+    val viewOrScrub: TouchMode = scrubHost.target?.let { _ ->
+        TouchMode.Scrub(
+            onDelta = move@{ dx ->
+                val t = scrubHost.target ?: return@move
+                scrubbing = true
+                val span = t.range.endInclusive - t.range.start
+                var next = (t.value + dx * span * 1.1f).coerceIn(t.range.start, t.range.endInclusive)
+                if (t.range.start < 0f && kotlin.math.abs(next) < span * 0.01f) next = 0f
+                t.onChange(next)
+            },
+            onEnd = { scrubbing = false; scrubHost.target?.onDone?.invoke() }
+        )
+    } ?: TouchMode.View
 
     // The overlay and the touch mode the open panel asks for.
     val overlay: Overlay = when {
@@ -185,7 +202,7 @@ fun EditorScreen(
             onEnd = { val pts = strokePoints; strokePoints = emptyList(); if (pts.isNotEmpty()) vm.addScribble(pts, cutWidth, cutKeep) },
             onCancel = { strokePoints = emptyList() }
         ) else TouchMode.View
-        ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else TouchMode.View
+        ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else viewOrScrub
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
             brush.pickingSource -> TouchMode.Tap { p -> brush = brush.copy(cloneSource = p, pickingSource = false) }
             brush.kind == MarkKind.REDEYE && panel == ToolId.Panel.RETOUCH -> TouchMode.Tap { p -> addMark(listOf(p), MarkKind.REDEYE) }
@@ -204,11 +221,11 @@ fun EditorScreen(
                 onCancel = { strokePoints = emptyList() }
             )
         }
-        else -> TouchMode.View
+        else -> viewOrScrub
     }
 
     Box(Modifier.fillMaxSize().background(StillColors.Background).imePadding()) {
-        AmbientBackdrop(strength = 0.5f)
+        AmbientBackdrop(strength = if (ui.palette.isEmpty()) 0.5f else 0.9f, colours = ui.palette.map { androidx.compose.ui.graphics.Color(it) })
         if (ui.loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LinearProgressIndicator(Modifier.width(160.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim) }
             return@Box
@@ -237,6 +254,18 @@ fun EditorScreen(
                             Text(stringResource(R.string.editor_hold_to_compare), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim)
                         }
                     }
+                    scrubHost.target?.let { t ->
+                        // The slider's name and value, large, over the picture while it is being swiped.
+                        androidx.compose.animation.AnimatedVisibility(visible = scrubbing, modifier = Modifier.align(Alignment.Center), enter = androidx.compose.animation.fadeIn(), exit = androidx.compose.animation.fadeOut()) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.clip(RoundedCornerShape(22.dp)).background(StillColors.Glass).border(1.dp, StillColors.Border, RoundedCornerShape(22.dp)).padding(horizontal = 22.dp, vertical = 12.dp)
+                            ) {
+                                Text(t.label, style = MaterialTheme.typography.labelMedium, color = StillColors.Muted)
+                                Text(t.format(t.value), style = MaterialTheme.typography.displayMedium, color = StillColors.BandBright)
+                            }
+                        }
+                    }
                     FloatingBar(
                         title = project?.name ?: stringResource(R.string.tool_edit_title),
                         subtitle = ui.canvasSize?.let { "${it.width} × ${it.height}" },
@@ -254,7 +283,7 @@ fun EditorScreen(
                         .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border, StillColors.Border)), sheet)
                 ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).size(width = 40.dp, height = 4.dp).background(StillColors.BorderStrong, RoundedCornerShape(2.dp)))
-                    PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false })
+                    PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false; scrubHost.target = null })
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when (panel) {
                             ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it })
@@ -316,28 +345,36 @@ fun EditorScreen(
     }
     ui.export?.let { e ->
         val file = ui.exportFile
-        AlertDialog(
-            onDismissRequest = vm::dismissExport, containerColor = StillColors.Surface,
-            title = { Text(stringResource(R.string.export_ready), color = StillColors.Text) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ui.exportPreview?.let { Image(it.asImageBitmap(), stringResource(R.string.export_preview_description), Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Fit) }
-                    Text("${e.width} × ${e.height} · ${FitSize.sizeText(e.bytes)}", style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.testTag("exportDimensions"))
-                    Text(if (e.quality < 0) stringResource(R.string.export_lossless_line, e.format.label) else stringResource(R.string.export_quality_line, e.format.label, e.quality), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted)
-                    for (n in e.notes) Text("· $n", style = MaterialTheme.typography.bodySmall, color = StillColors.Dim)
-                    project?.let { Text(stringResource(R.string.export_original_line, it.file.width, it.file.height, FitSize.sizeText(it.file.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                        SecondaryButton(stringResource(R.string.app_share), onClick = { vm.shareIntent()?.let { context.startActivity(it) } }, modifier = Modifier.weight(1f), tall = false)
-                        if (!settings.askWhereToSave) SecondaryButton(stringResource(R.string.export_save_folder), onClick = {
-                            val f = settings.saveFolder
-                            if (f != null) vm.saveInto(Uri.parse(f)) else folder.launch(still.exporter.openFolderIntent())
-                        }, modifier = Modifier.weight(1f), tall = false)
-                    }
+        // A share card: the picture big, the numbers bigger, and what to do with it.
+        Dialog(onDismissRequest = vm::dismissExport) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(StillColors.Surface)
+                    .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border, StillColors.Border)), RoundedCornerShape(28.dp))
+                    .verticalScroll(rememberScrollState()).padding(18.dp)
+            ) {
+                ui.exportPreview?.let { Image(it.asImageBitmap(), stringResource(R.string.export_preview_description), Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(20.dp)).background(StillColors.Canvas), contentScale = ContentScale.Fit) }
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 14.dp)) {
+                    Text(FitSize.sizeText(e.bytes), style = MaterialTheme.typography.displayMedium, color = StillColors.BandBright)
+                    Text(stringResource(R.string.export_ready_size), style = MaterialTheme.typography.titleMedium, color = StillColors.Muted, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
                 }
-            },
-            confirmButton = { PrimaryButton(stringResource(R.string.export_save_copy), onClick = { file?.let { save.launch(still.exporter.createDocumentIntent(it.displayName, it.mimeType)) } }, tall = false) },
-            dismissButton = { TextButton(onClick = vm::dismissExport) { Text(stringResource(R.string.app_close), color = StillColors.Muted) } }
-        )
+                Text("${e.width} × ${e.height} · ${FitSize.sizeText(e.bytes)}", style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.testTag("exportDimensions"))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    com.layerbit.still.ui.components.Pill(e.format.label, StillColors.Band)
+                    com.layerbit.still.ui.components.Pill(if (e.quality < 0) stringResource(R.string.export_lossless_line, "").trim(' ', '·') else stringResource(R.string.export_quality_line, "", e.quality).trim(' ', '·'), StillColors.Running)
+                }
+                for (n in e.notes) Text("· $n", style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 4.dp))
+                project?.let { Text(stringResource(R.string.export_original_line, it.file.width, it.file.height, FitSize.sizeText(it.file.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.padding(top = 6.dp)) }
+                PrimaryButton(stringResource(R.string.export_save_copy), onClick = { file?.let { save.launch(still.exporter.createDocumentIntent(it.displayName, it.mimeType)) } }, modifier = Modifier.fillMaxWidth().padding(top = 14.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    SecondaryButton(stringResource(R.string.app_share), onClick = { vm.shareIntent()?.let { context.startActivity(it) } }, modifier = Modifier.weight(1f), tall = false)
+                    if (!settings.askWhereToSave) SecondaryButton(stringResource(R.string.export_save_folder), onClick = {
+                        val f = settings.saveFolder
+                        if (f != null) vm.saveInto(Uri.parse(f)) else folder.launch(still.exporter.openFolderIntent())
+                    }, modifier = Modifier.weight(1f), tall = false)
+                }
+                TextButton(onClick = vm::dismissExport, modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp)) { Text(stringResource(R.string.app_close), color = StillColors.Muted) }
+            }
+        }
     }
     ui.message?.let { message ->
         AlertDialog(

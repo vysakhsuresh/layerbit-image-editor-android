@@ -109,7 +109,7 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
             if (exported.shrunk) append(" · ").append(Strings.get(R.string.engine_made_smaller, dims(input.width, input.height)))
             if (lossy != format) append(" · ").append(Strings.get(if (lossy == OutputFormat.PNG) R.string.engine_now_png else R.string.engine_now_jpeg))
         }
-        return OpOutcome.Produced(file, detail)
+        return OpOutcome.Produced(file, detail, before = input.sizeBytes)
     }
 
     /** The picture's own format, or JPEG for anything the platform cannot write back. */

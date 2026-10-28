@@ -209,7 +209,7 @@ class CompressOp(private val options: ExportOptions, private val tool0: ToolId =
             file.file.delete()
             return OpOutcome.Skipped(input.displayName, Strings.get(R.string.engine_nothing_to_gain, FitSize.sizeText(input.sizeBytes)))
         }
-        return OpOutcome.Produced(file, sizeChange(input.sizeBytes, exported.bytes) + " · " + dims(exported.width, exported.height))
+        return OpOutcome.Produced(file, sizeChange(input.sizeBytes, exported.bytes) + " · " + dims(exported.width, exported.height), before = input.sizeBytes)
     }
 }
 

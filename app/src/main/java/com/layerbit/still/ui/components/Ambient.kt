@@ -33,11 +33,14 @@ private const val TAU = (2 * PI).toFloat()
 
 /** Four soft pools of the brand's colours, drifting slowly behind the content. */
 @Composable
-fun AmbientBackdrop(modifier: Modifier = Modifier, strength: Float = 1f) {
+fun AmbientBackdrop(modifier: Modifier = Modifier, strength: Float = 1f, colours: List<Color> = emptyList()) {
     val clock = LocalLivelyClock.current
-    val band = StillColors.Band
     val dark = StillColors.isDark
-    val teal = Color(0xFF3ED3C0); val pink = Color(0xFFFF6BA8); val blue = Color(0xFF5B9DFF)
+    // The pools wear the picture's own colours when there are any, so the editor glows with what it holds.
+    val band = colours.getOrNull(0) ?: StillColors.Band
+    val teal = colours.getOrNull(1) ?: Color(0xFF3ED3C0)
+    val pink = colours.getOrNull(2) ?: Color(0xFFFF6BA8)
+    val blue = colours.getOrNull(1) ?: Color(0xFF5B9DFF)
     Canvas(modifier.fillMaxSize()) {
         val t = (clock?.value ?: 0.37f) * TAU
         val w = size.width; val h = size.height
