@@ -62,7 +62,8 @@ fun IntroScreen(onDone: () -> Unit) {
     val last = pager.currentPage == cards.lastIndex
     val accents = listOf(Neon.Violet, Neon.Mint, Neon.Coral)
     val accent by animateColorAsState(accents[pager.currentPage], label = "introAccent")
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(accent, accent.copy(alpha = 0.55f), StillColors.Background)))) {
+    // Opaque ground first: the intro sits over the home and must hide it entirely.
+    Box(Modifier.fillMaxSize().background(StillColors.Background).background(Brush.verticalGradient(listOf(accent, accent.copy(alpha = 0.55f), Color.Transparent)))) {
         AmbientBackdrop(strength = 0.6f)
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
