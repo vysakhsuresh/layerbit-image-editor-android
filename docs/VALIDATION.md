@@ -15,7 +15,7 @@ Green on `e6486a1`: https://github.com/vysakhsuresh/layerbit-image-editor-androi
 
 | Stage | Where | Result |
 | --- | --- | --- |
-| Engine | standalone Kotlin compiler, JUnit | 75 tests pass; nothing in `engine/` imports `android.*`; `ParallelTest` prints the banded stages against the sequential ones (on a 4-core runner: 1200×1000 detail, vignette, grain and scan in 464 ms sequential, 280 ms in four bands) |
+| Engine | standalone Kotlin compiler, JUnit | 78 tests pass; nothing in `engine/` imports `android.*`; `ParallelTest` prints the banded stages against the sequential ones (on a 4-core runner: 1200×1000 detail, vignette, grain and scan in 464 ms sequential, 280 ms in four bands) |
 | Gradle | GitHub Actions, JDK 17 | unit tests, lint with the baseline, debug APK and release bundle, manifest check, dependency report |
 | Robolectric | SDK 28, native graphics | 83 tests pass: renderer, codecs, EXIF, strip, every batch op, the pipeline |
 | Emulator | API 35 | the home, editor and export flow, and a walk through every screen that commits its screenshots to `docs/screenshots` when the commit message carries `[screens]` (run 40462061887) |

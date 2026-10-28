@@ -26,7 +26,7 @@ Recipes are JSON written and read by hand, with a default for every missing fiel
 
 ## Two render stages
 
-`Renderer.geometry` decodes within the budget (a preview decodes at twice the sampling and is halved with the filter, so it is the export's own shrink rather than skipped pixels), turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
+`Renderer.geometry` decodes within the budget (a preview decodes at twice the sampling and is halved with the filter, so it is the export's own shrink rather than skipped pixels), turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves, and keeps a half-size copy beside it: while a finger is on a slider the preview is rendered from that copy (a quarter of the pixels), and the full-size preview, the one that predicts the export, follows the moment the finger lifts. Debug builds log both timings.
 
 `Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables), `ScanMath` (the paper's light divided out), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas, the cut-out, and the frame.
 
@@ -55,6 +55,10 @@ An export copies nothing from the source's EXIF block. If the user chooses to ke
 `ProvideLivelyClock` is one slow infinite transition at the root. Glyphs read it in their draw lambda only, so the clock ticking redraws pictures and never recomposes a card. Off in Settings or when Android's animator scale is zero; every glyph then shows a rest frame.
 
 The same clock drives everything else that moves (`ui/components/Ambient.kt`, `Celebrate.kt`): the four pools of colour drifting behind each page, the breathing front door and its walking dashes, the sheen on the amber button, the rise of cards into a screen, and the burst when an export or a batch finishes. Screen changes are spring slides with a fade in `StillApp`. All of it is still when the clock is null.
+
+Behind the editor the backdrop's pools wear the picture's own colours: `engine/Palette.kt` takes a sparse sample of the preview, bins it by hue, weights each pixel by saturation and brightness, and lifts the fullest bins' means to a saturation and brightness that read as a light; a grey picture gives nothing and the brand's colours stand in.
+
+A slider can hand itself to the canvas: a tap on its name makes the picture its track, a sideways swipe anywhere moves it (`TouchMode.Scrub`), and the name and value sit large over the picture while it moves.
 
 The look itself is one set of tokens: Syne at display sizes and titles, Space Grotesk for everything else; a deep ink ground with one amber band and the neon accents in `Neon`; cards as glass (`StillColors.Glass`) with a lit top edge; pill buttons with a glow; option rows as grids of equal cells; sliders as a thick track that fills from zero under a lit thumb.
 
