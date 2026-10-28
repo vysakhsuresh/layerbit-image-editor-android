@@ -23,6 +23,19 @@ tap_text() {
     adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
 }
 
+# Like tap_text, but scrolls the page down up to three times looking for the text, then back up.
+find_tap() {
+    local tries=0
+    while [ $tries -lt 4 ]; do
+        if tap_text "$1"; then return 0; fi
+        adb shell input swipe 540 1500 540 500 350; sleep 1
+        tries=$((tries + 1))
+    done
+    return 1
+}
+
+home_top() { adb shell input swipe 540 500 540 1700 300; sleep 1; adb shell input swipe 540 500 540 1700 300; sleep 1; adb shell input swipe 540 500 540 1700 300; sleep 1; }
+
 record() { # name seconds
     adb shell screenrecord --time-limit "$2" --bit-rate 6000000 "/sdcard/$1.mp4" || return 1
     adb pull "/sdcard/$1.mp4" "$OUT/$1.raw.mp4" >/dev/null || return 1
@@ -44,6 +57,8 @@ record home-quick 8
 adb shell input swipe 540 500 540 1700 400; sleep 1; adb shell input swipe 540 500 540 1700 400; sleep 1
 # The editor, on the picture the walk left behind, with the Looks strip open.
 tap_text "walk-1.jpg" && { sleep 4; tap_text "Looks" && sleep 3; record editor-looks 8; adb shell input keyevent KEYCODE_BACK; sleep 2; }
-tap_text "Every tool" && { sleep 2; record tools 8; adb shell input keyevent KEYCODE_BACK; sleep 1; }
-tap_text "Process many" && { sleep 2; record batch 8; adb shell input keyevent KEYCODE_BACK; sleep 1; }
+home_top
+find_tap "Every tool" && { sleep 2; record tools 8; adb shell input keyevent KEYCODE_BACK; sleep 2; }
+home_top
+find_tap "Process many" && { sleep 2; record batch 8; adb shell input keyevent KEYCODE_BACK; sleep 2; }
 ls -la "$OUT"
