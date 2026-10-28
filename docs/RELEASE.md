@@ -9,8 +9,10 @@ git tag v1.0.0-rc.1
 git push origin v1.0.0-rc.1
 ```
 
-Or, without pushing a tag, run the `Release candidate` workflow from the Actions tab on the
-branch with the tag name as its input: it makes the tag at that commit when it publishes.
+Or, from a branch, push a commit whose message carries `[release v1.0.0-rc.1]`: the branch's own
+workflow (`android.yml`) runs its three checks and then a `release` job that builds the signed
+candidate and publishes it, making the tag at that commit. (The `Release candidate` workflow can
+also be dispatched from the Actions tab with the tag as its input once it exists on `main`.)
 
 `.github/workflows/release.yml` then runs the pure engine tests, the unit tests and lint, and
 the emulator walk, builds the optimised release APK and bundle, and only when all three jobs
