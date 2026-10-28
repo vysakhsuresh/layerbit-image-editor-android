@@ -5,8 +5,15 @@ name: Release candidate
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The tag to create and release, e.g. v1.0.0-rc.1 (made at the dispatched commit)'
+        required: true
 permissions:
   contents: read
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 jobs:
   engine:
     name: Pure engine (no Android SDK)
@@ -40,8 +47,8 @@ jobs:
       - name: Name the files for the tag and sum them
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk "out/still-${GITHUB_REF_NAME}.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "out/still-${GITHUB_REF_NAME}.aab"
+          cp app/build/outputs/apk/release/app-release.apk "out/still-${TAG}.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "out/still-${TAG}.aab"
           (cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
@@ -85,4 +92,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" out/* --title "Still $GITHUB_REF_NAME" --notes-file release/NOTES.md --prerelease
+          # From a tag push the tag exists; from a dispatch, the release is made at this commit and the tag with it.
+          gh release create "$TAG" out/* --target "$GITHUB_SHA" --title "Still $TAG" --notes-file release/NOTES.md --prerelease

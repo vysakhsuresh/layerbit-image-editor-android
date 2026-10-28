@@ -9,6 +9,9 @@ git tag v1.0.0-rc.1
 git push origin v1.0.0-rc.1
 ```
 
+Or, without pushing a tag, run the `Release candidate` workflow from the Actions tab on the
+branch with the tag name as its input: it makes the tag at that commit when it publishes.
+
 `.github/workflows/release.yml` then runs the pure engine tests, the unit tests and lint, and
 the emulator walk, builds the optimised release APK and bundle, and only when all three jobs
 pass publishes a GitHub Release for the tag with:
