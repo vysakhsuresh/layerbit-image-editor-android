@@ -50,7 +50,7 @@ The front door is one gesture: open pictures. One picture opens the editor; seve
 
 | Tool | What it does |
 |---|---|
-| Edit | One editor: crop, square, light, colour, curves, looks, detail, draw, retouch, layers, frame, inside, export, with undo, press-and-hold compare, pinch zoom and a histogram |
+| Edit | One editor: crop, square, light, colour, curves, looks, detail, draw, retouch, layers, frame, inside, export, with undo, press-and-hold compare, a split view with a line you drag, pinch zoom and a histogram |
 | Crop and straighten | Drag handles with thirds, aspect presets that mean what they say after a turn, straighten, turn, flip, exact output pixels |
 | Straighten a document | Four corners dragged onto a page; a perspective map squares it |
 | Light | Exposure, contrast, highlights, shadows, whites, blacks; Auto from the histogram, left as visible sliders |

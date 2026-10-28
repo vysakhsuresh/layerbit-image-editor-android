@@ -28,7 +28,9 @@ Recipes are JSON written and read by hand, with a default for every missing fiel
 
 `Renderer.geometry` decodes within the budget (a preview decodes at twice the sampling and is halved with the filter, so it is the export's own shrink rather than skipped pixels), turns the picture upright from EXIF, applies the perspective map, turns, flips, straightens into the bounding box, crops in the straightened frame and resizes through a halving pyramid. The editor caches its result and reuses it while a slider moves.
 
-`Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables, across the cores by rows), `ScanMath` (the paper's light divided out), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas, the cut-out, and the frame.
+`Renderer.finish` copies the pixels to an `IntArray` and hands them to the engine: `TonePipeline` (matrix then tables), `ScanMath` (the paper's light divided out), `Spatial.detail` (unsharp masks at radii scaled to the picture), vignette, grain; then the layers on a Canvas, the cut-out, and the frame.
+
+Every stage that treats a row without its neighbours in other rows runs in bands across the cores through `engine/Parallel.kt`: the tone pipeline, each pass of a separable blur, the unsharp mask, vignette, grain, the paper cleanup and the cut-out compositing. It is a plain JDK pool of at most four threads with no Android in it, so the JVM tests run the same bands; a band asked for from inside a band runs inline, so the pool is never waited on from the pool. `ParallelTest` proves the bands give the sequential answer pixel for pixel and prints the two timings.
 
 The cut-out (`engine/Segment.kt`) is decided once at a fixed analysis size chosen from the aspect alone: background colours learnt from the border, a first guess from what looks unlike them, then a geodesic distance from each seed set where crossing an edge costs more than crossing flat colour. The user's strokes are the only hard decisions; the mask is cached by picture, geometry and strokes and scaled to the preview and to the export, so both share one edge. Every pure step is the same at any size, which `RendererTest.previewPredictsExport` measures.
 
@@ -51,6 +53,10 @@ An export copies nothing from the source's EXIF block. If the user chooses to ke
 ## Motion
 
 `ProvideLivelyClock` is one slow infinite transition at the root. Glyphs read it in their draw lambda only, so the clock ticking redraws pictures and never recomposes a card. Off in Settings or when Android's animator scale is zero; every glyph then shows a rest frame.
+
+The same clock drives everything else that moves (`ui/components/Ambient.kt`, `Celebrate.kt`): the four pools of colour drifting behind each page, the breathing front door and its walking dashes, the sheen on the amber button, the rise of cards into a screen, and the burst when an export or a batch finishes. Screen changes are spring slides with a fade in `StillApp`. All of it is still when the clock is null.
+
+The look itself is one set of tokens: Syne at display sizes and titles, Space Grotesk for everything else; a deep ink ground with one amber band and the neon accents in `Neon`; cards as glass (`StillColors.Glass`) with a lit top edge; pill buttons with a glow; option rows as grids of equal cells; sliders as a thick track that fills from zero under a lit thumb.
 
 ## Not here, on purpose
 

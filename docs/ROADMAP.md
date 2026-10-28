@@ -33,8 +33,9 @@ the reasoning stays with the code.
    per-layer masks, on the existing marks list.
 5. **Precision export comparison.** A 1:1 loupe over the export against the edited preview, with
    the measured bytes and any resolution change shown beside it.
-6. **Smaller home card, shorter icon plays with longer rests, an Export label in the editor's
-   top bar**, and the animation setting re-read while the app is open.
+6. **The animation setting re-read while the app is open**, and a looks strip in the batch
+   steps like the editor's. (The home card, the editor's bar and the dock were redone in the
+   bento pass; the split view and the banded render core landed with it.)
 
 ## Release checks beyond the screen walk
 
