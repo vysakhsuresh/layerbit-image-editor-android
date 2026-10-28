@@ -91,8 +91,13 @@ jobs:
           git add docs/screenshots docs/motion
           git diff --cached --quiet && exit 0
           git commit -m "Screenshots from emulator run ${{ github.run_id }} [skip ci]"
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push origin HEAD:"${{ github.ref_name }}"
+          # GitHub sometimes drops the push mid-way (a 408); a few tries with a fresh rebase each time.
+          for try in 1 2 3 4; do
+            git pull --rebase origin "${{ github.ref_name }}"
+            git push origin HEAD:"${{ github.ref_name }}" && exit 0
+            sleep $((try * 15))
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
