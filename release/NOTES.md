@@ -1,11 +1,15 @@
-# Still 1.0.0-rc.1
+# Still 1.0.0-rc.2
 
-A release candidate for testing: the first build of the redesigned Still, signed with the
-release-candidate test key so it installs and updates on any Android 8.0+ phone.
+A release candidate for testing, signed with the release-candidate test key so it installs and
+updates on any Android 8.0+ phone.
+
+Since rc.1: the home puts the tools on the first screen whatever has been opened before. The
+open door lies across, the quick tools are one sideways strip under it with the next one
+peeking in, the four doors follow, and the recent pictures are a compact strip at the bottom.
 
 ## Install
 
-Download `still-v1.0.0-rc.1.apk`, open it on the phone, allow the install from this source.
+Download `still-v1.0.0-rc.2.apk`, open it on the phone, allow the install from this source.
 Check the download against `SHA256SUMS.txt` if you want to be sure of the file.
 
 ## What is in it

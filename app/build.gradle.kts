@@ -33,8 +33,8 @@ android {
         // lossless is offered only from 30, and everything else is android.graphics.
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.0-rc.1"
+        versionCode = 4
+        versionName = "1.0.0-rc.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

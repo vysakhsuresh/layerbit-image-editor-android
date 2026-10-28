@@ -126,7 +126,7 @@ fun HomeScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().testTag("quickTools")) {
                     items(quick.size) { i ->
                         val (glyph, label, action) = quick[i]
-                        Quick(glyph, accents[i % accents.size], stringResource(label), Modifier.width(88.dp), action)
+                        Quick(glyph, accents[i % accents.size], stringResource(label), Modifier.width(80.dp), action)
                     }
                 }
             }
