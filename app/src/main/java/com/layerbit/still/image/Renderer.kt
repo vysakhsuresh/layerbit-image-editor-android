@@ -263,7 +263,11 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
 
     // ------------------------------------------------------------------ cut-out
 
-    private class MaskEntry(val key: String, val width: Int, val height: Int, val mask: IntArray)
+    private class MaskEntry(val key: String, val width: Int, val height: Int, val mask: IntArray) {
+        /** The local subject and background colours, made once from the analysis picture when the edge is refined. */
+        @Volatile var models: Pair<IntArray, IntArray>? = null
+        @Volatile var analysisPixels: IntArray? = null
+    }
     private val maskCache = ArrayDeque<MaskEntry>()
 
     /**
