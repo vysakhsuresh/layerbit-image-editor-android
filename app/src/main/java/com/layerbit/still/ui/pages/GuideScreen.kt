@@ -30,6 +30,11 @@ fun GuideScreen(modifier: Modifier = Modifier) {
     val sections = listOf(
         Triple(R.drawable.ic_plus, R.string.guide_open_title, R.string.guide_open_body),
         Triple(R.drawable.ic_tool_edit, R.string.guide_edit_title, R.string.guide_edit_body),
+        Triple(R.drawable.ic_tool_local, R.string.guide_local_title, R.string.guide_local_body),
+        Triple(R.drawable.ic_tool_effects, R.string.guide_effects_title, R.string.guide_effects_body),
+        Triple(R.drawable.ic_tool_portrait, R.string.guide_portrait_title, R.string.guide_portrait_body),
+        Triple(R.drawable.ic_tool_expand, R.string.guide_expand_title, R.string.guide_expand_body),
+        Triple(R.drawable.ic_tool_history, R.string.guide_history_title, R.string.guide_history_body),
         Triple(R.drawable.ic_tool_recipe, R.string.guide_batch_title, R.string.guide_batch_body),
         Triple(R.drawable.ic_tool_cutout, R.string.guide_cutout_title, R.string.guide_cutout_body),
         Triple(R.drawable.ic_tool_scan, R.string.guide_scan_title, R.string.guide_scan_body),

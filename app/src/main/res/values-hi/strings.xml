@@ -1185,4 +1185,14 @@
     <string name="effect_vignette">विनेट</string>
     <string name="effect_extra_softness">नरमी</string>
     <string name="export_made_smaller">%1$d × %2$d पर बनाया: इन इफ़ेक्ट के साथ पूरा आकार फ़ोन की मेमोरी में नहीं समाया.</string>
+    <string name="guide_local_title">सिर्फ़ एक हिस्सा बदलें</string>
+    <string name="guide_local_body">हिस्सा: ब्रश करें, ग्रेडिएंट या गोला बनाएँ, या कोई रंग टैप करें. आसमान, मुख्य चीज़ और पृष्ठभूमि अपने-आप मिलते हैं. मास्क दिखाएँ से देखें क्या बदलेगा.</string>
+    <string name="guide_effects_title">स्टाइल वाले इफ़ेक्ट</string>
+    <string name="guide_effects_body">एम्बियंस, HDR, ड्रामा, ग्लो, फ़िल्म, लेंस ब्लर और खिसकाने वाला विनेट. हर एक में स्टाइल और मात्रा है, और इन्हें एक साथ लगा सकते हैं.</string>
+    <string name="guide_portrait_title">पोर्ट्रेट, नरमी से</string>
+    <string name="guide_portrait_body">पोर्ट्रेट त्वचा ढूँढकर उसे चिकना करता है पर रोमछिद्र रखता है, लाली कम करता है और चेहरे पर रोशनी देता है. आँखें या दाँत टैप करके निखारें.</string>
+    <string name="guide_expand_title">तस्वीर के चारों ओर और जगह</string>
+    <string name="guide_expand_body">फैलाएँ कैनवस को स्क्वेयर, स्टोरी या किसी भी आकार तक बढ़ाकर तस्वीर से ही भरता है.</string>
+    <string name="guide_history_title">हर बदलाव साफ़ शब्दों में</string>
+    <string name="guide_history_body">इतिहास हर बदलाव दिखाता है. तुलना के लिए छिपाएँ, कोई भी हटाएँ, या सभी को दूसरी तस्वीर पर कॉपी करें.</string>
 </resources>

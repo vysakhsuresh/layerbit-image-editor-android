@@ -1185,4 +1185,14 @@
     <string name="effect_vignette">Vignette</string>
     <string name="effect_extra_softness">Softness</string>
     <string name="export_made_smaller">Made at %1$d × %2$d: the full size did not fit in the memory of this phone with these effects.</string>
+    <string name="guide_local_title">Change just one part</string>
+    <string name="guide_local_body">Local: brush it, draw a gradient or a circle, or tap a colour. Sky, subject and background are found for you. Show mask to see exactly what changes.</string>
+    <string name="guide_effects_title">Effects with styles</string>
+    <string name="guide_effects_body">Ambiance, HDR, drama, glow, film, lens blur and a vignette you can place. Each has styles, a strength, and you can stack them.</string>
+    <string name="guide_portrait_title">Portraits, kindly</string>
+    <string name="guide_portrait_body">Portrait finds the skin, smooths it and keeps its pores, evens redness and lights the face. Tap eyes to brighten them, teeth to whiten. Show skin to check.</string>
+    <string name="guide_expand_title">More room around a picture</string>
+    <string name="guide_expand_body">Expand grows the canvas to a square, a story or any size and fills it from the picture itself.</string>
+    <string name="guide_history_title">Every edit in plain words</string>
+    <string name="guide_history_body">History lists each change. Hide one to compare, delete any of them, or copy all of them onto another picture. Auto fix and Same as last time are one tap on a new picture.</string>
 </resources>
