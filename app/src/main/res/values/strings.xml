@@ -1184,4 +1184,5 @@
     <string name="text_curve_hint">Curved text sits on one line. Slide right to arch it, left to bend it like a smile.</string>
     <string name="effect_vignette">Vignette</string>
     <string name="effect_extra_softness">Softness</string>
+    <string name="export_made_smaller">Made at %1$d × %2$d: the full size did not fit in the memory of this phone with these effects.</string>
 </resources>

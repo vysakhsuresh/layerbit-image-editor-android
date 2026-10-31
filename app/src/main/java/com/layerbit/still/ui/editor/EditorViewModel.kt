@@ -870,18 +870,23 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val ctx = currentCoroutineContext()
                 val check = { ctx.ensureActive() }
-                val result = withContext(Dispatchers.Default) {
-                    val stage = renderer.geometry(project.file.file, recipe.geometry, Budget.exportPixels, check, recipe.expand, maskKey(recipe.geometry))
-                    val picture = try { renderer.finish(stage.bitmap, recipe, check, maskKey = maskKey(recipe.geometry, recipe.expand), assets = project.file.file.parentFile) } finally { stage.bitmap.recycle() }
+                // Full size first. Should heavy effects not fit in memory, the picture is made again
+                // with fewer pixels rather than not at all, and the user is told the size it got.
+                var budget = Budget.exportPixels
+                var shrunk = false
+                var made: Triple<Exported, StillFile, Bitmap>? = null
+                while (made == null) {
                     try {
-                        val out = still.workspace.newOutput(project.name, "export", settings.format.extension)
-                        val exported = codecs.export(picture, settings, out, project.file.file, stage.scaled, check)
-                        val file = StillFile(out, com.layerbit.still.engine.Names.stem(project.name) + "-edited." + settings.format.extension, StillFile.Origin.Derived("export"), settings.format.mime, exported.width, exported.height)
-                        val preview = renderer.decode(out, 600_000, check)
-                        Triple(exported, file, preview)
-                    } finally { picture.recycle() }
+                        made = exportAt(project, recipe, settings, budget, check)
+                    } catch (e: OutOfMemoryError) {
+                        if (budget <= MIN_EXPORT_RETRY) throw e
+                        budget /= 2; shrunk = true
+                        System.gc()
+                    }
                 }
+                val result = made!!
                 _ui.update { it.copy(busy = null, export = result.first, exportFile = result.second, exportPreview = result.third) }
+                if (shrunk) message(Strings.get(R.string.export_made_smaller, result.first.width, result.first.height))
             } catch (c: CancellationException) {
                 _ui.update { it.copy(busy = null) }
                 throw c
@@ -892,6 +897,19 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    private suspend fun exportAt(project: ImageStore.Project, recipe: Recipe, settings: ExportOptions, budget: Long, check: () -> Unit): Triple<Exported, StillFile, Bitmap> =
+                withContext(Dispatchers.Default) {
+                    val stage = renderer.geometry(project.file.file, recipe.geometry, budget, check, recipe.expand, maskKey(recipe.geometry))
+                    val picture = try { renderer.finish(stage.bitmap, recipe, check, maskKey = maskKey(recipe.geometry, recipe.expand), assets = project.file.file.parentFile) } finally { stage.bitmap.recycle() }
+                    try {
+                        val out = still.workspace.newOutput(project.name, "export", settings.format.extension)
+                        val exported = codecs.export(picture, settings, out, project.file.file, stage.scaled, check)
+                        val file = StillFile(out, com.layerbit.still.engine.Names.stem(project.name) + "-edited." + settings.format.extension, StillFile.Origin.Derived("export"), settings.format.mime, exported.width, exported.height)
+                        val preview = renderer.decode(out, 600_000, check)
+                        Triple(exported, file, preview)
+                    } finally { picture.recycle() }
+                }
 
     fun cancelExport() { exportJob?.cancel() }
 
@@ -933,5 +951,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         const val MAX_UNDO = 100
+        /** The smallest export a memory retry goes down to, about 1.5 megapixels. */
+        const val MIN_EXPORT_RETRY = 1_500_000L
     }
 }

@@ -70,6 +70,14 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
         try {
             val target = File(folder, "source")
             copy(uri, target, name, check)
+            // The same picture opened again resumes where it was left: the newest project from the
+            // same place whose private copy is byte for byte this one. A changed original starts fresh.
+            sameAs(uri, target)?.let { earlier ->
+                folder.deleteRecursively()
+                val resumed = earlier.copy(modified = System.currentTimeMillis())
+                save(resumed)
+                return@withContext resumed
+            }
             val file = describe(target, name, StillFile.Origin.Imported(uri))
             val project = Project(id, file, Recipe(), System.currentTimeMillis())
             save(project)
@@ -77,6 +85,32 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
         } catch (t: Throwable) {
             folder.deleteRecursively(); throw t
         }
+    }
+
+    /** The newest project imported from [uri] whose copy has exactly the bytes of [fresh], if any. */
+    private fun sameAs(uri: Uri, fresh: File): Project? = projects().firstOrNull { p ->
+        val origin = (p.file.origin as? StillFile.Origin.Imported)?.uri
+        origin == uri && p.file.file.length() == fresh.length() && sameBytes(p.file.file, fresh)
+    }
+
+    private fun sameBytes(a: File, b: File): Boolean = a.inputStream().buffered().use { ia ->
+        b.inputStream().buffered().use { ib ->
+            val ba = ByteArray(64 * 1024); val bb = ByteArray(64 * 1024)
+            while (true) {
+                val na = ia.readNBytesCompat(ba); val nb = ib.readNBytesCompat(bb)
+                if (na != nb) return@use false
+                if (na <= 0) return@use true
+                for (k in 0 until na) if (ba[k] != bb[k]) return@use false
+            }
+            @Suppress("UNREACHABLE_CODE") true
+        }
+    }
+
+    /** Fills [buf] as far as the stream allows; readNBytes is API 33. */
+    private fun java.io.InputStream.readNBytesCompat(buf: ByteArray): Int {
+        var n = 0
+        while (n < buf.size) { val r = read(buf, n, buf.size - n); if (r < 0) break; n += r }
+        return n
     }
 
     /** A picture the app itself produced, adopted as a project so it can be edited further. */

@@ -1184,4 +1184,5 @@
     <string name="text_curve_hint">मुड़ा हुआ टेक्स्ट एक ही पंक्ति में रहता है. दाएँ खिसकाएँ तो मेहराब बनेगा, बाएँ खिसकाएँ तो मुस्कान जैसा मुड़ेगा.</string>
     <string name="effect_vignette">विनेट</string>
     <string name="effect_extra_softness">नरमी</string>
+    <string name="export_made_smaller">%1$d × %2$d पर बनाया: इन इफ़ेक्ट के साथ पूरा आकार फ़ोन की मेमोरी में नहीं समाया.</string>
 </resources>
