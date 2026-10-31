@@ -100,6 +100,10 @@ fun panelFor(step: StepKey): ToolId.Panel = when (step.kind) {
     StepKind.LOOK -> ToolId.Panel.LOOKS
     StepKind.SCAN -> ToolId.Panel.SCAN
     StepKind.DETAIL -> ToolId.Panel.DETAIL
+    StepKind.LOCAL -> ToolId.Panel.LOCAL
+    StepKind.EFFECT -> ToolId.Panel.EFFECTS
+    StepKind.PORTRAIT -> ToolId.Panel.PORTRAIT
+    StepKind.DOUBLE -> ToolId.Panel.DOUBLE
     StepKind.MARK -> ToolId.Panel.LAYERS
     StepKind.CUTOUT -> ToolId.Panel.CUTOUT
     StepKind.FRAME -> ToolId.Panel.FRAME
@@ -152,6 +156,10 @@ private fun stepTitle(step: Step, recipe: Recipe): String {
         }
         StepKind.CUTOUT -> stringResource(R.string.panel_cutout)
         StepKind.FRAME -> stringResource(R.string.panel_frame)
+        StepKind.LOCAL -> stringResource(R.string.panel_local) + ": " + maskLabel(com.layerbit.still.engine.MaskKind.entries.firstOrNull { it.name == step.label } ?: com.layerbit.still.engine.MaskKind.BRUSH)
+        StepKind.EFFECT -> stringResource(effectLabelRes(com.layerbit.still.engine.EffectKind.entries.firstOrNull { it.name == step.label } ?: com.layerbit.still.engine.EffectKind.AMBIANCE)) + " " + step.values.firstOrNull()?.second?.roundToInt() + "%"
+        StepKind.PORTRAIT -> stringResource(R.string.panel_portrait)
+        StepKind.DOUBLE -> stringResource(R.string.panel_double)
     }
 }
 

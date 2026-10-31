@@ -4,7 +4,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** The parts of a recipe the History panel lists, in the order the renderer applies them. */
-enum class StepKind { PERSPECTIVE, TURN, STRAIGHTEN, CROP, SIZE, EXPAND, LIGHT, COLOUR, CURVES, LOOK, MIX, SCAN, DETAIL, MARK, CUTOUT, FRAME }
+enum class StepKind { PERSPECTIVE, TURN, STRAIGHTEN, CROP, SIZE, EXPAND, LIGHT, COLOUR, CURVES, LOOK, MIX, SCAN, DETAIL, LOCAL, EFFECT, PORTRAIT, DOUBLE, MARK, CUTOUT, FRAME }
 
 /** One step: its kind and, for layers, which one. */
 data class StepKey(val kind: StepKind, val index: Int = 0)
@@ -60,6 +60,10 @@ object Steps {
         if (!r.mix.isIdentity) out.add(Step(StepKey(StepKind.MIX)))
         if (!r.scan.isIdentity) out.add(Step(StepKey(StepKind.SCAN), label = r.scan.mode.name))
         toneStep(r.tone, StepKind.DETAIL, DETAIL_FIELDS)?.let { out.add(it) }
+        r.locals.forEachIndexed { i, l -> out.add(Step(StepKey(StepKind.LOCAL, i), label = l.mask.kind.name)) }
+        r.effects.forEachIndexed { i, e -> out.add(Step(StepKey(StepKind.EFFECT, i), label = e.kind.name, values = listOf("strength" to (e.strength * 100).roundToInt().toFloat()))) }
+        if (!r.portrait.isIdentity) out.add(Step(StepKey(StepKind.PORTRAIT)))
+        if (!r.double.isIdentity) out.add(Step(StepKey(StepKind.DOUBLE), label = r.double.mode.name))
         r.marks.forEachIndexed { i, m -> out.add(Step(StepKey(StepKind.MARK, i), label = m.kind.name, values = emptyList())) }
         if (!r.cutout.isIdentity) out.add(Step(StepKey(StepKind.CUTOUT), label = r.cutout.mode.name))
         if (!r.frame.isIdentity) out.add(Step(StepKey(StepKind.FRAME)))
@@ -103,16 +107,26 @@ object Steps {
             StepKind.LOOK -> out = out.copy(look = Look.NONE, lookStrength = 1f)
             StepKind.MIX -> out = out.copy(mix = ColourMix())
             StepKind.SCAN -> out = out.copy(scan = Scan())
-            StepKind.MARK -> Unit
+            StepKind.PORTRAIT -> out = out.copy(portrait = PortraitEdit())
+            StepKind.DOUBLE -> out = out.copy(double = DoubleExposure())
+            StepKind.MARK, StepKind.LOCAL, StepKind.EFFECT -> Unit
             StepKind.CUTOUT -> out = out.copy(cutout = Cutout())
             StepKind.FRAME -> out = out.copy(frame = Frame())
         }
-        val gone = hidden.filter { it.kind == StepKind.MARK }.map { it.index }.toSet()
-        val marks = if (gone.isEmpty()) out.marks else out.marks.filterIndexed { i, _ -> i !in gone }
-        return out.copy(geometry = g, tone = t, marks = marks)
+        fun gone(kind: StepKind) = hidden.filter { it.kind == kind }.map { it.index }.toSet()
+        val goneMarks = gone(StepKind.MARK); val goneLocals = gone(StepKind.LOCAL); val goneEffects = gone(StepKind.EFFECT)
+        return out.copy(
+            geometry = g, tone = t,
+            marks = if (goneMarks.isEmpty()) out.marks else out.marks.filterIndexed { i, _ -> i !in goneMarks },
+            locals = if (goneLocals.isEmpty()) out.locals else out.locals.filterIndexed { i, _ -> i !in goneLocals },
+            effects = if (goneEffects.isEmpty()) out.effects else out.effects.filterIndexed { i, _ -> i !in goneEffects }
+        )
     }
 
     fun without(r: Recipe, step: StepKey): Recipe = without(r, setOf(step))
+
+    /** Steps listed one per item, so deleting one moves the later ones up. */
+    private val INDEXED = setOf(StepKind.MARK, StepKind.LOCAL, StepKind.EFFECT)
 
     /**
      * After deleting the layer at [deleted], the hidden set with later layers' indices moved up
@@ -121,7 +135,7 @@ object Steps {
     fun afterDelete(hidden: Set<StepKey>, deleted: StepKey): Set<StepKey> = hidden.mapNotNull { k ->
         when {
             k == deleted -> null
-            deleted.kind == StepKind.MARK && k.kind == StepKind.MARK && k.index > deleted.index -> k.copy(index = k.index - 1)
+            deleted.kind in INDEXED && k.kind == deleted.kind && k.index > deleted.index -> k.copy(index = k.index - 1)
             else -> k
         }
     }.toSet()
@@ -133,6 +147,7 @@ object Steps {
      */
     fun paste(target: Recipe, copied: Recipe): Recipe = target.copy(
         tone = copied.tone, curves = copied.curves, look = copied.look, lookStrength = copied.lookStrength,
-        mix = copied.mix, scan = copied.scan, frame = copied.frame
+        mix = copied.mix, scan = copied.scan, frame = copied.frame, effects = copied.effects,
+        portrait = copied.portrait.copy(strokes = target.portrait.strokes, taps = target.portrait.taps)
     )
 }

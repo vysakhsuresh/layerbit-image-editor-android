@@ -80,4 +80,22 @@ class StepsTest {
         assertEquals("1:1", Steps.ratioName(Geometry2D.Size(500, 501)))
         assertEquals("1.30:1", Steps.ratioName(Geometry2D.Size(1300, 1000)))
     }
+
+    @Test
+    fun effectsLocalsPortraitAndDoubleAreListedAndCanBeTakenOut() {
+        val r = Recipe(
+            effects = listOf(Effect(EffectKind.DRAMA, strength = 0.6f), Effect(EffectKind.HDR_SCAPE)),
+            locals = listOf(LocalAdjust(LocalMask(MaskKind.SKY), exposure = -0.3f)),
+            portrait = PortraitEdit(smooth = 0.5f)
+        )
+        val steps = Steps.describe(r, null).map { it.key }
+        org.junit.Assert.assertTrue(StepKey(StepKind.EFFECT, 0) in steps && StepKey(StepKind.EFFECT, 1) in steps)
+        org.junit.Assert.assertTrue(StepKey(StepKind.LOCAL, 0) in steps && StepKey(StepKind.PORTRAIT) in steps)
+        val noDrama = Steps.without(r, StepKey(StepKind.EFFECT, 0))
+        org.junit.Assert.assertEquals(listOf(EffectKind.HDR_SCAPE), noDrama.effects.map { it.kind })
+        org.junit.Assert.assertTrue(Steps.without(r, StepKey(StepKind.PORTRAIT)).portrait.isIdentity)
+        org.junit.Assert.assertTrue(Steps.without(r, StepKey(StepKind.LOCAL, 0)).locals.isEmpty())
+        // Deleting the first effect moves a hidden second one up, so it stays hidden.
+        org.junit.Assert.assertEquals(setOf(StepKey(StepKind.EFFECT, 0)), Steps.afterDelete(setOf(StepKey(StepKind.EFFECT, 1)), StepKey(StepKind.EFFECT, 0)))
+    }
 }

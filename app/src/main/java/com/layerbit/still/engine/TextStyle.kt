@@ -338,7 +338,7 @@ enum class TextPreset {
         return when (this) {
             CLASSIC -> ink to d
             POSTER -> ink to d.copy(font = TextFont.GROTESK, weight = 700, caps = true, align = TextAlign.CENTER, letterSpacing = 0.02f, lineHeight = 0.9f, shadowBlur = 0.04f, shadowY = 0.03f, shadowColor = 0x66000000)
-            CAPTION -> TextStyle.WHITE to d.copy(weight = 500, align = TextAlign.CENTER, shadowColor = none, boxColor = TextStyle.BLACK, boxOpacity = 0.62f, boxPadding = 0.35f, boxRadius = 0.12f)
+            CAPTION -> TextStyle.WHITE to d.copy(weight = 500, align = TextAlign.CENTER, shadowColor = none, boxColor = TextStyle.BLACK, boxOpacity = 0.8f, boxPadding = 0.35f, boxRadius = 0.12f)
             NEON -> mix(ink, TextStyle.WHITE, 0.6f) to d.copy(font = TextFont.GROTESK, weight = 500, align = TextAlign.CENTER, letterSpacing = 0.04f, shadowBlur = 0.32f, shadowX = 0f, shadowY = 0f, shadowColor = ink or (0xFF shl 24))
             OUTLINE -> TextStyle.WHITE to d.copy(font = TextFont.GROTESK, weight = 700, caps = true, align = TextAlign.CENTER, outline = 0.07f, outlineColor = TextStyle.BLACK, shadowColor = none)
             HANDWRITTEN -> ink to d.copy(font = TextFont.SCRIPT, weight = 600, align = TextAlign.CENTER, lineHeight = 1.05f, shadowBlur = 0.06f, shadowY = 0.03f, shadowColor = 0x50000000)
