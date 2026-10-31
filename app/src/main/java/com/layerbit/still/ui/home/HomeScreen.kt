@@ -421,9 +421,13 @@ private fun Quick(glyph: Glyph?, accent: Pair<Color, Color>, label: String, inde
             if (glyph != null) AnimatedGlyph(glyph, Color.White, Modifier.size(34.dp), seed = glyph.ordinal * 11)
             else androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(iconRes), contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
         }
-        Text(
-            label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = StillColors.Text,
-            textAlign = TextAlign.Center, modifier = Modifier.padding(top = 9.dp), maxLines = 2, minLines = 2, lineHeight = 15.sp
+        // Two lines at most; a long word under large system text shrinks to fit rather than being cut.
+        androidx.compose.foundation.text.BasicText(
+            label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, color = StillColors.Text, textAlign = TextAlign.Center, lineHeight = 15.sp),
+            modifier = Modifier.padding(top = 9.dp).fillMaxWidth().height(36.dp),
+            maxLines = 2,
+            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize, stepSize = 0.5.sp)
         )
     }
 }
