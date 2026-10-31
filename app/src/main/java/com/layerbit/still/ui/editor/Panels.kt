@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.engine.ColourMix
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.shape.CircleShape
@@ -248,6 +250,7 @@ fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) ->
     AutoStrength(s, autoStep, onAutoAmount)
     Spacer(Modifier.height(4.dp))
     ColourPanel(s)
+    MixerSection(s)
 }
 
 @Composable
@@ -667,4 +670,36 @@ fun ScanPanel(s: PanelScope, onFindPage: () -> Unit = {}, onAdjustCorners: () ->
         Knob(stringResource(R.string.scan_whiten), sc.whiten, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(scan = sc.copy(whiten = v))) }, onDone = s.commit, onReset = { s.change { it.copy(scan = it.scan.copy(whiten = 0.5f)) } }, haptics = s.haptics, format = { "${(it * 100).roundToInt()}" })
     }
     Hint(stringResource(R.string.scan_hint))
+}
+
+
+/** The eight colour families of the mixer, as the dots that pick them. */
+private val MixDots = listOf(0xFFE5484D, 0xFFF08A24, 0xFFF2CC2E, 0xFF4CC26A, 0xFF35C2C1, 0xFF3D7BE0, 0xFF8E5BE0, 0xFFD94AB0).map { it.toInt() }
+
+/**
+ * The mixer: one colour family at a time. Pick its dot, then move its hue, saturation and
+ * lightness; a dot that has been moved wears a small mark, so nothing changed stays hidden.
+ */
+@Composable
+private fun MixerSection(s: PanelScope) {
+    var band by rememberSaveable { mutableIntStateOf(5) }
+    val mix = s.recipe.mix
+    SectionHeading(stringResource(R.string.mix_title), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+        MixDots.forEachIndexed { i, c ->
+            val active = i == band
+            val moved = mix.hue[i] != 0f || mix.saturation[i] != 0f || mix.lightness[i] != 0f
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(36.dp).clip(CircleShape).clickable(role = Role.RadioButton) { band = i }) {
+                Box(Modifier.size(if (active) 30.dp else 24.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Color(c))
+                    .border(if (active) 3.dp else 0.dp, StillColors.Text, CircleShape))
+                if (moved) Box(Modifier.align(Alignment.TopEnd).size(9.dp).clip(CircleShape).background(StillColors.BandBright).border(1.5.dp, StillColors.Surface, CircleShape))
+            }
+        }
+    }
+    fun live(kind: ColourMix.Kind, v: Float) = s.draft(s.recipe.copy(mix = mix.with(kind, band, v)))
+    fun reset(kind: ColourMix.Kind) = s.change { it.copy(mix = it.mix.with(kind, band, 0f)) }
+    Knob(stringResource(R.string.mix_hue), mix.hue[band], -1f..1f, onChange = { live(ColourMix.Kind.HUE, it) }, onDone = s.commit, onReset = { reset(ColourMix.Kind.HUE) }, haptics = s.haptics, modifier = Modifier.padding(top = 4.dp))
+    Knob(stringResource(R.string.mix_saturation), mix.saturation[band], -1f..1f, onChange = { live(ColourMix.Kind.SATURATION, it) }, onDone = s.commit, onReset = { reset(ColourMix.Kind.SATURATION) }, haptics = s.haptics)
+    Knob(stringResource(R.string.mix_lightness), mix.lightness[band], -1f..1f, onChange = { live(ColourMix.Kind.LIGHTNESS, it) }, onDone = s.commit, onReset = { reset(ColourMix.Kind.LIGHTNESS) }, haptics = s.haptics)
+    if (!mix.isIdentity) TextButton(onClick = { s.change { it.copy(mix = ColourMix()) } }) { Text(stringResource(R.string.mix_reset), color = StillColors.Muted) }
 }

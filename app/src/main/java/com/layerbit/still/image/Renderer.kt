@@ -234,6 +234,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         val tone = com.layerbit.still.engine.Looks.combine(r.tone, r.curves, r.look, r.lookStrength).tone
         val pipeline = TonePipeline.build(r.tone, r.curves, r.look, r.lookStrength)
         if (!pipeline.isIdentity) parallelRows(h) { from, to -> pipeline.apply(pixels, w, from, to) }
+        r.mix.compile()?.let { mix -> parallelRows(h) { from, to -> mix.apply(pixels, w, from, to) } }
         check()
         var working = pixels
         // Paper cleanup before detail, so sharpening works on clean ink.

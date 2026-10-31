@@ -716,6 +716,11 @@
     <string name="colour_neutral_cancel">Cancel the tap</string>
     <string name="colour_neutral_tap">Tap something in the picture that should be grey or white.</string>
     <string name="colour_neutral_done">Temperature and tint set from the tap.</string>
+    <string name="mix_title">Colour mixer</string>
+    <string name="mix_hue">Hue</string>
+    <string name="mix_saturation">Saturation</string>
+    <string name="mix_lightness">Lightness</string>
+    <string name="mix_reset">Reset the mixer</string>
     <string name="colour_auto">Auto colour</string>
     <string name="colour_auto_hint">Auto finds what should be grey and takes the cast away. Not right? Tap something white and it follows your tap.</string>
     <string name="colour_auto_nothing">No colour cast to take away.</string>

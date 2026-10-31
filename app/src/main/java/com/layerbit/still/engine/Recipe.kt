@@ -269,12 +269,14 @@ data class Recipe(
     /** Paper cleanup, applied after tone and before detail. */
     val scan: Scan = Scan(),
     /** The subject or the ink lifted off its surroundings, applied after the layers and before the frame. */
-    val cutout: Cutout = Cutout()
+    val cutout: Cutout = Cutout(),
+    /** Hue, saturation and lightness per family of colour, after the tone. */
+    val mix: ColourMix = ColourMix()
 ) {
     val isIdentity: Boolean get() = this == Recipe()
     val valid: Boolean
         get() = geometry.valid && tone.valid && curves.valid && lookStrength in 0f..1f && marks.size <= MAX_MARKS &&
-            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid
+            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid && mix.valid
 
     /** The recipe without what belongs to one particular picture: what a preset keeps. */
     fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout())

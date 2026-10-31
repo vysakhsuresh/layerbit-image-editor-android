@@ -716,6 +716,11 @@
     <string name="colour_neutral_cancel">टैप रद्द करें</string>
     <string name="colour_neutral_tap">तस्वीर में किसी ऐसी चीज़ पर टैप करें जो ग्रे या सफ़ेद होनी चाहिए.</string>
     <string name="colour_neutral_done">टैप से तापमान और टिंट तय हुए.</string>
+    <string name="mix_title">रंग मिक्सर</string>
+    <string name="mix_hue">रंगत</string>
+    <string name="mix_saturation">गाढ़ापन</string>
+    <string name="mix_lightness">हल्कापन</string>
+    <string name="mix_reset">मिक्सर रीसेट करें</string>
     <string name="colour_auto">ऑटो रंग</string>
     <string name="colour_auto_hint">ऑटो ढूँढता है कि क्या ग्रे होना चाहिए और रंग की छाया हटा देता है. ठीक नहीं लगा? किसी सफ़ेद चीज़ पर टैप करें, वह आपके टैप को मानेगा.</string>
     <string name="colour_auto_nothing">हटाने लायक कोई रंग की छाया नहीं.</string>
