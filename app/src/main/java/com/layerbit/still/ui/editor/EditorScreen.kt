@@ -469,7 +469,7 @@ fun EditorScreen(
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE, MarkKind.HEAL)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> {
-                                LaunchedEffect(ui.project?.id) { vm.ensureFrameThumbs() }
+                                LaunchedEffect(ui.project?.id, recipe.tone, recipe.curves, recipe.look, recipe.lookStrength, recipe.mix, recipe.effects) { vm.ensureFrameThumbs() }
                                 FramePanel(scope, ui.swatches, ui.frameThumbs)
                             }
                             ToolId.Panel.DETAILS -> {

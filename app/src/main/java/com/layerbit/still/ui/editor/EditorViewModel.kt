@@ -698,17 +698,23 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     private var frameThumbJob: Job? = null
 
     /** Draws the picture in every frame style, once per project, for the Frame strip. */
+    private var frameThumbKey: Recipe? = null
+    private var frameSmall: Bitmap? = null
+
+    /** Frame thumbnails over the picture as the user has made it look, redrawn when that look changes. */
     fun ensureFrameThumbs() {
-        if (_ui.value.frameThumbs.isNotEmpty() || frameThumbJob?.isActive == true) return
+        val look = effectThumbBase(_ui.value.recipe).copy(effects = _ui.value.recipe.effects)
+        if ((_ui.value.frameThumbs.isNotEmpty() && frameThumbKey == look) || frameThumbJob?.isActive == true) return
         frameThumbJob = viewModelScope.launch {
             val project = _ui.value.project ?: return@launch
             try {
-                val small = withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }
+                val small = frameSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { frameSmall = it }
                 val thumbs = LinkedHashMap<com.layerbit.still.engine.FrameStyle?, Bitmap>()
-                thumbs[null] = renderer.finish(small, Recipe())
+                thumbs[null] = renderer.finish(small, look)
                 for (style in com.layerbit.still.engine.FrameStyle.entries) {
-                    thumbs[style] = renderer.finish(small, Recipe(frame = com.layerbit.still.engine.FrameStyles.preset(style).copy(caption = "")))
+                    thumbs[style] = renderer.finish(small, look.copy(frame = com.layerbit.still.engine.FrameStyles.preset(style).copy(caption = "")))
                 }
+                frameThumbKey = look
                 _ui.update { it.copy(frameThumbs = thumbs) }
             } catch (c: CancellationException) {
                 throw c
