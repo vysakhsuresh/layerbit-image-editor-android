@@ -57,12 +57,14 @@ data class Cutout(
     val outline: Float = 0f,
     val outlineColor: Int = 0xFFFFFFFF.toInt(),
     /** Crop the result to the subject, with a small margin. */
-    val trim: Boolean = false
+    val trim: Boolean = false,
+    /** A soft shadow cast down and right of the subject onto what is behind it, 0..1. */
+    val shadow: Float = 0f
 ) {
     val isIdentity: Boolean get() = this == Cutout()
     val valid: Boolean
         get() = scribbles.size <= MAX_SCRIBBLES && scribbles.all { it.valid } && feather in 0f..0.05f && threshold in 0f..1f && blur in 0f..0.1f &&
-            grow in -0.03f..0.03f && outline in 0f..0.04f
+            grow in -0.03f..0.03f && outline in 0f..0.04f && shadow in 0f..1f
 
     /** What decides the mask itself, as a key: the strokes, the mode, the threshold and the grow. */
     val maskKey: String get() = "$mode|$threshold|$grow|" + scribbles.joinToString(";") { s -> (if (s.keep) "k" else "r") + s.width + ":" + s.points.joinToString(",") { "${it.x},${it.y}" } }
@@ -497,6 +499,24 @@ object Segment {
      * Source-over with straight alpha: [top] over [under], both ARGB. Colour is weighted by each
      * layer's own alpha, so a translucent edge over a translucent ground stays the right colour.
      */
+    /**
+     * The shadow a kept area casts: the mask moved down and right by [offsetPx] and softened by
+     * [softPx], at the analysis size, so it scales with the picture like the mask itself.
+     */
+    fun shadow(mask: IntArray, w: Int, h: Int, offsetPx: Int, softPx: Int): IntArray {
+        val moved = IntArray(mask.size)
+        val dx = offsetPx / 2; val dy = offsetPx
+        for (y in 0 until h) {
+            val sy = y - dy
+            if (sy !in 0 until h) continue
+            for (x in 0 until w) {
+                val sx = x - dx
+                if (sx in 0 until w) moved[y * w + x] = mask[sy * w + sx]
+            }
+        }
+        return feather(moved, w, h, softPx)
+    }
+
     fun over(top: Int, under: Int): Int {
         val a = Argb.alpha(top); val ua = Argb.alpha(under)
         if (a == 255 || ua == 0) return top

@@ -187,4 +187,16 @@ class SegmentEdgeTest {
         val tm0 = System.nanoTime(); Segment.localModels(px, w, h, mask, 20); Segment.grow(mask, w, h, 8); val tm1 = System.nanoTime()
         println("segment: models and grow ${(tm1 - tm0) / 1_000_000} ms")
     }
+
+    @Test
+    fun theShadowFallsBelowAndRightAndIsSoft() {
+        val w = 60; val h = 60
+        val mask = IntArray(w * h) { i -> val x = i % w; val y = i / w; if (x in 20..35 && y in 20..35) 255 else 0 }
+        val s = Segment.shadow(mask, w, h, 6, 3)
+        // Below the subject's bottom edge there is shade; above its top edge there is none.
+        assertTrue(s[40 * w + 30] > 60)
+        assertEquals(0, s[14 * w + 28])
+        // Soft: the shade fades rather than stopping.
+        assertTrue(s[42 * w + 30] in 1 until s[40 * w + 30])
+    }
 }

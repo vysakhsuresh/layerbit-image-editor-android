@@ -621,6 +621,7 @@ fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: 
                 Backdrop.MONO -> Unit
             }
             Knob(stringResource(R.string.cutout_outline), c.outline, 0f..0.04f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(outline = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(outline = 0f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+            Knob(stringResource(R.string.cutout_shadow), c.shadow, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(shadow = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(shadow = 0f)) } }, haptics = s.haptics, format = { "${(it * 100).roundToInt()}" }, modifier = Modifier.padding(top = 4.dp))
             if (c.outline > 0f) ColourRow(colours, c.outlineColor, { col -> s.change { it.copy(cutout = it.cutout.copy(outlineColor = col)) } }, Modifier.padding(top = 4.dp))
             ToggleRow(stringResource(R.string.cutout_trim), c.trim, { v -> s.change { it.copy(cutout = it.cutout.copy(trim = v)) } }, detail = stringResource(R.string.cutout_trim_detail))
             Hint(stringResource(R.string.cutout_done_hint))

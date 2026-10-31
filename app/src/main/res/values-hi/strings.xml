@@ -674,6 +674,7 @@
     <string name="cutout_ink_hint">गहरे और तेज़ रंग के निशान रहते हैं; कागज़ हटता है. ऑटो पन्ने से तय करता है; हल्की स्याही रखने के लिए सीमा बढ़ाएं.</string>
     <string name="cutout_kept">रखा गया</string>
     <string name="cutout_kept_value">तस्वीर का %1$d%%</string>
+    <string name="cutout_shadow">परछाईं</string>
     <string name="cutout_feather">किनारे की कोमलता</string>
     <string name="cutout_invert">इसके बजाय बैकग्राउंड रखें</string>
     <string name="cutout_invert_detail">विषय हटाता है और उसके आसपास का सब रखता है.</string>

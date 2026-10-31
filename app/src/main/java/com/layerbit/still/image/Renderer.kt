@@ -322,6 +322,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         // The sticker outline: a ring just outside the kept area, at the analysis size.
         val outlinePx = (cut.outline * shorter).roundToInt()
         val ring = if (outlinePx > 0 && !preview) Segment.feather(Segment.grow(analysis.mask, mw, mh, outlinePx), mw, mh, 1) else null
+        // The cast shadow: never for an inverted cut, which keeps the background, not a subject.
+        val shade = if (cut.shadow > 0f && !preview && !cut.invert) Segment.shadow(analysis.mask, mw, mh, max(1, (0.022f * shorter).roundToInt()), max(1, (0.03f * shorter).roundToInt())) else null
         check()
         val px = IntArray(w * h)
         picture.getPixels(px, 0, w, 0, 0, w, h)
@@ -372,12 +374,17 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                         val o = Segment.sample(ring, mw, mh, fx, fy)
                         if (o > 0 && m < 255) top = Segment.over(top, Argb.withAlpha(cut.outlineColor, o))
                     }
-                    px[i] = when (cut.backdrop) {
-                        Backdrop.TRANSPARENT -> top
-                        Backdrop.COLOUR -> Segment.over(top, cut.color)
-                        Backdrop.BLUR -> Segment.over(top, behind!!.at(x, y, w, h))
-                        Backdrop.MONO -> Segment.over(top, mono(original))
+                    val under = when (cut.backdrop) {
+                        Backdrop.TRANSPARENT -> 0
+                        Backdrop.COLOUR -> cut.color
+                        Backdrop.BLUR -> behind!!.at(x, y, w, h)
+                        Backdrop.MONO -> mono(original)
                     }
+                    val shadowed = if (shade != null) {
+                        val s = (Segment.sample(shade, mw, mh, fx, fy) * cut.shadow * 0.55f).roundToInt().coerceIn(0, 255)
+                        if (s > 0) Segment.over(Argb.withAlpha(0xFF000000.toInt(), s), under) else under
+                    } else under
+                    px[i] = if (Argb.alpha(shadowed) == 0) top else Segment.over(top, shadowed)
                 }
             } }
         }

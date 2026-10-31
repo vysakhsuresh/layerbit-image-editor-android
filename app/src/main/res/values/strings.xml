@@ -674,6 +674,7 @@
     <string name="cutout_ink_hint">Dark and strongly coloured marks stay; the paper goes. Auto decides from the page; raise the threshold to keep fainter ink.</string>
     <string name="cutout_kept">Kept</string>
     <string name="cutout_kept_value">%1$d%% of the picture</string>
+    <string name="cutout_shadow">Shadow</string>
     <string name="cutout_feather">Edge softness</string>
     <string name="cutout_invert">Keep the background instead</string>
     <string name="cutout_invert_detail">Removes the subject and keeps everything around it.</string>
