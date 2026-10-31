@@ -89,7 +89,7 @@
     <string name="tool_markup_summary">हाथ से रेखा, तीर, डिब्बे, गोले और टेक्स्ट जिसे बाद में हिलाया जा सके</string>
     <string name="tool_markup_action">निशान लगाएं</string>
     <string name="tool_retouch_title">छिपाएं और सुधारें</string>
-    <string name="tool_retouch_summary">कोई हिस्सा धुंधला, पिक्सेलेट या ढकें, पारदर्शी मिटाएं, दाग पर क्लोन करें</string>
+    <string name="tool_retouch_summary">कोई हिस्सा धुंधला, पिक्सेलेट या ढकें, पारदर्शी मिटाएं, दाग पर हील या क्लोन करें</string>
     <string name="tool_retouch_action">सुधारें</string>
     <string name="tool_frame_title">फ़्रेम और पैड</string>
     <string name="tool_frame_summary">चौकोर या स्टोरी के लिए पैड करें, किनारा जोड़ें, कोने गोल करें, भराव धुंधला करें</string>
@@ -737,6 +737,9 @@
     <string name="colour_auto_nothing">हटाने लायक कोई रंग की छाया नहीं.</string>
     <string name="auto_strength">ऑटो की मात्रा</string>
     <string name="retouch_redeye">लाल आंख</string>
+    <string name="retouch_heal">हील</string>
+    <string name="retouch_heal_hint">किसी दाग, धूल के कण या छोटी चीज़ पर ब्रश चलाएं. Still पास से एक साफ़ हिस्सा ढूंढकर उसे घुला-मिला देता है. डैश वाला गोला दिखाता है कि हिस्सा कहां से आया; दूसरा चुनने के लिए उसे खींचें.</string>
+    <string name="heal_no_room">उस जगह के पास हील करने के लिए कोई साफ़ हिस्सा नहीं है. छोटा ब्रश आज़माएं.</string>
     <string name="redeye_find">लाल आँखें खोजें</string>
     <string name="redeye_steer_hint">Still लाल आँखें खोजकर हर एक ठीक करता है. किसी सुधार पर टैप करके उसे हटाएँ, या छूटी आँख पर टैप करें.</string>
     <string name="redeye_none_found">कोई लाल आँख नहीं मिली. हर आँख पर टैप करके खुद ठीक करें.</string>

@@ -89,7 +89,7 @@
     <string name="tool_markup_summary">Freehand, arrows, boxes, circles and text you can move afterwards</string>
     <string name="tool_markup_action">Mark it up</string>
     <string name="tool_retouch_title">Hide and retouch</string>
-    <string name="tool_retouch_summary">Blur, pixelate or cover a detail, erase to transparent, clone over a blemish</string>
+    <string name="tool_retouch_summary">Blur, pixelate or cover a detail, erase to transparent, heal or clone over a blemish</string>
     <string name="tool_retouch_action">Retouch</string>
     <string name="tool_frame_title">Frame and pad</string>
     <string name="tool_frame_summary">Pad to a square or a story, add a border, round the corners, blur the fill</string>
@@ -737,6 +737,9 @@
     <string name="colour_auto_nothing">No colour cast to take away.</string>
     <string name="auto_strength">Auto strength</string>
     <string name="retouch_redeye">Red eye</string>
+    <string name="retouch_heal">Heal</string>
+    <string name="retouch_heal_hint">Brush over a spot, a speck of dust or a small thing. Still finds a clean patch nearby and blends it in. The dashed circle shows where the patch came from; drag it to pick another.</string>
+    <string name="heal_no_room">There is no clean patch near that spot to heal from. Try a smaller brush.</string>
     <string name="redeye_find">Find red eyes</string>
     <string name="redeye_steer_hint">Still looks for red eyes and fixes each one it finds. Tap a fix to take it away, or tap an eye it missed.</string>
     <string name="redeye_none_found">No red eyes found. Tap each eye to fix it by hand.</string>

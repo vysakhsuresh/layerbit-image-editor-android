@@ -19,7 +19,9 @@ import com.layerbit.still.engine.PageQuad
 import com.layerbit.still.engine.Level
 import kotlin.math.min
 import kotlin.math.max
+import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
+import com.layerbit.still.engine.Heal
 import com.layerbit.still.engine.ToneStep
 import com.layerbit.still.engine.Crop
 import com.layerbit.still.engine.Frame
@@ -360,6 +362,25 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
      * Finds flash red-eye and adds a correction on each, skipping eyes already corrected. The
      * user then taps a wrong one away or taps a missed eye; nothing here is final.
      */
+    /**
+     * A heal stroke: the engine picks the patch on the preview the user is looking at, which
+     * holds every earlier layer, and the choice is written into the mark so the export reuses it.
+     */
+    fun addHeal(points: List<Pt>, width: Float) {
+        val b = _ui.value.preview?.takeIf { !it.isRecycled } ?: return
+        if (_ui.value.recipe.marks.size >= Recipe.MAX_MARKS) { message(Strings.get(R.string.layers_full)); return }
+        val w = b.width; val h = b.height
+        val px = IntArray(w * h)
+        b.getPixels(px, 0, w, 0, 0, w, h)
+        viewModelScope.launch {
+            val source = withContext(Dispatchers.Default) { Heal.findSource(px, w, h, points, width) }
+            if (source == null) { message(Strings.get(R.string.heal_no_room)); return@launch }
+            val mark = Mark(MarkKind.HEAL, points, width = width, source = source)
+            if (!mark.valid) return@launch
+            change { it.copy(marks = it.marks + mark) }
+        }
+    }
+
     fun findRedEyes() {
         val b = base?.takeIf { !it.isRecycled }
         if (b == null) { redEyesPending = true; return }

@@ -24,6 +24,7 @@ import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.WatermarkLayout
 import com.layerbit.still.engine.Mark
+import com.layerbit.still.engine.Heal
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Backdrop
@@ -499,6 +500,16 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                 c.drawPath(path, p)
                 p.shader = null
                 snap.recycle()
+            }
+            MarkKind.HEAL -> {
+                // The engine decides every pixel; the source was chosen when the stroke was added.
+                val src = m.source ?: return
+                val win = Heal.window(m.points, m.width, src, b.width, b.height) ?: return
+                val ww = win[2] - win[0]; val wh = win[3] - win[1]
+                val region = IntArray(ww * wh)
+                b.getPixels(region, 0, ww, win[0], win[1], ww, wh)
+                Heal.apply(region, ww, wh, win[0], win[1], b.width, b.height, m.points, m.width, src, m.opacity, check)
+                b.setPixels(region, 0, ww, win[0], win[1], ww, wh)
             }
             MarkKind.PIXELATE, MarkKind.BLUR -> {
                 val x = rect.left.toInt().coerceIn(0, b.width - 1); val y = rect.top.toInt().coerceIn(0, b.height - 1)

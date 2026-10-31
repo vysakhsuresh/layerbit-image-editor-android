@@ -121,6 +121,8 @@ fun EditorScreen(
     var editingText by remember { mutableIntStateOf(-1) }
     var presetDialog by remember { mutableStateOf(false) }
     var draggingText by remember { mutableIntStateOf(-1) }
+    // The heal mark whose patch was last added or dragged, drawn strongest.
+    var healFocus by remember { mutableIntStateOf(-1) }
     var cutKeep by rememberSaveable { mutableStateOf(true) }
     var cutWidth by rememberSaveable { mutableFloatStateOf(0.06f) }
     var pickingNeutral by rememberSaveable { mutableStateOf(startTool == ToolId.WHITE_BALANCE) }
@@ -175,7 +177,14 @@ fun EditorScreen(
         panel == ToolId.Panel.PERSPECTIVE -> Overlay.QuadOverlay(recipe.geometry.quad)
         panel == ToolId.Panel.MARKUP && moving -> Overlay.Selection(recipe.marks.filter { it.kind in Movable && it.visible }, recipe.marks.getOrNull(selectedMark)?.takeIf { it.kind in Movable })
         panel == ToolId.Panel.MARKUP && brush.kind == MarkKind.TEXT -> if (strokePoints.isEmpty()) Overlay.Texts(recipe.marks.filter { it.kind == MarkKind.TEXT && it.visible }) else Overlay.None
-        panel == ToolId.Panel.MARKUP || panel == ToolId.Panel.RETOUCH -> Overlay.Stroke(brush.kind, strokePoints, brush.color, brush.width, brush.cloneSource.takeIf { brush.kind == MarkKind.CLONE })
+        panel == ToolId.Panel.MARKUP || panel == ToolId.Panel.RETOUCH -> Overlay.Stroke(
+            brush.kind, strokePoints, brush.color, brush.width, brush.cloneSource.takeIf { brush.kind == MarkKind.CLONE },
+            heals = if (panel == ToolId.Panel.RETOUCH && brush.kind == MarkKind.HEAL && strokePoints.isEmpty()) {
+                val all = recipe.marks.withIndex().filter { (_, m) -> m.kind == MarkKind.HEAL && m.visible }
+                val focus = all.firstOrNull { it.index == healFocus } ?: all.lastOrNull()
+                (all - listOfNotNull(focus).toSet() + listOfNotNull(focus)).map { it.value }
+            } else emptyList()
+        )
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         else -> Overlay.None
     }
@@ -241,6 +250,27 @@ fun EditorScreen(
                 onTap = { p -> if (brush.text.isNotBlank()) addMark(listOf(p), MarkKind.TEXT) }
             )
             brush.kind == MarkKind.CLONE && brush.cloneSource == null -> TouchMode.Tap { p -> brush = brush.copy(cloneSource = p) }
+            // Heal: paint a spot and the patch is chosen for you; drag a patch's dashed circle to choose another.
+            brush.kind == MarkKind.HEAL && panel == ToolId.Panel.RETOUCH -> TouchMode.DrawOrDrag(
+                draw = TouchMode.Draw(
+                    onStart = { p -> strokePoints = listOf(p) },
+                    onMove = { p -> if (strokePoints.size < Mark.MAX_POINTS) strokePoints = strokePoints + p },
+                    onEnd = { val pts = strokePoints; strokePoints = emptyList(); if (pts.isNotEmpty()) { healFocus = -1; vm.addHeal(pts, brush.width) } },
+                    onCancel = { strokePoints = emptyList() }
+                ),
+                hit = { at ->
+                    recipe.marks.indices.lastOrNull { i ->
+                        val m = recipe.marks[i]
+                        m.kind == MarkKind.HEAL && m.visible && healRing(m, transform)?.let { ring -> (ring.source - at).getDistance() <= kotlin.math.max(reach, ring.radius * 0.8f) } == true
+                    }?.also { healFocus = it }
+                },
+                onDrag = { i, d ->
+                    val m = recipe.marks.getOrNull(i)
+                    val src = m?.source
+                    if (m != null && src != null) vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, m.copy(source = Pt((src.x + d.x).coerceIn(0f, 1f), (src.y + d.y).coerceIn(0f, 1f)))) }))
+                },
+                onDragEnd = { vm.commit() }
+            )
             else -> TouchMode.Draw(
                 onStart = { p -> strokePoints = listOf(p) },
                 onMove = { p -> if (strokePoints.size < Mark.MAX_POINTS) strokePoints = strokePoints + p },
@@ -334,7 +364,7 @@ fun EditorScreen(
                                 onSelectedColour = { c -> editSelected { it.copy(color = c) } },
                                 onDeleteSelected = { val i = selectedMark; if (i in recipe.marks.indices) { vm.change { r -> r.copy(marks = r.marks.filterIndexed { k, _ -> k != i }) }; selectedMark = -1 } }
                             )
-                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
+                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE, MarkKind.HEAL)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> FramePanel(scope, ui.swatches)
                             ToolId.Panel.DETAILS -> {

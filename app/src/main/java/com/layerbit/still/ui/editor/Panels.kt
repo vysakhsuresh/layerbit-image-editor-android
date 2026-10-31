@@ -420,7 +420,7 @@ fun MarkupPanel(
 
 @Composable
 fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean, onFindRedEyes: () -> Unit = {}) {
-    val kinds = listOf(MarkKind.BLUR to stringResource(R.string.retouch_blur), MarkKind.PIXELATE to stringResource(R.string.retouch_pixelate), MarkKind.COVER to stringResource(R.string.retouch_cover), MarkKind.ERASE to stringResource(R.string.retouch_erase), MarkKind.CLONE to stringResource(R.string.retouch_clone), MarkKind.REDEYE to stringResource(R.string.retouch_redeye))
+    val kinds = listOf(MarkKind.BLUR to stringResource(R.string.retouch_blur), MarkKind.PIXELATE to stringResource(R.string.retouch_pixelate), MarkKind.COVER to stringResource(R.string.retouch_cover), MarkKind.ERASE to stringResource(R.string.retouch_erase), MarkKind.HEAL to stringResource(R.string.retouch_heal), MarkKind.CLONE to stringResource(R.string.retouch_clone), MarkKind.REDEYE to stringResource(R.string.retouch_redeye))
     val kind = if (brush.kind in kinds.map { it.first }) brush.kind else MarkKind.BLUR
     ChipRow(kinds, kind, { onBrush(brush.copy(kind = it, pickingSource = it == MarkKind.CLONE && brush.cloneSource == null)) })
     if (kind == MarkKind.COVER) ColourRow(InkColours, brush.color, { onBrush(brush.copy(color = it)) }, Modifier.padding(top = 10.dp))
@@ -430,6 +430,7 @@ fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean, onFin
             SecondaryButton(stringResource(if (brush.cloneSource == null) R.string.retouch_pick_source else R.string.retouch_change_source), onClick = { onBrush(brush.copy(pickingSource = true)) }, tall = false)
             Hint(stringResource(if (brush.pickingSource) R.string.retouch_tap_source else R.string.retouch_clone_hint))
         }
+        MarkKind.HEAL -> Hint(stringResource(R.string.retouch_heal_hint))
         MarkKind.ERASE -> Hint(stringResource(R.string.retouch_erase_hint))
         MarkKind.COVER -> Hint(stringResource(R.string.retouch_cover_hint))
         MarkKind.REDEYE -> {
@@ -475,7 +476,7 @@ fun markLabel(kind: MarkKind): String = stringResource(
         MarkKind.DRAW -> R.string.mark_draw; MarkKind.TEXT -> R.string.mark_text; MarkKind.ARROW -> R.string.mark_arrow; MarkKind.BOX -> R.string.mark_box
         MarkKind.ELLIPSE -> R.string.mark_ellipse; MarkKind.COVER -> R.string.retouch_cover; MarkKind.PIXELATE -> R.string.retouch_pixelate
         MarkKind.BLUR -> R.string.retouch_blur; MarkKind.ERASE -> R.string.retouch_erase; MarkKind.CLONE -> R.string.retouch_clone; MarkKind.WATERMARK -> R.string.tool_watermark_title
-        MarkKind.REDEYE -> R.string.retouch_redeye
+        MarkKind.REDEYE -> R.string.retouch_redeye; MarkKind.HEAL -> R.string.retouch_heal
     }
 )
 

@@ -197,7 +197,9 @@ enum class MarkKind {
     /** Text repeated across the whole picture at an angle. */
     WATERMARK,
     /** A tap on a flash-red pupil: the point and a radius. */
-    REDEYE
+    REDEYE,
+    /** A brushed blemish filled from a nearby patch at [Mark.source], blended to its surroundings by [Heal]. */
+    HEAL
 }
 
 /**
@@ -213,7 +215,11 @@ data class Mark(
     val text: String = "",
     val opacity: Float = 1f,
     val visible: Boolean = true,
-    /** Where a clone stroke samples from. */
+    /**
+     * Where a clone or heal stroke samples from: the canvas fraction its first point copies.
+     * Heal chooses it automatically when the stroke is added and stores it here, so the export
+     * makes the same choice the preview showed.
+     */
     val source: Pt? = null,
     /** Degrees, for text and watermarks. */
     val angle: Float = 0f,
@@ -223,12 +229,14 @@ data class Mark(
     val valid: Boolean
         get() = points.isNotEmpty() && points.size <= MAX_POINTS && points.all { it.finite && it.x in 0f..1f && it.y in 0f..1f } &&
             width in 0.002f..0.3f && opacity in 0f..1f && text.length <= MAX_TEXT && angle.isFinite() &&
-            (source?.finite ?: true) && (kind != MarkKind.CLONE || source != null)
+            (source?.finite ?: true) && (kind !in SOURCED || source != null)
 
     companion object {
         const val DEFAULT_COLOR = 0xFFE62E80.toInt()
         const val MAX_POINTS = 4000
         const val MAX_TEXT = 300
+        /** The kinds that copy from a [source] and are meaningless without one. */
+        val SOURCED = setOf(MarkKind.CLONE, MarkKind.HEAL)
     }
 }
 

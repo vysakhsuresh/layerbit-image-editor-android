@@ -93,6 +93,12 @@ sealed interface TouchMode {
     data class Tap(val onTap: (Pt) -> Unit) : TouchMode
     /** Drag a handle found by [hit] at the touch, in box coordinates; [onDrag] gets the delta in fractions. */
     data class Handles(val hit: (Offset) -> Int?, val onDrag: (Int, Pt, Offset) -> Unit, val onEnd: () -> Unit, val onTap: ((Pt) -> Unit)? = null) : TouchMode
+    /**
+     * A stroke with [draw], unless the touch starts on a handle found by [hit]: then that handle
+     * is dragged and [onDrag] gets the delta in fractions. A tap with no handle under it is a
+     * one-point stroke. Heal uses it: paint a spot, or drag a patch's dashed circle.
+     */
+    data class DrawOrDrag(val draw: Draw, val hit: (Offset) -> Int?, val onDrag: (Int, Offset) -> Unit, val onDragEnd: () -> Unit) : TouchMode
     /** A sideways swipe anywhere on the picture moves the chosen slider; [onDelta] gets the move as a fraction of the width. */
     data class Scrub(val onDelta: (Float) -> Unit, val onEnd: () -> Unit) : TouchMode
 }
@@ -116,6 +122,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
             var comparing = false
             var drawing = false
             var handle: Int? = null
+            var decided = false
             var scrubbing = false
             var lastPos = start
             var handleLast = start
@@ -127,7 +134,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
                     if (pressed.size >= 2) {
                         if (!multi) {
                             multi = true
-                            if (drawing) { (mode as? TouchMode.Draw)?.onCancel?.invoke(); drawing = false }
+                            if (drawing) { (mode as? TouchMode.Draw)?.onCancel?.invoke(); (mode as? TouchMode.DrawOrDrag)?.draw?.onCancel?.invoke(); drawing = false }
                             if (comparing) { onCompare(false); comparing = false }
                         }
                         t.set(t.zoom * event.calculateZoom(), event.calculateCentroid(useCurrent = true), event.calculatePan())
@@ -159,6 +166,27 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
                                     t.set(t.zoom, pos, pos - lastPos); change.consume()
                                 }
                             }
+                            is TouchMode.DrawOrDrag -> {
+                                if (!decided) {
+                                    decided = true
+                                    handle = mode.hit(start)
+                                    if (handle == null && t.inside(start)) { drawing = true; mode.draw.onStart(t.toPt(start)) }
+                                }
+                                val h = handle
+                                if (h != null) {
+                                    if (moved) {
+                                        val delta = pos - handleLast
+                                        val r = t.rect
+                                        mode.onDrag(h, Offset(if (r.width > 0) delta.x / r.width else 0f, if (r.height > 0) delta.y / r.height else 0f))
+                                        handleLast = pos
+                                        t.loupe = pos
+                                    }
+                                } else if (drawing) {
+                                    if (pos != lastPos) mode.draw.onMove(t.toPt(pos))
+                                    if (moved) t.loupe = pos
+                                }
+                                change.consume()
+                            }
                             is TouchMode.Tap -> Unit
                             is TouchMode.Scrub -> {
                                 if (moved) {
@@ -183,10 +211,12 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
             } finally {
                 val mode = modeState.value
                 if (scrubbing) (mode as TouchMode.Scrub).onEnd()
-                if (drawing) (mode as TouchMode.Draw).onEnd()
+                if (drawing) { (mode as? TouchMode.Draw)?.onEnd?.invoke(); (mode as? TouchMode.DrawOrDrag)?.draw?.onEnd?.invoke() }
                 if (comparing) onCompare(false)
                 t.loupe = null
-                if (handle != null) (mode as TouchMode.Handles).onEnd()
+                if (handle != null) { (mode as? TouchMode.Handles)?.onEnd?.invoke(); (mode as? TouchMode.DrawOrDrag)?.onDragEnd?.invoke() }
+                // A quick tap never reaches the move loop; for a brush it is a dab.
+                if (mode is TouchMode.DrawOrDrag && !decided && !multi && t.inside(start) && mode.hit(start) == null) { mode.draw.onStart(t.toPt(start)); mode.draw.onEnd() }
                 if (mode is TouchMode.Tap && !moved && !multi && t.inside(start)) mode.onTap(t.toPt(start))
                 if (mode is TouchMode.Handles && handle == null && !moved && !multi && t.inside(start)) mode.onTap?.invoke(t.toPt(start))
             }

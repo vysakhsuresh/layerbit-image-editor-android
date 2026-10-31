@@ -133,6 +133,28 @@ class RendererTest {
     }
 
     @Test
+    fun aHealChosenOnThePreviewLooksTheSameOnTheExport() = runBlocking {
+        // The source is chosen once on the small render, the way the editor does, and stored on
+        // the mark; the large render reuses it, and the two agree once the large one is shrunk.
+        val src = scene(1200, 800)
+        val stroke = listOf(Pt(0.3f, 0.4f), Pt(0.36f, 0.45f))
+        val plain = renderer.render(src, Recipe(), maxPixels = 300 * 200)
+        val px = IntArray(plain.width * plain.height)
+        plain.getPixels(px, 0, plain.width, 0, 0, plain.width, plain.height)
+        val source = com.layerbit.still.engine.Heal.findSource(px, plain.width, plain.height, stroke, 0.06f)
+        assertNotNull(source)
+        val r = Recipe(marks = listOf(Mark(MarkKind.HEAL, stroke, width = 0.06f, source = source)))
+        assertTrue(r.valid)
+        val small = renderer.render(src, r, maxPixels = 300 * 200)
+        val large = renderer.render(src, r, maxPixels = 1200 * 800)
+        val shrunk = renderer.scale(large, small.width, small.height)
+        val diff = renderer.difference(small, shrunk)
+        assertTrue("mean difference $diff", diff < 6.0)
+        assertTrue("the heal changed something", renderer.difference(plain, small) > 0.0)
+        plain.recycle(); small.recycle(); large.recycle(); shrunk.recycle()
+    }
+
+    @Test
     fun eraseKeepsTransparencyInPngAndJpegFlattensToWhite() {
         val src = scene(160, 100)
         val mask = Mark(MarkKind.ERASE, listOf(Pt(0.2f, 0.5f), Pt(0.8f, 0.5f)), width = 0.25f)

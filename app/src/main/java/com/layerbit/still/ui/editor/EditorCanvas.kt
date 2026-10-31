@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.layerbit.still.R
 import com.layerbit.still.engine.Crop
+import com.layerbit.still.engine.Heal
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
@@ -60,8 +61,11 @@ sealed interface Overlay {
     data object None : Overlay
     data class CropOverlay(val crop: Crop, val dragging: Boolean, val passport: Boolean = false) : Overlay
     data class QuadOverlay(val quad: Quad) : Overlay
-    /** The stroke in progress and the source marker for clone. */
-    data class Stroke(val kind: MarkKind, val points: List<Pt>, val color: Int, val width: Float, val cloneSource: Pt?) : Overlay
+    /**
+     * The stroke in progress and the source marker for clone. [heals] are the heal marks whose
+     * patches are shown as dashed circles to drag; the last one is drawn strongest.
+     */
+    data class Stroke(val kind: MarkKind, val points: List<Pt>, val color: Int, val width: Float, val cloneSource: Pt?, val heals: List<Mark> = emptyList()) : Overlay
     /** Movable text layers, highlighted. */
     data class Texts(val marks: List<Mark>) : Overlay
     /** Markup in move mode: every movable mark faintly outlined, the chosen one strongly. */
@@ -86,6 +90,23 @@ fun markBounds(m: Mark, t: CanvasTransform): Rect {
         left -= w / 2; right += w / 2; top -= h / 2; bottom += h / 2
     }
     return Rect(left - pad, top - pad, right + pad, bottom + pad)
+}
+
+/** A heal mark on screen: the centre of what it covers, the centre of its patch, and a radius that holds either. */
+data class HealRing(val target: Offset, val source: Offset, val radius: Float)
+
+fun healRing(m: Mark, t: CanvasTransform): HealRing? {
+    val src = m.source ?: return null
+    if (m.points.isEmpty()) return null
+    val r = t.rect
+    val minX = m.points.minOf { it.x }; val maxX = m.points.maxOf { it.x }
+    val minY = m.points.minOf { it.y }; val maxY = m.points.maxOf { it.y }
+    val first = m.points.first()
+    val target = t.toOffset(Pt((minX + maxX) / 2f, (minY + maxY) / 2f))
+    val source = Offset(target.x + (src.x - first.x) * r.width, target.y + (src.y - first.y) * r.height)
+    val brush = m.width * min(r.width, r.height) / 2f * Heal.FEATHER
+    val half = max((maxX - minX) * r.width, (maxY - minY) * r.height) / 2f
+    return HealRing(target, source, brush + half)
 }
 
 /**
@@ -271,6 +292,19 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
                         drawPath(path, colour.copy(alpha = alpha), style = Stroke(max(2f, overlay.width * min(r.width, r.height)), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                     }
                 }
+            }
+            val dash = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
+            for ((i, m) in overlay.heals.withIndex()) {
+                val ring = healRing(m, t) ?: continue
+                val strong = i == overlay.heals.lastIndex
+                val alpha = if (strong) 1f else 0.45f
+                if (strong) {
+                    drawLine(Color.White.copy(alpha = 0.5f), ring.target, ring.source, thin, pathEffect = dash)
+                    drawCircle(Color.White.copy(alpha = 0.5f), ring.radius, ring.target, style = Stroke(thin))
+                }
+                drawCircle(Color.Black.copy(alpha = 0.35f * alpha), ring.radius, ring.source, style = Stroke(thin * 2.6f))
+                drawCircle(Color.White.copy(alpha = alpha), ring.radius, ring.source, style = Stroke(thin * 1.4f, pathEffect = dash))
+                if (strong) drawCircle(StillColors.Band, handleR * 0.45f, ring.source)
             }
             overlay.cloneSource?.let { src ->
                 val at = t.toOffset(src)
