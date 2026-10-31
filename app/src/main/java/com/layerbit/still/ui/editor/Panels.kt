@@ -376,7 +376,19 @@ data class Brush(val kind: MarkKind = MarkKind.DRAW, val color: Int = Mark.DEFAU
 val InkColours = listOf(0xFFE62E80.toInt(), 0xFFF2A531.toInt(), 0xFF4CCB8F.toInt(), 0xFF5BA9E8.toInt(), 0xFFFFFFFF.toInt(), 0xFF111111.toInt())
 
 @Composable
-fun MarkupPanel(brush: Brush, onBrush: (Brush) -> Unit, onPlaceCentre: () -> Unit, haptics: Boolean) {
+fun MarkupPanel(
+    brush: Brush, onBrush: (Brush) -> Unit, onPlaceCentre: () -> Unit, haptics: Boolean,
+    moving: Boolean = false, onMoving: (Boolean) -> Unit = {}, selected: Mark? = null,
+    onSelectedWidth: (Float, Boolean) -> Unit = { _, _ -> }, onSelectedColour: (Int) -> Unit = {}, onDeleteSelected: () -> Unit = {}
+) {
+    ToggleRow(stringResource(R.string.mark_move), moving, onMoving, detail = stringResource(R.string.mark_move_detail))
+    if (moving) {
+        if (selected == null) { Hint(stringResource(R.string.mark_move_hint)); return }
+        ColourRow(InkColours, selected.color, onSelectedColour, Modifier.padding(top = 8.dp))
+        Knob(stringResource(if (selected.kind == MarkKind.TEXT) R.string.mark_text_size else R.string.mark_size), selected.width, 0.004f..0.12f, onChange = { onSelectedWidth(it, false) }, onDone = { onSelectedWidth(selected.width, true) }, onReset = { onSelectedWidth(0.02f, true) }, haptics = haptics, format = { "${(it * 1000).roundToInt()}" })
+        SecondaryButton(stringResource(R.string.mark_delete), onClick = onDeleteSelected, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), tall = false)
+        return
+    }
     val kinds = listOf(MarkKind.DRAW to stringResource(R.string.mark_draw), MarkKind.TEXT to stringResource(R.string.mark_text), MarkKind.ARROW to stringResource(R.string.mark_arrow), MarkKind.BOX to stringResource(R.string.mark_box), MarkKind.ELLIPSE to stringResource(R.string.mark_ellipse))
     ChipRow(kinds, brush.kind, { onBrush(brush.copy(kind = it)) })
     ColourRow(InkColours, brush.color, { onBrush(brush.copy(color = it)) }, Modifier.padding(top = 10.dp))

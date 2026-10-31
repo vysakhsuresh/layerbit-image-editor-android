@@ -330,6 +330,10 @@
     <string name="mark_place_centre">बीच में रखें</string>
     <string name="mark_text_hint">टेक्स्ट रखने के लिए तस्वीर पर टैप करें; रखे टेक्स्ट को हिलाने के लिए खींचें. शब्द और कोण परतों से बदलें.</string>
     <string name="mark_hint">तस्वीर पर बनाएं. हर स्ट्रोक एक परत बनती है जिसे आप छिपा, हल्का, ऊपर-नीचे या मिटा सकते हैं.</string>
+    <string name="mark_move">खिसकाएँ और आकार बदलें</string>
+    <string name="mark_move_detail">जो भी बनाया या लिखा, उसे उठाकर बदलें.</string>
+    <string name="mark_move_hint">किसी निशान को छूकर उठाएँ, फिर खींचें. खाली जगह छूकर छोड़ें.</string>
+    <string name="mark_delete">यह निशान हटाएँ</string>
 
     <!-- Retouch -->
     <string name="retouch_blur">धुंधला</string>

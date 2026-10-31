@@ -110,6 +110,9 @@ fun EditorScreen(
     }
 
     val transform = remember { CanvasTransform() }
+    // Markup's move mode and the mark it holds, by index into the recipe's marks.
+    var moving by remember { mutableStateOf(false) }
+    var selectedMark by remember { mutableIntStateOf(-1) }
     var brush by rememberSaveable(stateSaver = BrushSaver) { mutableStateOf(Brush()) }
     var lockAspect by rememberSaveable { mutableFloatStateOf(0f) }
     var comparing by remember { mutableStateOf(false) }
@@ -170,10 +173,18 @@ fun EditorScreen(
         comparing -> Overlay.None
         panel == ToolId.Panel.CROP -> Overlay.CropOverlay(recipe.geometry.crop, cropDragging)
         panel == ToolId.Panel.PERSPECTIVE -> Overlay.QuadOverlay(recipe.geometry.quad)
+        panel == ToolId.Panel.MARKUP && moving -> Overlay.Selection(recipe.marks.filter { it.kind in Movable && it.visible }, recipe.marks.getOrNull(selectedMark)?.takeIf { it.kind in Movable })
         panel == ToolId.Panel.MARKUP && brush.kind == MarkKind.TEXT -> if (strokePoints.isEmpty()) Overlay.Texts(recipe.marks.filter { it.kind == MarkKind.TEXT && it.visible }) else Overlay.None
         panel == ToolId.Panel.MARKUP || panel == ToolId.Panel.RETOUCH -> Overlay.Stroke(brush.kind, strokePoints, brush.color, brush.width, brush.cloneSource.takeIf { brush.kind == MarkKind.CLONE })
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         else -> Overlay.None
+    }
+
+    /** The selected mark changed by [block], as one undo step. */
+    fun editSelected(block: (Mark) -> Mark) {
+        val i = selectedMark
+        if (i !in recipe.marks.indices) return
+        vm.change { r -> r.copy(marks = r.marks.toMutableList().apply { set(i, block(get(i))) }) }
     }
 
     fun addMark(points: List<Pt>, kind: MarkKind) {
@@ -208,6 +219,13 @@ fun EditorScreen(
         ) else TouchMode.View
         ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else viewOrScrub
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
+            // Move mode: a touch on a mark picks it, a drag carries it; a touch on nothing lets go.
+            moving && panel == ToolId.Panel.MARKUP -> TouchMode.Handles(
+                hit = { at -> recipe.marks.indices.lastOrNull { i -> val m = recipe.marks[i]; m.kind in Movable && m.visible && markBounds(m, transform).inflate(reach * 0.5f).contains(at) }?.also { selectedMark = it } },
+                onDrag = { i, _, d -> vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).let { m -> m.copy(points = m.points.map { p -> Pt((p.x + d.x).coerceIn(0f, 1f), (p.y + d.y).coerceIn(0f, 1f)) }) }) })) },
+                onEnd = { vm.commit() },
+                onTap = { selectedMark = -1 }
+            )
             brush.pickingSource -> TouchMode.Tap { p -> brush = brush.copy(cloneSource = p, pickingSource = false) }
             // A tap on a correction takes it away; anywhere else adds one. Found and hand-placed eyes behave the same.
             brush.kind == MarkKind.REDEYE && panel == ToolId.Panel.RETOUCH -> TouchMode.Tap { p ->
@@ -307,7 +325,15 @@ fun EditorScreen(
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
-                            ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
+                            ToolId.Panel.MARKUP -> MarkupPanel(
+                                brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it },
+                                onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics,
+                                moving = moving, onMoving = { moving = it; if (!it) selectedMark = -1 },
+                                selected = recipe.marks.getOrNull(selectedMark)?.takeIf { moving && it.kind in Movable },
+                                onSelectedWidth = { w, done -> val i = selectedMark; if (i in recipe.marks.indices) { if (done) vm.commit() else vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).copy(width = w)) })) } },
+                                onSelectedColour = { c -> editSelected { it.copy(color = c) } },
+                                onDeleteSelected = { val i = selectedMark; if (i in recipe.marks.indices) { vm.change { r -> r.copy(marks = r.marks.filterIndexed { k, _ -> k != i }) }; selectedMark = -1 } }
+                            )
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> FramePanel(scope, ui.swatches)
@@ -495,3 +521,6 @@ val BrushSaver = androidx.compose.runtime.saveable.Saver<Brush, List<Any>>(
     save = { listOf(it.kind.name, it.color, it.width, it.text) },
     restore = { Brush(MarkKind.valueOf(it[0] as String), it[1] as Int, it[2] as Float, it[3] as String) }
 )
+
+/** The marks Markup can pick up and move: what it draws, not what Retouch does to pixels. */
+private val Movable = setOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)

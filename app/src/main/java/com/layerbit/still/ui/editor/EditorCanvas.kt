@@ -64,6 +64,28 @@ sealed interface Overlay {
     data class Stroke(val kind: MarkKind, val points: List<Pt>, val color: Int, val width: Float, val cloneSource: Pt?) : Overlay
     /** Movable text layers, highlighted. */
     data class Texts(val marks: List<Mark>) : Overlay
+    /** Markup in move mode: every movable mark faintly outlined, the chosen one strongly. */
+    data class Selection(val marks: List<Mark>, val selected: Mark?) : Overlay
+}
+
+/**
+ * Where a mark sits on screen, padded by its stroke, for hit testing and the selection outline.
+ * Text has no measured box here, so it is estimated from its size and length: generous, never tight.
+ */
+fun markBounds(m: Mark, t: CanvasTransform): Rect {
+    val r = t.rect
+    val short = min(r.width, r.height).coerceAtLeast(1f)
+    val pts = m.points.map { t.toOffset(it) }
+    if (pts.isEmpty()) return Rect.Zero
+    var left = pts.minOf { it.x }; var right = pts.maxOf { it.x }
+    var top = pts.minOf { it.y }; var bottom = pts.maxOf { it.y }
+    val pad = m.width * short
+    if (m.kind == MarkKind.TEXT) {
+        val w = m.text.lines().maxOfOrNull { it.length }.let { (it ?: 1) * pad * 0.62f }
+        val h = m.text.lines().size * pad * 1.25f
+        left -= w / 2; right += w / 2; top -= h / 2; bottom += h / 2
+    }
+    return Rect(left - pad, top - pad, right + pad, bottom + pad)
 }
 
 /**
@@ -244,6 +266,19 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
                 drawCircle(Color.White, handleR * 1.2f, at, style = Stroke(thin * 1.4f))
                 drawLine(Color.White, Offset(at.x - handleR * 1.7f, at.y), Offset(at.x + handleR * 1.7f, at.y), thin)
                 drawLine(Color.White, Offset(at.x, at.y - handleR * 1.7f), Offset(at.x, at.y + handleR * 1.7f), thin)
+            }
+        }
+        is Overlay.Selection -> {
+            val dash = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
+            for (m in overlay.marks) {
+                val b = markBounds(m, t)
+                scope.drawRoundRect(Color.White.copy(alpha = 0.35f), b.topLeft, b.size, androidx.compose.ui.geometry.CornerRadius(8f), style = Stroke(1.5f, pathEffect = dash))
+            }
+            overlay.selected?.let { m ->
+                val b = markBounds(m, t)
+                scope.drawRoundRect(StillColors.Band.copy(alpha = 0.14f), b.topLeft, b.size, androidx.compose.ui.geometry.CornerRadius(10f))
+                scope.drawRoundRect(StillColors.Band, b.topLeft, b.size, androidx.compose.ui.geometry.CornerRadius(10f), style = Stroke(3f, pathEffect = dash))
+                for (c in listOf(b.topLeft, b.topRight, b.bottomLeft, b.bottomRight)) { scope.drawCircle(Color.White, 7f, c); scope.drawCircle(StillColors.Band, 5f, c) }
             }
         }
         is Overlay.Texts -> {

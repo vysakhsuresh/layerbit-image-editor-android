@@ -330,6 +330,10 @@
     <string name="mark_place_centre">Place in the centre</string>
     <string name="mark_text_hint">Tap the picture to place the text; drag placed text to move it. Edit its words and angle from Layers.</string>
     <string name="mark_hint">Draw on the picture. Each stroke becomes a layer you can hide, fade, reorder or delete.</string>
+    <string name="mark_move">Move and resize</string>
+    <string name="mark_move_detail">Pick up anything you drew or wrote and change it.</string>
+    <string name="mark_move_hint">Touch a mark to pick it up, then drag it. Touch nothing to let go.</string>
+    <string name="mark_delete">Delete this mark</string>
 
     <!-- Retouch -->
     <string name="retouch_blur">Blur</string>
