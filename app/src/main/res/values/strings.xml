@@ -925,7 +925,7 @@
     <string name="local_point_size">Size</string>
     <string name="local_point_range">Colour range</string>
     <string name="local_subject_hint">The subject is found the same way Cut out finds it, on your phone.</string>
-    <string name="local_sky_hint">Sky is found from bright, smooth blue or white that reaches the top edge.</string>
+    <string name="local_sky_hint">Sky is found from smooth blue, white, sunset glow or grey mist that reaches the top. Brush it in or out if it misses.</string>
     <string name="local_sky_none">No sky found in this picture.</string>
     <string name="local_presets">Quick start</string>
     <string name="local_dodge">Dodge</string>

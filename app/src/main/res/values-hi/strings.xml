@@ -925,7 +925,7 @@
     <string name="local_point_size">आकार</string>
     <string name="local_point_range">रंग की सीमा</string>
     <string name="local_subject_hint">मुख्य हिस्सा उसी तरह आपके फ़ोन पर मिलता है जैसे कट आउट में.</string>
-    <string name="local_sky_hint">आसमान ऊपरी किनारे तक फैले चमकीले, चिकने नीले या सफ़ेद हिस्से से पहचाना जाता है.</string>
+    <string name="local_sky_hint">ऊपरी किनारे तक पहुँचने वाले नीले, सफ़ेद, सूर्यास्त की चमक या धुंध से आसमान ढूँढा जाता है.</string>
     <string name="local_sky_none">इस तस्वीर में आसमान नहीं मिला.</string>
     <string name="local_presets">जल्दी शुरू करें</string>
     <string name="local_dodge">हल्का करें</string>
