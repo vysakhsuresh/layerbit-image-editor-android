@@ -22,6 +22,7 @@ import com.layerbit.still.engine.Argb
 import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
+import com.layerbit.still.engine.WatermarkLayout
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
@@ -535,30 +536,37 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         c.restore()
     }
 
-    /** The text repeated on a diagonal grid across the whole canvas. */
+    /**
+     * The text repeated on a diagonal grid across the whole canvas, or once in a corner or the
+     * middle. Size, margin, spot and grid come from [WatermarkLayout], scaled with the canvas, so
+     * the preview predicts the export.
+     */
     private fun drawWatermark(c: Canvas, m: Mark, size: Geometry2D.Size, p: Paint) {
         val tp = TextPaint(p).apply {
             style = Paint.Style.FILL
-            textSize = max(8f, Geometry2D.px(m.width, size) * 3.2f)
+            textSize = WatermarkLayout.textSize(m.width, size)
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         val text = m.text.ifBlank { "©" }
-        val tw = tp.measureText(text)
-        val stepX = tw * 1.6f
-        val stepY = tp.textSize * 3.2f
-        val diag = hypot(size.width.toFloat(), size.height.toFloat())
-        c.save()
-        c.rotate(m.angle, size.width / 2f, size.height / 2f)
-        var y = size.height / 2f - diag
-        var row = 0
-        while (y < size.height / 2f + diag) {
-            var x = size.width / 2f - diag + (if (row % 2 == 0) 0f else stepX / 2)
-            while (x < size.width / 2f + diag) {
-                c.drawText(text, x, y, tp)
-                x += stepX
-            }
-            y += stepY; row++
+        if (!m.place.single) {
+            val tw = tp.measureText(text)
+            c.save()
+            c.rotate(m.angle, size.width / 2f, size.height / 2f)
+            for (at in WatermarkLayout.tiles(size, tw, tp.textSize)) c.drawText(text, at.x, at.y, tp)
+            c.restore()
+            return
         }
+        val fm = tp.fontMetrics
+        val spot = WatermarkLayout.single(m.place, size, tp.measureText(text), fm.descent - fm.ascent, m.angle)
+        tp.textSize *= spot.scale
+        // A soft shadow keeps a single mark readable on a pale sky as well as a dark coat.
+        tp.setShadowLayer(tp.textSize * 0.08f, 0f, tp.textSize * 0.04f, Color.argb((90 * m.opacity).roundToInt(), 0, 0, 0))
+        val tw = tp.measureText(text)
+        val metrics = tp.fontMetrics
+        c.save()
+        c.translate(spot.centreX, spot.centreY)
+        c.rotate(m.angle)
+        c.drawText(text, -tw / 2f, -(metrics.ascent + metrics.descent) / 2f, tp)
         c.restore()
     }
 

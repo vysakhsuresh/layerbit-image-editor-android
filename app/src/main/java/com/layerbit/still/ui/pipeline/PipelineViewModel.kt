@@ -26,11 +26,31 @@ import com.layerbit.still.ops.Pipeline
 import com.layerbit.still.ops.PipelineOp
 import com.layerbit.still.ops.ResizeOp
 import com.layerbit.still.text.Strings
+import androidx.compose.runtime.snapshotFlow
+import com.layerbit.still.engine.FitSize
+import com.layerbit.still.engine.Geometry2D
+import com.layerbit.still.engine.WatermarkPlace
+import com.layerbit.still.files.Workspace
+import com.layerbit.still.ops.OpContext
+import com.layerbit.still.ops.OpOutcome
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * The steps as the screen holds them: switches and the text fields behind them. Turned into a
@@ -42,7 +62,7 @@ data class Steps(
     val formatOn: Boolean = false, val format: OutputFormat = OutputFormat.JPEG, val quality: Int = 90,
     val enhance: Boolean = false,
     val lookOn: Boolean = false, val look: Look = Look.NONE, val lookStrength: Float = 1f, val recipeName: String = "",
-    val watermarkOn: Boolean = false, val watermarkText: String = "", val watermarkOpacity: Float = 0.35f, val watermarkAngle: Float = -30f, val watermarkSize: Float = 0.03f, val watermarkColor: Int = 0xFFFFFFFF.toInt(),
+    val watermarkOn: Boolean = false, val watermarkText: String = "", val watermarkOpacity: Float = 0.35f, val watermarkAngle: Float = -30f, val watermarkSize: Float = 0.03f, val watermarkColor: Int = 0xFFFFFFFF.toInt(), val watermarkPlace: WatermarkPlace = WatermarkPlace.TILED,
     val frameOn: Boolean = false, val frame: Frame = Frame(padding = 0.05f),
     val cutoutOn: Boolean = false, val cutoutMode: CutoutMode = CutoutMode.SUBJECT, val cutoutBackdrop: Backdrop = Backdrop.TRANSPARENT, val cutoutColor: Int = 0xFFFFFFFF.toInt(), val cutoutBlur: Float = 0.03f,
     val scanOn: Boolean = false, val scanMode: ScanMode = ScanMode.COLOUR, val scanStrength: Float = 1f, val scanWhiten: Float = 0.5f,
@@ -50,8 +70,38 @@ data class Steps(
     val pattern: String = ""
 ) {
     val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn || cutoutOn || scanOn
+
+    /** A step whose whole point is the file's size or pixels: worth a size check. */
+    val changesSize: Boolean get() = resizeOn || underOn || formatOn
+
+    /** Whether a trial run on the first picture has anything to show. */
+    val wantsCheck: Boolean get() = changesSize || watermarkOn
 }
 
+/**
+ * The first picture run through the steps for real, into the app's private cache. Every number
+ * is read off the file that was written; [before] and [after] are that file and its source,
+ * decoded small for the card.
+ */
+data class SizeCheck(
+    val busy: Boolean = false,
+    val result: Result? = null,
+    /** Why the trial produced nothing: a size that cannot be reached, a picture already clean. */
+    val problem: String? = null,
+    /** The batch would leave this picture as it is: said plainly, not as an error. */
+    val skipped: Boolean = false
+) {
+    data class Result(
+        val source: String,
+        val before: Bitmap, val after: Bitmap,
+        val beforeBytes: Long, val afterBytes: Long,
+        val beforeSize: Geometry2D.Size, val afterSize: Geometry2D.Size
+    ) {
+        val percent: Int get() = FitSize.percentChange(beforeBytes, afterBytes)
+    }
+}
+
+@OptIn(FlowPreview::class)
 class PipelineViewModel(app: Application) : AndroidViewModel(app) {
 
     private val still = app as StillApplication
@@ -63,6 +113,81 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
     val ui: StateFlow<Ui> = _ui.asStateFlow()
 
     var steps by mutableStateOf(Steps(format = still.settings.current.defaultFormat, quality = still.settings.current.defaultQuality, keepCamera = still.settings.current.keepCameraFields))
+
+    /** The live trial on the first picture; empty while no step it can show is on. */
+    var sizeCheck by mutableStateOf(SizeCheck())
+        private set
+
+    /** The trial's own scratch folder in the private cache, emptied after every trial. */
+    private val checkSpace = Workspace(app, Workspace.SIZE_CHECK)
+    private var beforeCache: Pair<String, Bitmap>? = null
+
+    init {
+        // Settings, the first picture and whether a batch is running: each change starts a new
+        // trial after a short pause, and a newer change cancels the trial still running.
+        viewModelScope.launch {
+            combine(
+                snapshotFlow { steps },
+                _ui.map { it.files.firstOrNull() }.distinctUntilChanged(),
+                still.jobRunner.state.map { it is JobState.Running }.distinctUntilChanged()
+            ) { s, first, running -> Triple(s, first, running) }
+                .distinctUntilChanged()
+                .onEach { (s, first, running) -> if (s.wantsCheck && first != null && !running) sizeCheck = sizeCheck.copy(busy = true) }
+                .debounce(CHECK_DELAY_MS)
+                .collectLatest { (s, first, running) -> check(s, first, running) }
+        }
+    }
+
+    private suspend fun check(s: Steps, first: StillFile?, running: Boolean) {
+        if (first == null || !s.wantsCheck) { sizeCheck = SizeCheck(); return }
+        // The batch has the renderer; the last trial stays on screen until it is done.
+        if (running) { sizeCheck = sizeCheck.copy(busy = false); return }
+        // A step not filled in yet (no watermark text, an empty size) has nothing honest to show.
+        val p = pipeline(s) {} ?: run { sizeCheck = SizeCheck(); return }
+        sizeCheck = sizeCheck.copy(busy = true)
+        val job = currentCoroutineContext().job
+        val context = OpContext(checkSpace, still.renderer, still.codecs) { !job.isActive }
+        try {
+            sizeCheck = withContext(Dispatchers.Default) { trial(p, first, context) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: OutOfMemoryError) {
+            sizeCheck = SizeCheck(problem = Strings.get(R.string.engine_out_of_memory))
+        } catch (e: Exception) {
+            sizeCheck = SizeCheck(problem = e.message ?: Strings.get(R.string.engine_unreadable))
+        } finally {
+            withContext(NonCancellable + Dispatchers.IO) { checkSpace.clear() }
+        }
+    }
+
+    /**
+     * The batch's own op over a one-picture list, so the trial cannot drift from the run: same
+     * steps, same encoder, same size search. The written file is measured, decoded small for
+     * the card and deleted.
+     */
+    private suspend fun trial(p: Pipeline, first: StillFile, context: OpContext): SizeCheck =
+        when (val outcome = PipelineOp(p).run(listOf(first), context) {}.single()) {
+            is OpOutcome.Produced -> {
+                val out = outcome.file.file
+                try {
+                    val afterBytes = out.length()
+                    val afterSize = still.renderer.bounds(out) ?: throw IllegalStateException(Strings.get(R.string.engine_unreadable))
+                    val beforeSize = still.renderer.bounds(first.file) ?: Geometry2D.Size(first.width, first.height)
+                    val after = still.renderer.decode(out, CHECK_PIXELS, context.check)
+                    val before = beforeCache?.takeIf { it.first == first.file.path }?.second
+                        ?: still.renderer.decode(first.file, CHECK_PIXELS, context.check).also { beforeCache = first.file.path to it }
+                    SizeCheck(result = SizeCheck.Result(first.file.path, before, after, first.file.length(), afterBytes, beforeSize, afterSize))
+                } finally {
+                    out.delete()
+                }
+            }
+            is OpOutcome.Failed -> SizeCheck(problem = outcome.reason)
+            is OpOutcome.Skipped -> SizeCheck(problem = outcome.reason, skipped = true)
+        }
+
+    override fun onCleared() {
+        checkSpace.clear()
+    }
 
     /** A shortcut or the home board can switch a step on before the screen shows. */
     fun start(preset: String?) {
@@ -102,29 +227,31 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
     fun message(text: String?) = _ui.update { it.copy(message = text) }
     suspend fun thumbnail(file: StillFile): Bitmap? = still.store.thumbnail(file)
 
-    /** The pipeline for the current steps, or null after a message about what is missing. */
-    fun pipeline(): Pipeline? {
-        val s = steps
+    /**
+     * The pipeline for [s], or null after [report] says what is missing. The batch and the size
+     * check both come through here, so the trial runs exactly the steps the batch will.
+     */
+    fun pipeline(s: Steps = steps, report: (String) -> Unit = ::message): Pipeline? {
         val resize = if (!s.resizeOn) null else when (s.resizeMode) {
             "exact" -> {
                 val w = s.exactWidth.toIntOrNull(); val h = s.exactHeight.toIntOrNull()
-                if (w == null || h == null || w !in 1..8192 || h !in 1..8192) { message(Strings.get(R.string.tools_need_dimensions)); return null }
+                if (w == null || h == null || w !in 1..8192 || h !in 1..8192) { report(Strings.get(R.string.tools_need_dimensions)); return null }
                 ResizeOp.Mode.Exact(w, h)
             }
             "percent" -> ResizeOp.Mode.Percent(s.percent)
             else -> {
                 val e = s.longEdge.toIntOrNull()
-                if (e == null || e !in 16..8192) { message(Strings.get(R.string.tools_need_edge)); return null }
+                if (e == null || e !in 16..8192) { report(Strings.get(R.string.tools_need_edge)); return null }
                 ResizeOp.Mode.LongEdge(e)
             }
         }
-        val under = if (!s.underOn) null else s.underKb.toFloatOrNull()?.takeIf { it >= 2f } ?: run { message(Strings.get(R.string.engine_kb_too_small)); return null }
+        val under = if (!s.underOn) null else s.underKb.toFloatOrNull()?.takeIf { it >= 2f } ?: run { report(Strings.get(R.string.engine_kb_too_small)); return null }
         val recipe = if (s.lookOn && s.recipeName.isNotBlank()) _ui.value.presets.firstOrNull { it.name == s.recipeName }?.recipe else null
-        if (s.watermarkOn && s.watermarkText.isBlank()) { message(Strings.get(R.string.tools_need_text)); return null }
+        if (s.watermarkOn && s.watermarkText.isBlank()) { report(Strings.get(R.string.tools_need_text)); return null }
         return Pipeline(
             resize = resize, underKb = under, passport = s.underOn && s.passport, enhance = s.enhance,
             look = if (s.lookOn) s.look else Look.NONE, lookStrength = s.lookStrength, recipe = recipe,
-            watermark = if (s.watermarkOn) Pipeline.Watermark(s.watermarkText, s.watermarkOpacity, s.watermarkAngle, s.watermarkSize, s.watermarkColor) else null,
+            watermark = if (s.watermarkOn) Pipeline.Watermark(s.watermarkText, s.watermarkOpacity, s.watermarkAngle, s.watermarkSize, s.watermarkColor, s.watermarkPlace) else null,
             frame = if (s.frameOn) s.frame else null,
             cutout = if (s.cutoutOn) Cutout(enabled = true, mode = s.cutoutMode, backdrop = s.cutoutBackdrop, color = s.cutoutColor, blur = s.cutoutBlur) else null,
             scan = if (s.scanOn) Scan(s.scanMode, s.scanStrength, s.scanWhiten) else null,
@@ -161,5 +288,11 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    companion object { const val MAX_INPUTS = 100 }
+    companion object {
+        const val MAX_INPUTS = 100
+        /** The pause after a change before the trial runs, so a dragged knob runs it once. */
+        const val CHECK_DELAY_MS = 400L
+        /** The card's pictures: enough to see blocks and blur at the size they are shown. */
+        const val CHECK_PIXELS = 500_000L
+    }
 }

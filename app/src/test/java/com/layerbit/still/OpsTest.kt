@@ -17,6 +17,7 @@ import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.RecipeJson
 import com.layerbit.still.engine.Tone
+import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.files.Workspace
@@ -224,6 +225,25 @@ class OpsTest {
         assertFalse(JpegSegments.hasGps(out.file.file.readBytes()))
         assertEquals("big-web.jpg", out.file.displayName)
         assertTrue(p.summary().contains("800 px"))
+    }
+
+    @Test
+    fun theSizeCheckTrialWritesTheSameBytesAsTheBatch() {
+        // The size check runs the batch's op over a one-picture list in its own scratch folder.
+        // What it measures must be what the batch then writes for that picture, byte for byte.
+        val first = picture(1200, 900, jpeg = true, name = "first.jpg", gps = true)
+        val second = picture(640, 480, jpeg = false, name = "second.png")
+        val p = Pipeline(resize = ResizeOp.Mode.LongEdge(800), underKb = 40f, watermark = Pipeline.Watermark("© me", place = WatermarkPlace.BOTTOM_RIGHT, angle = 0f))
+        val scratch = Workspace(app, Workspace.SIZE_CHECK)
+        try {
+            val trial = runBlocking { PipelineOp(p).run(listOf(first), OpContext(scratch, renderer, codecs)) {} }.single() as OpOutcome.Produced
+            assertTrue("The trial stays in the private cache", trial.file.file.canonicalPath.startsWith(app.cacheDir.canonicalPath))
+            val batch = run(PipelineOp(p), first, second).first() as OpOutcome.Produced
+            assertTrue(trial.file.file.readBytes().contentEquals(batch.file.file.readBytes()))
+            assertEquals(batch.file.width, trial.file.width); assertEquals(batch.file.height, trial.file.height)
+        } finally {
+            scratch.clear()
+        }
     }
 
     @Test

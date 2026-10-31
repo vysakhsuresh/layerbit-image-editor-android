@@ -784,4 +784,23 @@
     <string name="contact_bug_body">बताएं कि आपने क्या किया और क्या उम्मीद थी. संस्करण और फ़ोन मॉडल भर दिए जाते हैं; ऐप कभी तस्वीर नहीं जोड़ता.</string>
     <string name="contact_bug_write">रिपोर्ट करें</string>
     <string name="contact_bug_template">Still %1$s, %2$s पर, Android %3$s\n\nमैंने क्या किया:\n\nक्या उम्मीद थी:\n\nक्या हुआ:\n</string>
+
+    <!-- Size check and watermark placement -->
+    <string name="size_check_title">साइज़ जाँच</string>
+    <string name="size_check_hint">आपकी पहली तस्वीर, इन चरणों से सच में चलाकर. अंक उसी फ़ाइल के हैं जो लिखी गई.</string>
+    <string name="size_check_before">पहले</string>
+    <string name="size_check_after">बाद में</string>
+    <string name="size_check_working">जाँच रहे हैं…</string>
+    <string name="size_check_smaller">%1$d%% छोटी</string>
+    <string name="size_check_bigger">%1$d%% बड़ी</string>
+    <string name="size_check_same">उतनी ही</string>
+    <string name="size_check_drag">तुलना के लिए खींचें</string>
+    <string name="watermark_place">कहाँ</string>
+    <string name="watermark_place_tiled">पूरी तस्वीर पर</string>
+    <string name="watermark_place_top_left">ऊपर बाएं</string>
+    <string name="watermark_place_top_right">ऊपर दाएं</string>
+    <string name="watermark_place_centre">बीच में</string>
+    <string name="watermark_place_bottom_left">नीचे बाएं</string>
+    <string name="watermark_place_bottom_right">नीचे दाएं</string>
+    <string name="watermark_preview">आपकी पहली तस्वीर पर</string>
 </resources>

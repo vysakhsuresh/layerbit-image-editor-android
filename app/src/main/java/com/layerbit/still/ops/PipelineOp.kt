@@ -15,6 +15,7 @@ import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.Budget
 import com.layerbit.still.image.Codecs
@@ -56,7 +57,7 @@ data class Pipeline(
     /** Blank means the step's own default: "{name}-clean" for a cleaning-only run, "{name}" otherwise. */
     val pattern: String = ""
 ) {
-    data class Watermark(val text: String, val opacity: Float = 0.35f, val angle: Float = -30f, val size: Float = 0.03f, val color: Int = 0xFFFFFFFF.toInt())
+    data class Watermark(val text: String, val opacity: Float = 0.35f, val angle: Float = -30f, val size: Float = 0.03f, val color: Int = 0xFFFFFFFF.toInt(), val place: WatermarkPlace = WatermarkPlace.TILED)
 
     /** Whether anything changes the pixels; otherwise a picture is only cleaned. */
     val changesPixels: Boolean
@@ -151,7 +152,7 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
         }
         r = r.copy(geometry = geometry)
         p.watermark?.let { w ->
-            r = r.copy(marks = r.marks + Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), color = w.color, width = w.size, text = w.text, opacity = w.opacity, angle = w.angle))
+            r = r.copy(marks = r.marks + Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), color = w.color, width = w.size, text = w.text, opacity = w.opacity, angle = w.angle, place = w.place))
         }
         p.frame?.let { r = r.copy(frame = it) }
         p.cutout?.let { r = r.copy(cutout = it.copy(enabled = true, scribbles = emptyList())) }

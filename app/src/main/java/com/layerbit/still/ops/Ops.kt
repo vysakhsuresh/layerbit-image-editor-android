@@ -20,6 +20,7 @@ import com.layerbit.still.engine.Names
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Tone
+import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.Budget
 import com.layerbit.still.image.Codecs
@@ -292,13 +293,13 @@ class RecipeOp(private val recipe: Recipe, private val name: String, private val
 
 // ------------------------------------------------------------------------------------- watermark
 
-class WatermarkOp(private val text: String, private val opacity: Float, private val angle: Float, private val size: Float, private val color: Int, private val options: ExportOptions, private val pattern: String = "{name}-marked") : PerFileOp() {
+class WatermarkOp(private val text: String, private val opacity: Float, private val angle: Float, private val size: Float, private val color: Int, private val options: ExportOptions, private val pattern: String = "{name}-marked", private val place: WatermarkPlace = WatermarkPlace.TILED) : PerFileOp() {
     override val tool = ToolId.WATERMARK
     override val title: String = Strings.get(R.string.engine_title_watermark, text.take(20))
     private var counter = 0
 
     override suspend fun one(input: StillFile, context: OpContext): OpOutcome {
-        val mark = Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), color = color, width = size, text = text, opacity = opacity, angle = angle)
+        val mark = Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), color = color, width = size, text = text, opacity = opacity, angle = angle, place = place)
         val (file, exported) = renderAndExport(input, Recipe(marks = listOf(mark)), options, context, "marked", pattern, ++counter)
         return OpOutcome.Produced(file, dims(exported.width, exported.height))
     }

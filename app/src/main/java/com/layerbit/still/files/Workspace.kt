@@ -12,10 +12,11 @@ import java.io.File
  * the next launch. Nothing here survives a reinstall and nothing is backed up; the user's real
  * output went out through [Exporter].
  */
-class Workspace(private val context: Context) {
+class Workspace(private val context: Context, private val folder: String = "work") {
 
+    /** Always under the app's private cache: nothing written here is visible outside the app. */
     private val root: File
-        get() = File(context.cacheDir, "work").apply { mkdirs() }
+        get() = File(context.cacheDir, folder).apply { mkdirs() }
 
     /** A fresh file for an operation to write. [step] ends up in the name for debugging. */
     fun newOutput(baseName: String, step: String, extension: String): File {
@@ -45,6 +46,9 @@ class Workspace(private val context: Context) {
     }
 
     companion object {
+        /** The size check's own scratch, emptied after every check so a trial file never piles up. */
+        const val SIZE_CHECK = "sizecheck"
+
         /** A few large exports. Past this, oldest results go. */
         const val DEFAULT_LIMIT_BYTES = 768L * 1024L * 1024L
     }

@@ -29,6 +29,7 @@ import com.layerbit.still.ops.ResizeOp
 import com.layerbit.still.ops.StripMetadataOp
 import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ops.WatermarkOp
+import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.text.Strings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +55,7 @@ data class ToolConfig(
     val watermarkAngle: Float = -30f,
     val watermarkSize: Float = 0.03f,
     val watermarkColor: Int = 0xFFFFFFFF.toInt(),
+    val watermarkPlace: WatermarkPlace = WatermarkPlace.TILED,
     val layout: Collage.Layout = Collage.Layout.GRID,
     val collageBackground: Int = 0xFFFFFFFF.toInt(),
     val presetName: String = "",
@@ -165,7 +167,7 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
             }
             ToolId.WATERMARK -> {
                 if (c.watermarkText.isBlank()) { message(Strings.get(R.string.tools_need_text)); return null }
-                WatermarkOp(c.watermarkText, c.watermarkOpacity, c.watermarkAngle, c.watermarkSize, c.watermarkColor, export, c.pattern.ifBlank { "{name}-marked" })
+                WatermarkOp(c.watermarkText, c.watermarkOpacity, c.watermarkAngle, c.watermarkSize, c.watermarkColor, export, c.pattern.ifBlank { "{name}-marked" }, c.watermarkPlace)
             }
             ToolId.COLLAGE -> CollageOp(c.layout, c.collageBackground, export)
             ToolId.FRAME -> FrameOp(c.frame, export, c.pattern.ifBlank { "{name}-framed" })

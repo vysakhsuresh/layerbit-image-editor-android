@@ -101,5 +101,15 @@ object FitSize {
     }
 
     /** Bytes for a limit typed as [value] with [unit] "KB" or "MB"; 1,000 to the unit. */
+    /**
+     * How much a file changed, as a whole percentage of [before]: negative when it got smaller.
+     * Rounded toward zero, so a file 0.4% smaller is "the same", never "1% smaller", and a file
+     * that shrank is never shown as 100% smaller while it still has bytes.
+     */
+    fun percentChange(before: Long, after: Long): Int {
+        if (before <= 0L) return 0
+        return ((after - before) * 100L / before).toInt()
+    }
+
     fun limitBytes(value: Float, unit: String): Int = (value * if (unit == "MB") 1_000_000 else 1_000).roundToInt()
 }

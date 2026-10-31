@@ -784,4 +784,23 @@
     <string name="contact_bug_body">Say what you did and what you expected. The version and phone model are filled in; a picture is never attached by the app.</string>
     <string name="contact_bug_write">Report it</string>
     <string name="contact_bug_template">Still %1$s on %2$s, Android %3$s\n\nWhat I did:\n\nWhat I expected:\n\nWhat happened:\n</string>
+
+    <!-- Size check and watermark placement -->
+    <string name="size_check_title">Size check</string>
+    <string name="size_check_hint">Your first picture, run through these steps for real. The numbers are from the file it wrote.</string>
+    <string name="size_check_before">Before</string>
+    <string name="size_check_after">After</string>
+    <string name="size_check_working">Checking…</string>
+    <string name="size_check_smaller">%1$d%% smaller</string>
+    <string name="size_check_bigger">%1$d%% bigger</string>
+    <string name="size_check_same">Same size</string>
+    <string name="size_check_drag">Drag to compare</string>
+    <string name="watermark_place">Where</string>
+    <string name="watermark_place_tiled">All over</string>
+    <string name="watermark_place_top_left">Top left</string>
+    <string name="watermark_place_top_right">Top right</string>
+    <string name="watermark_place_centre">Middle</string>
+    <string name="watermark_place_bottom_left">Bottom left</string>
+    <string name="watermark_place_bottom_right">Bottom right</string>
+    <string name="watermark_preview">On your first picture</string>
 </resources>

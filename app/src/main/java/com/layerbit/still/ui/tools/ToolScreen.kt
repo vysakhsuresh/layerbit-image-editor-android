@@ -60,6 +60,7 @@ import com.layerbit.still.ops.CollageOp
 import com.layerbit.still.ops.OpOutcome
 import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ui.components.ChipRow
+import com.layerbit.still.ui.pipeline.WatermarkPlacePicker
 import com.layerbit.still.ui.components.Panel
 import com.layerbit.still.ui.components.Pill
 import com.layerbit.still.ui.components.PrimaryButton
@@ -319,6 +320,14 @@ private fun Options(tool: ToolId, c: ToolConfig, set: (ToolConfig) -> Unit, pres
         }
         ToolId.WATERMARK -> {
             OutlinedTextField(c.watermarkText, { set(c.copy(watermarkText = it.take(60))) }, label = { Text(stringResource(R.string.watermark_text)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColours())
+            WatermarkPlacePicker(c.watermarkPlace) { place ->
+                val angle = when {
+                    place.single && c.watermarkAngle == -30f -> 0f
+                    !place.single && c.watermarkAngle == 0f -> -30f
+                    else -> c.watermarkAngle
+                }
+                set(c.copy(watermarkPlace = place, watermarkAngle = angle))
+            }
             ColourRow(InkColours, c.watermarkColor, { set(c.copy(watermarkColor = it)) }, Modifier.padding(top = 8.dp))
             Knob(stringResource(R.string.layers_opacity), c.watermarkOpacity, 0.05f..1f, onChange = { set(c.copy(watermarkOpacity = it)) }, onDone = {}, onReset = { set(c.copy(watermarkOpacity = 0.35f)) })
             Knob(stringResource(R.string.layers_angle), c.watermarkAngle, -90f..90f, onChange = { set(c.copy(watermarkAngle = it)) }, onDone = {}, onReset = { set(c.copy(watermarkAngle = -30f)) }, format = { "${it.toInt()}°" })

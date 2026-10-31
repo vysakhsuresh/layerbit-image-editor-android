@@ -171,7 +171,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                 SectionHeading(stringResource(R.string.pipeline_steps), modifier = Modifier.padding(bottom = 4.dp))
                 Hint(stringResource(R.string.pipeline_steps_hint))
             }
-            item { StepsList(vm.steps, { vm.steps = it }, ui.presets.map { it.name }) }
+            item { StepsList(vm.steps, { vm.steps = it }, ui.presets.map { it.name }, vm.sizeCheck, hasPictures = ui.files.isNotEmpty()) }
 
             item {
                 if (shown is JobState.Running) {
@@ -241,7 +241,7 @@ private fun Step(key: String, title: String, detail: String, iconRes: Int, accen
 }
 
 @Composable
-private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
+private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>, check: SizeCheck, hasPictures: Boolean) {
     Column {
         Step("resize", stringResource(R.string.tool_resize_title), stringResource(R.string.step_resize_detail), R.drawable.ic_tool_resize, Color(0xFF3ED3C0), s.resizeOn, { set(s.copy(resizeOn = it)) }) {
             ChipRow(listOf("edge" to stringResource(R.string.resize_long_edge), "percent" to stringResource(R.string.resize_percent), "exact" to stringResource(R.string.resize_exact)), s.resizeMode, { set(s.copy(resizeMode = it)) })
@@ -263,6 +263,8 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
             if (s.format.lossy) Knob(stringResource(R.string.export_quality), s.quality / 100f, 0.4f..1f, onChange = { set(s.copy(quality = (it * 100).roundToInt())) }, onDone = {}, onReset = { set(s.copy(quality = 90)) }, format = { "${(it * 100).roundToInt()}" })
             Hint(stringResource(R.string.convert_hint))
         }
+        // Right under the steps that move it: the first picture's real before and after.
+        AnimatedVisibility(s.changesSize && hasPictures) { SizeCheckCard(check, Modifier.padding(bottom = 10.dp)) }
         Step("enhance", stringResource(R.string.tool_enhance_title), stringResource(R.string.step_enhance_detail), R.drawable.ic_tool_enhance, Color(0xFF5B9DFF), s.enhance, { set(s.copy(enhance = it)) }) { Hint(stringResource(R.string.enhance_hint)) }
         Step("look", stringResource(R.string.tool_looks_title), stringResource(R.string.step_look_detail), R.drawable.ic_tool_looks, Color(0xFF5B9DFF), s.lookOn, { set(s.copy(lookOn = it)) }) {
             ChipRow(Look.entries.map { it to lookLabel(it) }, s.look, { set(s.copy(look = it)) })
@@ -272,9 +274,19 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>) {
         }
         Step("watermark", stringResource(R.string.tool_watermark_title), stringResource(R.string.step_watermark_detail), R.drawable.ic_tool_watermark, Color(0xFFB08CFF), s.watermarkOn, { set(s.copy(watermarkOn = it)) }) {
             OutlinedTextField(s.watermarkText, { set(s.copy(watermarkText = it.take(60))) }, label = { Text(stringResource(R.string.watermark_text)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColours())
+            if (hasPictures && s.watermarkText.isNotBlank()) WatermarkPreview(check)
+            WatermarkPlacePicker(s.watermarkPlace) { place ->
+                // A single mark reads best level and a tiled one on a slant: follow the angle along unless it was set by hand.
+                val angle = when {
+                    place.single && s.watermarkAngle == -30f -> 0f
+                    !place.single && s.watermarkAngle == 0f -> -30f
+                    else -> s.watermarkAngle
+                }
+                set(s.copy(watermarkPlace = place, watermarkAngle = angle))
+            }
             ColourRow(InkColours, s.watermarkColor, { set(s.copy(watermarkColor = it)) })
             Knob(stringResource(R.string.layers_opacity), s.watermarkOpacity, 0.05f..1f, onChange = { set(s.copy(watermarkOpacity = it)) }, onDone = {}, onReset = { set(s.copy(watermarkOpacity = 0.35f)) })
-            Knob(stringResource(R.string.layers_angle), s.watermarkAngle, -90f..90f, onChange = { set(s.copy(watermarkAngle = it)) }, onDone = {}, onReset = { set(s.copy(watermarkAngle = -30f)) }, format = { "${it.toInt()}°" })
+            Knob(stringResource(R.string.layers_angle), s.watermarkAngle, -90f..90f, onChange = { set(s.copy(watermarkAngle = it)) }, onDone = {}, onReset = { set(s.copy(watermarkAngle = if (s.watermarkPlace.single) 0f else -30f)) }, format = { "${it.toInt()}°" })
             Knob(stringResource(R.string.mark_text_size), s.watermarkSize, 0.01f..0.1f, onChange = { set(s.copy(watermarkSize = it)) }, onDone = {}, onReset = { set(s.copy(watermarkSize = 0.03f)) }, format = { "${(it * 1000).roundToInt()}" })
         }
         Step("frame", stringResource(R.string.tool_frame_title), stringResource(R.string.step_frame_detail), R.drawable.ic_tool_frame, Color(0xFFB08CFF), s.frameOn, { set(s.copy(frameOn = it)) }) {

@@ -21,6 +21,7 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Quad
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.engine.Tone
 import com.layerbit.still.image.Codecs
 import com.layerbit.still.image.ExportOptions
@@ -235,6 +236,29 @@ class RendererTest {
         assertTrue(renderer.difference(plain, blurred) > 1.0)
         assertEquals(plain.getPixel(2, 2), blurred.getPixel(2, 2))
         plain.recycle(); blurred.recycle()
+    }
+
+    @Test
+    fun aSingleWatermarkStaysInItsCornerAtAnySize() = runBlocking {
+        val src = scene(400, 300)
+        for (place in listOf(WatermarkPlace.BOTTOM_RIGHT, WatermarkPlace.TOP_LEFT)) {
+            val mark = Mark(MarkKind.WATERMARK, listOf(Pt(0.5f, 0.5f)), text = "© Still", opacity = 1f, width = 0.04f, place = place)
+            for (pixels in listOf(60_000L, 120_000L)) {
+                val plain = renderer.render(src, Recipe(), maxPixels = pixels)
+                val marked = renderer.render(src, Recipe(marks = listOf(mark)), maxPixels = pixels)
+                val w = plain.width; val h = plain.height
+                fun changed(x0: Float, y0: Float, x1: Float, y1: Float): Int {
+                    var n = 0
+                    for (y in (h * y0).toInt() until (h * y1).toInt()) for (x in (w * x0).toInt() until (w * x1).toInt()) if (plain.getPixel(x, y) != marked.getPixel(x, y)) n++
+                    return n
+                }
+                val near = if (place == WatermarkPlace.BOTTOM_RIGHT) changed(0.5f, 0.6f, 1f, 1f) else changed(0f, 0f, 0.5f, 0.4f)
+                val far = if (place == WatermarkPlace.BOTTOM_RIGHT) changed(0f, 0f, 0.4f, 0.5f) else changed(0.6f, 0.5f, 1f, 1f)
+                assertTrue("$place at $pixels draws in its corner", near > 0)
+                assertEquals("$place at $pixels leaves the far corner alone", 0, far)
+                plain.recycle(); marked.recycle()
+            }
+        }
     }
 
     @Test

@@ -216,7 +216,9 @@ data class Mark(
     /** Where a clone stroke samples from. */
     val source: Pt? = null,
     /** Degrees, for text and watermarks. */
-    val angle: Float = 0f
+    val angle: Float = 0f,
+    /** Where a watermark goes; other kinds ignore it. */
+    val place: WatermarkPlace = WatermarkPlace.TILED
 ) {
     val valid: Boolean
         get() = points.isNotEmpty() && points.size <= MAX_POINTS && points.all { it.finite && it.x in 0f..1f && it.y in 0f..1f } &&

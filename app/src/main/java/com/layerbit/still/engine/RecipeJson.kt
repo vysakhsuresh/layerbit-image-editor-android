@@ -61,7 +61,8 @@ object RecipeJson {
     private fun mark(m: Mark) = jsonOf(
         "kind" to m.kind.name.json(), "points" to points(m.points), "color" to m.color.json(), "width" to m.width.json(),
         "text" to m.text.json(), "opacity" to m.opacity.json(), "visible" to m.visible.json(),
-        "source" to m.source?.let { listOf(it.x.json(), it.y.json()).json() }, "angle" to m.angle.json()
+        "source" to m.source?.let { listOf(it.x.json(), it.y.json()).json() }, "angle" to m.angle.json(),
+        "place" to m.place.takeIf { it != WatermarkPlace.TILED }?.name?.json()
     )
 
     private fun points(ps: List<Pt>) = ps.map { listOf(it.x.json(), it.y.json()).json() }.json()
@@ -143,7 +144,9 @@ object RecipeJson {
         opacity = m["opacity"]?.num()?.toFloat() ?: 1f,
         visible = m["visible"]?.bool() ?: true,
         source = m["source"]?.let { pt(it) },
-        angle = m["angle"]?.num()?.toFloat() ?: 0f
+        angle = m["angle"]?.num()?.toFloat() ?: 0f,
+        // Older apps never wrote a place, and a name this app does not know falls back to tiled.
+        place = m["place"]?.str()?.let { name -> WatermarkPlace.entries.firstOrNull { it.name == name } } ?: WatermarkPlace.TILED
     )
 
     /**
