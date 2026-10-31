@@ -104,6 +104,8 @@ fun HomeScreen(
     onEditOne: () -> Unit,
     onProcessMany: (String?) -> Unit,
     onQuickTool: (ToolId) -> Unit,
+    recentTools: List<String> = emptyList(),
+    onUsed: (ToolId) -> Unit = {},
     onCollage: () -> Unit,
     onTools: () -> Unit,
     onGuide: () -> Unit,
@@ -125,20 +127,26 @@ fun HomeScreen(
             Column(rise(2)) {
                 SectionHeading(stringResource(R.string.home_quick), modifier = Modifier.padding(top = 2.dp, bottom = 6.dp))
                 // One sideways strip, always above the fold: each icon acts out its tool. One picture tools ask for the picture first; batch tools open the steps ready.
-                val quick = listOf(
-                    Triple(Glyph.CUTOUT, R.string.home_quick_cutout) { onQuickTool(ToolId.CUTOUT) },
-                    Triple(Glyph.SCAN, R.string.home_quick_scan) { onQuickTool(ToolId.SCAN) },
-                    Triple(Glyph.SIGNATURE, R.string.home_quick_signature) { onQuickTool(ToolId.SIGNATURE) },
-                    Triple(Glyph.RESIZE_KB, R.string.home_quick_under) { onProcessMany("under") },
-                    Triple(Glyph.PASSPORT, R.string.home_quick_passport) { onProcessMany("passport") },
-                    Triple(Glyph.STRIP, R.string.home_quick_clean) { onProcessMany("clean") },
-                    Triple(Glyph.REDEYE, R.string.home_quick_redeye) { onQuickTool(ToolId.RED_EYE) },
-                    Triple(Glyph.NEUTRAL, R.string.home_quick_neutral) { onQuickTool(ToolId.WHITE_BALANCE) },
-                    Triple(Glyph.STICKER, R.string.home_quick_sticker) { onQuickTool(ToolId.STICKER) },
-                    Triple(Glyph.CONVERT, R.string.home_quick_convert) { onProcessMany("convert") },
-                    Triple(Glyph.WATERMARK, R.string.home_quick_watermark) { onProcessMany("watermark") },
-                    Triple(Glyph.COLLAGE, R.string.home_quick_collage) { onCollage() }
+                val quickAll = listOf(
+                    QuickTool(Glyph.CUTOUT, R.string.home_quick_cutout, ToolId.CUTOUT) { onQuickTool(ToolId.CUTOUT) },
+                    QuickTool(Glyph.SCAN, R.string.home_quick_scan, ToolId.SCAN) { onQuickTool(ToolId.SCAN) },
+                    QuickTool(Glyph.SIGNATURE, R.string.home_quick_signature, ToolId.SIGNATURE) { onQuickTool(ToolId.SIGNATURE) },
+                    QuickTool(Glyph.RESIZE_KB, R.string.home_quick_under, ToolId.RESIZE_KB) { onProcessMany("under") },
+                    QuickTool(Glyph.PASSPORT, R.string.home_quick_passport, ToolId.PASSPORT) { onProcessMany("passport") },
+                    QuickTool(Glyph.STRIP, R.string.home_quick_clean, ToolId.STRIP_METADATA) { onProcessMany("clean") },
+                    QuickTool(Glyph.REDEYE, R.string.home_quick_redeye, ToolId.RED_EYE) { onQuickTool(ToolId.RED_EYE) },
+                    QuickTool(Glyph.NEUTRAL, R.string.home_quick_neutral, ToolId.WHITE_BALANCE) { onQuickTool(ToolId.WHITE_BALANCE) },
+                    QuickTool(Glyph.STICKER, R.string.home_quick_sticker, ToolId.STICKER) { onQuickTool(ToolId.STICKER) },
+                    QuickTool(Glyph.CONVERT, R.string.home_quick_convert, ToolId.CONVERT) { onProcessMany("convert") },
+                    QuickTool(Glyph.WATERMARK, R.string.home_quick_watermark, ToolId.WATERMARK) { onProcessMany("watermark") },
+                    QuickTool(Glyph.COLLAGE, R.string.home_quick_collage, ToolId.COLLAGE) { onCollage() }
                 )
+                // What you reached for last comes first; the rest keep their order. The colours stay with the position,
+                // so the strip keeps its sweep whatever leads it.
+                val quick = remember(recentTools) {
+                    val rank = recentTools.withIndex().associate { (i, n) -> n to i }
+                    quickAll.withIndex().sortedWith(compareBy({ rank[it.value.tool.name] ?: Int.MAX_VALUE }, { it.index })).map { it.value }
+                }
                 // Each tile is a pair of neighbouring neons, so the strip reads as one sweep of colour.
                 val accents = listOf(
                     Neon.Coral to Neon.Magenta, Neon.Cyan to Neon.Sky, Neon.Lime to Neon.Mint, Neon.Mint to Neon.Cyan,
@@ -172,8 +180,8 @@ fun HomeScreen(
                         }
                 ) {
                     items(quick.size) { i ->
-                        val (glyph, label, action) = quick[i]
-                        Quick(glyph, accents[i % accents.size], stringResource(label), i, Modifier.width(84.dp), action)
+                        val q = quick[i]
+                        Quick(q.glyph, accents[i % accents.size], stringResource(q.label), i, Modifier.width(84.dp)) { onUsed(q.tool); q.action() }
                     }
                 }
                 QuickScrollIndicator(quickState, Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp))
@@ -331,6 +339,9 @@ private fun QuickScrollIndicator(state: LazyListState, modifier: Modifier = Modi
         )
     }
 }
+
+/** One entry of the quick strip: what it shows, which tool it counts as, what a tap does. */
+private class QuickTool(val glyph: Glyph, @androidx.annotation.StringRes val label: Int, val tool: ToolId, val action: () -> Unit)
 
 /**
  * A quick tool as a small cousin of the doors below: a glossy tile in two neighbouring neons

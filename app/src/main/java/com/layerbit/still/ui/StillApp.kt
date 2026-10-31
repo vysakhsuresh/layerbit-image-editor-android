@@ -146,6 +146,8 @@ fun StillApp(
                     onEditOne = { onPickOne(null) },
                     onProcessMany = { preset -> navController.navigate(Routes.pipeline(preset)) },
                     onQuickTool = { tool -> onPickOne(tool) },
+                    recentTools = settings.recentTools,
+                    onUsed = { tool -> still.settings.rememberTool(tool.name) },
                     onCollage = { navController.navigate(Routes.COLLAGE) },
                     onTools = { navController.navigate(Routes.TOOLS) },
                     onGuide = { navController.navigate(Routes.GUIDE) },
@@ -157,7 +159,8 @@ fun StillApp(
             composable(Routes.TOOLS) {
                 Column {
                     StillTopBar(title = stringResource(R.string.tools_page_title), subtitle = stringResource(R.string.tools_page_subtitle), onBack = { navController.popBackStack() })
-                    ToolsScreen(onTool = { tool ->
+                    ToolsScreen(recent = settings.recentTools, onTool = { tool ->
+                        still.settings.rememberTool(tool.name)
                         when {
                             tool.mode == ToolId.Mode.EDITOR -> onPickOne(tool)
                             tool == ToolId.COLLAGE -> navController.navigate(Routes.COLLAGE)
