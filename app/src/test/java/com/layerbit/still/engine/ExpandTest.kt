@@ -171,4 +171,24 @@ class ExpandTest {
             assertTrue("$fill differs by ${diff / n} on average", diff / n < 6.0)
         }
     }
+
+    @Test
+    fun aPictureOfThingsSettlesFarOutInsteadOfRepeatingThem() {
+        // A calm ground with a few hard-edged objects: far from the edge the fill must not tile them.
+        val w = 192; val h = 192
+        val px = picture(w, h) { x, y -> if ((x / 24 + y / 24) % 5 == 0 && (x % 24) in 4..16 && (y % 24) in 4..16) 230 else 70 + (x + y) % 6 }
+        val e = Expand(right = 1.0f)
+        val l = e.layout(w, h)
+        val out = Expansion.apply(px, w, h, e)
+        fun spread(x0: Int, x1: Int): Double {
+            val v = ArrayList<Double>()
+            for (y in 0 until l.height) for (x in x0 until x1) v += grey(out[y * l.width + x])
+            val m = v.average(); return sqrt(v.sumOf { (it - m) * (it - m) } / v.size)
+        }
+        // No copy of a bright object anywhere in the far third, and the ground there is calm.
+        var brightest = 0.0
+        for (y in 0 until l.height) for (x in l.width - l.width / 3 until l.width) brightest = maxOf(brightest, grey(out[y * l.width + x]))
+        assertTrue("an object was copied far out: $brightest", brightest < 160)
+        assertTrue("far ground not calm: ${spread(l.width - 30, l.width)}", spread(l.width - 30, l.width) < 10)
+    }
 }

@@ -165,7 +165,12 @@ object Expansion {
             ExpandFill.WHITE -> out.fill(0xFFFFFFFF.toInt())
             ExpandFill.BLACK -> out.fill(0xFF000000.toInt())
             ExpandFill.BLUR -> blurFill(picture, w, h, lay, out, check)
-            ExpandFill.SMART -> smartFill(picture, w, h, lay, out, plan ?: plan(picture, w, h, e, check), check)
+            ExpandFill.SMART -> {
+                // A soft backdrop the smart fill can settle into far from a busy picture.
+                val backdrop = IntArray(out.size)
+                blurFill(picture, w, h, lay, backdrop, check)
+                smartFill(picture, w, h, lay, out, plan ?: plan(picture, w, h, e, check), check, backdrop)
+            }
         }
         for (y in 0 until h) System.arraycopy(picture, y * w, out, (y + lay.y) * lay.width + lay.x, w)
         return out
@@ -479,7 +484,7 @@ object Expansion {
     /** Detail above about this many levels is an object, not texture, and is softened. */
     private const val TEXTURE_KNEE = 70.0
 
-    private fun smartFill(px: IntArray, w: Int, h: Int, lay: Expand.Layout, out: IntArray, plan: Plan, check: () -> Unit) {
+    private fun smartFill(px: IntArray, w: Int, h: Int, lay: Expand.Layout, out: IntArray, plan: Plan, check: () -> Unit, backdrop: IntArray? = null) {
         // This picture's own split into colour and texture, at the plan's analysis size.
         val small = shrink(px, w, h, plan.aiw, plan.aih)
         val low = blur(small, plan.aiw, plan.aih, lowRadius(plan.aiw, plan.aih))
@@ -492,6 +497,8 @@ object Expansion {
         val mags = FloatArray(plan.aiw * plan.aih) { i -> (abs(small[i * 3] - low[i * 3]) + abs(small[i * 3 + 1] - low[i * 3 + 1]) + abs(small[i * 3 + 2] - low[i * 3 + 2])) / 3f }
         mags.sort()
         val typical = mags[mags.size / 2].toDouble()
+        // Strong detail in places: a picture of things, which is what can repeat. A smooth picture has none.
+        val things = ((mags[(mags.size * 9) / 10].toDouble() - 12.0) / 30.0).coerceIn(0.0, 1.0)
         val even = typical / (typical + 12.0)
         val knee = TEXTURE_KNEE + 4.0 * typical
         val floor = 0.3 + 0.65 * even
@@ -539,6 +546,15 @@ object Expansion {
                         val fade = 1.0 - (1.0 - floor) * smoothstep(((reach - 0.03) / 0.3).coerceIn(0.0, 1.0))
                         fun soft(d: Double): Double = d / (1.0 + Math.abs(d) / knee) * fade
                         r += soft(dr / wsum); g += soft(dg / wsum); b += soft(db / wsum)
+                        // A picture of things, far out: settle into the soft backdrop, as a lens
+                        // would, rather than tile what is not there. A texture never does.
+                        if (backdrop != null) {
+                            val m = (1.0 - even) * things * smoothstep(((reach - 0.1) / 0.35).coerceIn(0.0, 1.0))
+                            if (m > 0.0) {
+                                val c = backdrop[y * lay.width + x]
+                                r += ((c shr 16 and 0xFF) - r) * m; g += ((c shr 8 and 0xFF) - g) * m; b += ((c and 0xFF) - b) * m
+                            }
+                        }
                     }
                     out[y * lay.width + x] = pack(r.toFloat(), g.toFloat(), b.toFloat())
                 }
