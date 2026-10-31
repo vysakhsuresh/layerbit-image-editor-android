@@ -13,7 +13,20 @@ object Palette {
     private const val BINS = 24
 
     /** Up to [count] ARGB colours, strongest first, or empty for a picture with no colour in it. */
-    fun of(pixels: IntArray, count: Int = 3, step: Int = max(1, pixels.size / 40_000)): List<Int> {
+    fun of(pixels: IntArray, count: Int = 3, step: Int = max(1, pixels.size / 40_000)): List<Int> =
+        strongest(pixels, count, step).map { rgb(it[0], max(it[1], 0.6f), max(it[2], 0.8f)) }
+
+    /**
+     * Backgrounds that belong with the picture, for frames and cut-out backdrops: for each of its
+     * two strongest colours, a pale tint and a deep shade of the same hue. A designer's trick: a
+     * frame in the picture's own colour, quiet enough not to compete with it. Empty for a grey
+     * picture.
+     */
+    fun matched(pixels: IntArray, step: Int = max(1, pixels.size / 40_000)): List<Int> =
+        strongest(pixels, 2, step).flatMap { listOf(rgb(it[0], min(it[1], 0.16f), 0.96f), rgb(it[0], max(0.45f, min(it[1], 0.7f)), 0.26f)) }
+
+    /** The mean hue, saturation and value of the fullest, well-separated hue bins. */
+    private fun strongest(pixels: IntArray, count: Int, step: Int): List<FloatArray> {
         if (pixels.isEmpty()) return emptyList()
         val weight = FloatArray(BINS); val sr = FloatArray(BINS); val sg = FloatArray(BINS); val sb = FloatArray(BINS)
         var i = 0
@@ -29,21 +42,20 @@ object Palette {
             weight[bin] += w; sr[bin] += r * w; sg[bin] += g * w; sb[bin] += b * w
         }
         val order = (0 until BINS).filter { weight[it] > 0f }.sortedByDescending { weight[it] }
-        val picked = ArrayList<Int>(count)
+        val picked = ArrayList<FloatArray>(count)
+        val pickedBins = ArrayList<Int>(count)
         val total = weight.sum()
         for (bin in order) {
             if (picked.size >= count) break
             // A colour that is less than a fiftieth of the colour in the picture is noise, not a colour.
             if (weight[bin] < total / 50f) break
-            if (picked.any { abs(binOf(it) - bin).let { d -> min(d, BINS - d) } < 2 }) continue
+            if (pickedBins.any { abs(it - bin).let { d -> min(d, BINS - d) } < 2 }) continue
             val w = weight[bin]
-            val mean = hsv((sr[bin] / w).toInt(), (sg[bin] / w).toInt(), (sb[bin] / w).toInt())
-            picked.add(rgb(mean[0], max(mean[1], 0.6f), max(mean[2], 0.8f)))
+            picked.add(hsv((sr[bin] / w).toInt(), (sg[bin] / w).toInt(), (sb[bin] / w).toInt()))
+            pickedBins.add(bin)
         }
         return picked
     }
-
-    private fun binOf(argb: Int): Int = ((hsv(Argb.red(argb), Argb.green(argb), Argb.blue(argb))[0] / 360f) * BINS).toInt().coerceIn(0, BINS - 1)
 
     /** Hue in degrees, saturation and value in 0..1. */
     fun hsv(r: Int, g: Int, b: Int): FloatArray {

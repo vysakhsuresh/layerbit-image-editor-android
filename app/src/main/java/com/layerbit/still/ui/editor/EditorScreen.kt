@@ -288,9 +288,9 @@ fun EditorScreen(
                         when (panel) {
                             ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it })
                             ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope)
-                            ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto)
-                            ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it })
-                            ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles)
+                            ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.LIGHT }, onAutoAmount = vm::setAutoAmount)
+                            ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it }, onAuto = { pickingNeutral = false; vm.autoColour() }, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.COLOUR }, onAutoAmount = vm::setAutoAmount)
+                            ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles, swatches = ui.swatches)
                             ToolId.Panel.SCAN -> ScanPanel(scope)
                             ToolId.Panel.CURVES -> CurvesPanel(scope)
                             ToolId.Panel.LOOKS -> {
@@ -301,7 +301,7 @@ fun EditorScreen(
                             ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
-                            ToolId.Panel.FRAME -> FramePanel(scope)
+                            ToolId.Panel.FRAME -> FramePanel(scope, ui.swatches)
                             ToolId.Panel.DETAILS -> DetailsPanel(remember(project) { project?.let { still.store.details(it.file) } ?: emptyList() }, onStrip = { project?.let { onStripMetadata(it.file) } })
                             ToolId.Panel.EXPORT -> ExportPanel(vm.options, onOptions = { vm.options = it }, canvas = ui.canvasSize, onPrepare = vm::prepareExport, haptics = settings.haptics)
                         }

@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import com.layerbit.still.R
 import com.layerbit.still.engine.AutoEnhance
+import com.layerbit.still.engine.AutoWhite
 import com.layerbit.still.engine.Collage
 import com.layerbit.still.engine.FitSize
 import com.layerbit.still.engine.Frame
@@ -18,6 +19,7 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Names
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
+import com.layerbit.still.engine.Tone
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.Budget
 import com.layerbit.still.image.Codecs
@@ -261,15 +263,16 @@ class EnhanceOp(private val options: ExportOptions, private val pattern: String 
 
     override suspend fun one(input: StillFile, context: OpContext): OpOutcome {
         val preview = context.renderer.decode(input.file, Budget.PREVIEW_PIXELS, context.check)
-        val histogram = try {
-            val px = IntArray(preview.width * preview.height)
-            preview.getPixels(px, 0, preview.width, 0, 0, preview.width, preview.height)
-            Histogram.of(px)
+        val px = try {
+            IntArray(preview.width * preview.height).also { preview.getPixels(it, 0, preview.width, 0, 0, preview.width, preview.height) }
         } finally { preview.recycle() }
-        if (!AutoEnhance.worthwhile(histogram)) return OpOutcome.Skipped(input.displayName, Strings.get(R.string.engine_enhance_nothing))
-        val tone = AutoEnhance.tone(histogram)
+        val histogram = Histogram.of(px)
+        // Light from the histogram, then the colour cast from what ought to be grey.
+        val light = if (AutoEnhance.worthwhile(histogram)) AutoEnhance.tone(histogram) else Tone()
+        val tone = AutoWhite.tone(px, light)
+        if (tone == Tone()) return OpOutcome.Skipped(input.displayName, Strings.get(R.string.engine_enhance_nothing))
         val (file, _) = renderAndExport(input, Recipe(tone = tone), options, context, "enhanced", pattern, 1)
-        return OpOutcome.Produced(file, Strings.get(R.string.engine_enhance_detail, (tone.exposure * 100).roundToInt() / 100f, (tone.whites * 100).roundToInt(), (tone.blacks * 100).roundToInt()))
+        return OpOutcome.Produced(file, Strings.get(R.string.engine_enhance_detail, (tone.exposure * 100).roundToInt() / 100f, (tone.whites * 100).roundToInt(), (tone.blacks * 100).roundToInt(), (tone.temperature * 100).roundToInt()))
     }
 }
 

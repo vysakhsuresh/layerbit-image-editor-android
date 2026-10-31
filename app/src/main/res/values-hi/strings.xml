@@ -321,6 +321,7 @@
     <string name="frame_border">किनारा</string>
     <string name="frame_corners">गोल कोने</string>
     <string name="frame_background">पृष्ठभूमि</string>
+    <string name="frame_from_picture">तस्वीर से</string>
     <string name="frame_border_colour">किनारे का रंग</string>
     <string name="frame_white">सफ़ेद</string>
     <string name="frame_black">काला</string>
@@ -416,8 +417,8 @@
     <string name="engine_strip_lossless_detail">%1$s. तस्वीर खुद बाइट-दर-बाइट वही है: %2$s → %3$s.</string>
     <string name="engine_strip_reencoded_detail">बिना हानि %1$s के रूप में दोबारा एन्कोड, कुछ छिपा नहीं, %2$s.</string>
     <string name="engine_title_enhance">अपने आप निखारें</string>
-    <string name="engine_enhance_nothing">पहले से अच्छी तरह एक्सपोज़्ड है. वैसी ही छोड़ी गई.</string>
-    <string name="engine_enhance_detail">एक्सपोज़र %1$.2f, सफ़ेद %2$d, काला %3$d.</string>
+    <string name="engine_enhance_nothing">पहले से अच्छी तरह एक्सपोज़्ड और रंग में सही है. वैसी ही छोड़ी गई.</string>
+    <string name="engine_enhance_detail">एक्सपोज़र %1$.2f, सफ़ेद %2$d, काला %3$d, गर्माहट %4$d.</string>
     <string name="engine_title_recipe">रेसिपी “%1$s”</string>
     <string name="engine_title_watermark">वॉटरमार्क “%1$s”</string>
     <string name="engine_title_collage">कोलाज, %1$s</string>
@@ -534,7 +535,7 @@
     <string name="about_rate">Google Play पर रेट करें</string>
     <string name="about_privacy">निजता नीति</string>
     <string name="about_made_by">%1$s द्वारा निर्मित · %2$s</string>
-    <string name="about_licences">Kotlin और AndroidX Apache-2.0 के तहत हैं. Space Grotesk और Syne SIL Open Font Licence के तहत हैं. कोई और तृतीय-पक्ष कोड शामिल नहीं है.</string>
+    <string name="about_licences">Kotlin और AndroidX Apache-2.0 के तहत हैं. Space Grotesk और Fira Code SIL Open Font Licence के तहत हैं. कोई और तृतीय-पक्ष कोड शामिल नहीं है.</string>
 
     <!-- Home, one gesture -->
     <string name="home_open_pictures">तस्वीरें खोलें</string>
@@ -651,8 +652,11 @@
     <string name="colour_neutral">सफ़ेद पर टैप करें</string>
     <string name="colour_neutral_cancel">टैप रद्द करें</string>
     <string name="colour_neutral_tap">तस्वीर में किसी ऐसी चीज़ पर टैप करें जो ग्रे या सफ़ेद होनी चाहिए.</string>
-    <string name="colour_neutral_hint">ग्रे कार्ड, सफ़ेद दीवार, कागज़ की शीट: उस पर टैप करें और रंग की छाया चली जाती है.</string>
     <string name="colour_neutral_done">टैप से तापमान और टिंट तय हुए.</string>
+    <string name="colour_auto">ऑटो रंग</string>
+    <string name="colour_auto_hint">ऑटो ढूँढता है कि क्या ग्रे होना चाहिए और रंग की छाया हटा देता है. ठीक नहीं लगा? किसी सफ़ेद चीज़ पर टैप करें, वह आपके टैप को मानेगा.</string>
+    <string name="colour_auto_nothing">हटाने लायक कोई रंग की छाया नहीं.</string>
+    <string name="auto_strength">ऑटो की मात्रा</string>
     <string name="retouch_redeye">लाल आंख</string>
     <string name="retouch_redeye_hint">फ़्लैश से लाल हुई हर पुतली पर टैप करें. सिर्फ़ हरे और नीले से कहीं ज़्यादा लाल को गहरा किया जाता है, इसलिए त्वचा और होंठ अछूते रहते हैं.</string>
     <string name="export_sticker">स्टिकर</string>

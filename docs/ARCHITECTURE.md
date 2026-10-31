@@ -60,7 +60,7 @@ Behind the editor the backdrop's pools wear the picture's own colours: `engine/P
 
 A slider can hand itself to the canvas: a tap on its name makes the picture its track, a sideways swipe anywhere moves it (`TouchMode.Scrub`), and the name and value sit large over the picture while it moves.
 
-The look itself is one set of tokens: Syne at display sizes and titles, Space Grotesk for everything else; a deep ink ground with one amber band and the neon accents in `Neon`; cards as glass (`StillColors.Glass`) with a lit top edge; pill buttons with a glow; option rows as grids of equal cells; sliders as a thick track that fills from zero under a lit thumb.
+The look itself is one set of tokens: Space Grotesk, the site's face, from display sizes down, with Fira Code for measured numbers; a deep ink ground with one amber band and the neon accents in `Neon`; cards as glass (`StillColors.Glass`) with a lit top edge; pill buttons with a glow; option rows as grids of equal cells; sliders as a thick track that fills from zero under a lit thumb.
 
 ## Not here, on purpose
 

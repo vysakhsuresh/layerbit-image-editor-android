@@ -44,4 +44,19 @@ class PaletteTest {
             assertEquals(r, Argb.red(back)); assertEquals(g, Argb.green(back)); assertEquals(b, Argb.blue(back))
         }
     }
+
+    @Test
+    fun matchedGivesAPaleAndADeepSwatchPerColour() {
+        // Mostly teal, some orange, some grey.
+        val px = IntArray(9000) { i -> when (i % 9) { in 0..4 -> Argb.pack(255, 30, 140, 150); in 5..6 -> Argb.pack(255, 230, 120, 30); else -> Argb.pack(255, 128, 128, 128) } }
+        val m = Palette.matched(px, step = 1)
+        assertEquals(4, m.size)
+        val paleTeal = Palette.hsv(Argb.red(m[0]), Argb.green(m[0]), Argb.blue(m[0]))
+        val deepTeal = Palette.hsv(Argb.red(m[1]), Argb.green(m[1]), Argb.blue(m[1]))
+        assertTrue("pale is light ${paleTeal[2]}", paleTeal[2] > 0.9f && paleTeal[1] < 0.2f)
+        assertTrue("deep is dark ${deepTeal[2]}", deepTeal[2] < 0.3f)
+        assertTrue("teal hue ${paleTeal[0]}", paleTeal[0] in 170f..200f)
+        assertTrue("same hue", kotlin.math.abs(paleTeal[0] - deepTeal[0]) < 6f)
+        assertTrue(Palette.matched(IntArray(500) { Argb.pack(255, 90, 90, 90) }, step = 1).isEmpty())
+    }
 }

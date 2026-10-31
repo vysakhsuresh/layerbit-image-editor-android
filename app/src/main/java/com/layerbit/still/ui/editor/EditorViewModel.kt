@@ -11,6 +11,8 @@ import androidx.lifecycle.viewModelScope
 import com.layerbit.still.R
 import com.layerbit.still.StillApplication
 import com.layerbit.still.engine.AutoEnhance
+import com.layerbit.still.engine.AutoWhite
+import com.layerbit.still.engine.ToneStep
 import com.layerbit.still.engine.Crop
 import com.layerbit.still.engine.Frame
 import com.layerbit.still.engine.Geometry
@@ -94,6 +96,12 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val previewFast: Boolean = false,
         /** The few colours that carry the picture, for the glow behind the editor. */
         val palette: List<Int> = emptyList(),
+        /** The last Auto press, kept so its strength can be turned up or down; null once it no longer applies. */
+        val autoStep: ToneStep? = null,
+        /** The panel whose Auto made [autoStep]: Light or Colour. */
+        val autoPanel: ToolId.Panel? = null,
+        /** Backgrounds in the picture's own colours, a pale and a deep one per colour, for Frame and Cut out. */
+        val swatches: List<Int> = emptyList(),
         val loading: Boolean = true
     )
 
@@ -195,7 +203,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setPanel(panel: ToolId.Panel) {
         commit()
-        _ui.update { it.copy(panel = panel) }
+        _ui.update { it.copy(panel = panel, autoStep = null, autoPanel = null) }
         requestRender()
     }
 
@@ -234,23 +242,55 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     fun undo() {
         val r = undo.removeLastOrNull() ?: return
         redo.addLast(baseline); baseline = r
-        _ui.update { it.copy(recipe = r, canUndo = undo.isNotEmpty(), canRedo = true, export = null, exportFile = null, exportPreview = null) }
+        _ui.update { it.copy(recipe = r, canUndo = undo.isNotEmpty(), canRedo = true, export = null, exportFile = null, exportPreview = null, autoStep = null, autoPanel = null) }
         persist(); requestRender()
     }
 
     fun redo() {
         val r = redo.removeLastOrNull() ?: return
         undo.addLast(baseline); baseline = r
-        _ui.update { it.copy(recipe = r, canUndo = true, canRedo = redo.isNotEmpty(), export = null, exportFile = null, exportPreview = null) }
+        _ui.update { it.copy(recipe = r, canUndo = true, canRedo = redo.isNotEmpty(), export = null, exportFile = null, exportPreview = null, autoStep = null, autoPanel = null) }
         persist(); requestRender()
     }
 
-    fun resetAll() = change { Recipe() }
+    fun resetAll() {
+        change { Recipe() }
+        _ui.update { it.copy(autoStep = null, autoPanel = null) }
+    }
 
     /** Levels and exposure from the current preview's histogram, as sliders the user can see. */
     fun auto() {
         val h = _ui.value.histogram ?: return
-        change { it.copy(tone = AutoEnhance.tone(h, it.tone)) }
+        val before = _ui.value.recipe.tone
+        val after = AutoEnhance.tone(h, before)
+        change { it.copy(tone = after) }
+        _ui.update { it.copy(autoStep = ToneStep.between(before, after), autoPanel = ToolId.Panel.LIGHT) }
+    }
+
+    /**
+     * The colour cast, found from what ought to be grey in the picture before any tone, and
+     * cancelled with temperature and tint. A tap on something white still overrides it.
+     */
+    fun autoColour() {
+        val b = base?.takeIf { !it.isRecycled } ?: return
+        val px = IntArray(b.width * b.height)
+        b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
+        viewModelScope.launch {
+            val before = _ui.value.recipe.tone
+            val after = withContext(Dispatchers.Default) { AutoWhite.tone(px, before) }
+            if (after == before) { message(Strings.get(R.string.colour_auto_nothing)); return@launch }
+            change { it.copy(tone = after) }
+            _ui.update { it.copy(autoStep = ToneStep.between(before, after), autoPanel = ToolId.Panel.COLOUR) }
+        }
+    }
+
+    /** Turns the last Auto up or down; slider moves made since are kept. */
+    fun setAutoAmount(amount: Float, done: Boolean) {
+        val step = _ui.value.autoStep ?: return
+        val next = _ui.value.recipe.let { it.copy(tone = step.rescale(it.tone, amount)) }
+        draft(next)
+        _ui.update { it.copy(autoStep = step.copy(amount = amount)) }
+        if (done) commit()
     }
 
     fun savePreset(name: String) {
@@ -346,6 +386,13 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     val fresh = withContext(Dispatchers.Default) { renderer.geometry(project.file.file, geometry, Budget.PREVIEW_PIXELS, check) }
                     dropBase()
                     base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
+                    val swatches = withContext(Dispatchers.Default) {
+                        val bmp = fresh.bitmap
+                        val px = IntArray(bmp.width * bmp.height)
+                        bmp.getPixels(px, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+                        Palette.matched(px)
+                    }
+                    _ui.update { it.copy(swatches = swatches) }
                     fresh.bitmap
                 }
                 val cutoutPanel = state.panel == ToolId.Panel.CUTOUT && !state.recipe.cutout.enabled

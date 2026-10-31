@@ -14,7 +14,7 @@ Runtime dependencies are deliberately few:
 | AndroidX DocumentFile | Display names; folder writes through a granted tree | Apache-2.0 |
 | AndroidX ProfileInstaller | Installs the baseline profile below API 31 | Apache-2.0 |
 | Space Grotesk (four weights) | The family typeface | SIL Open Font Licence 1.1 |
-| Syne (variable weight) | Display sizes and titles | SIL Open Font Licence 1.1 (docs/licences/SYNE-OFL.txt) |
+| Fira Code (variable weight) | Measured numbers: slider values, sizes | SIL Open Font Licence 1.1 (docs/licences/FIRA-CODE-OFL.txt) |
 
 Build and test only: Gradle and AGP (Apache-2.0), JUnit 4 (EPL-1.0), Hamcrest (BSD-3), Robolectric (MIT), AndroidX Test, UI Automator and Macrobenchmark (Apache-2.0). `tools/jvm-check.sh` fetches the Kotlin compiler and JUnit from Maven Central for the engine check; none of that reaches the APK.
 

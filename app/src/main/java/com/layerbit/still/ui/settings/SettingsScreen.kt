@@ -47,7 +47,10 @@ import com.layerbit.still.ui.components.RowBetween
 import com.layerbit.still.ui.components.SecondaryButton
 import com.layerbit.still.ui.components.ToggleRow
 import com.layerbit.still.ui.components.formatBytes
+import com.layerbit.still.ui.theme.Numerals
 import com.layerbit.still.ui.theme.StillColors
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 /** Everything about the app the user gets to decide. Every switch says what it costs. */
 @Composable
@@ -97,7 +100,7 @@ fun SettingsScreen(
             Section(stringResource(R.string.settings_space), R.drawable.ic_tool_compress, Color(0xFF5B9DFF)) {
                 RowBetween {
                     Column {
-                        Text(formatBytes(workspaceBytes), style = MaterialTheme.typography.headlineSmall, color = StillColors.Text)
+                        Text(formatBytes(workspaceBytes), style = Numerals.copy(fontSize = 24.sp, fontWeight = FontWeight.SemiBold), color = StillColors.Text)
                         Text(stringResource(R.string.settings_results), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim)
                     }
                     SecondaryButton(stringResource(R.string.app_clear), onClick = onClearWorkspace, enabled = workspaceBytes > 0, tall = false)

@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.SideEffect
 import kotlin.math.min
@@ -58,6 +60,7 @@ import com.layerbit.still.engine.CurveMath
 import com.layerbit.still.engine.Curves
 import com.layerbit.still.engine.Histogram
 import com.layerbit.still.engine.Pt
+import com.layerbit.still.ui.theme.Numerals
 import com.layerbit.still.ui.theme.StillColors
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -112,7 +115,7 @@ fun Knob(
             if (steering) Text(stringResource(R.string.editor_scrub_hint), style = MaterialTheme.typography.labelSmall, color = StillColors.BandBright, modifier = Modifier.padding(start = 8.dp))
             Spacer(Modifier.weight(1f))
             Text(
-                shown, style = MaterialTheme.typography.labelMedium, color = if (live) StillColors.OnBand else StillColors.Dim,
+                shown, style = Numerals, color = if (live) StillColors.OnBand else StillColors.Dim,
                 modifier = Modifier.background(valueFill, RoundedCornerShape(999.dp)).padding(horizontal = 9.dp, vertical = 2.dp)
             )
         }
@@ -169,7 +172,7 @@ private fun sign(v: Float) = if (v > 0f) 1 else if (v < 0f) -1 else 0
 @Composable
 fun ColourRow(colours: List<Int>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val label = stringResource(R.string.editor_choose_colour)
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(modifier = modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (c in colours) {
             val active = c == selected
             Box(

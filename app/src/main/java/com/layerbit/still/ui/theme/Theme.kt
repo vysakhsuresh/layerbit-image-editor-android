@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.layerbit.still.R
@@ -93,13 +95,6 @@ internal val Light = Palette(
     running = Color(0xFF1C6FB8), done = Color(0xFF17784E), failed = Color(0xFFA83C27), skipped = Color(0xFF8A5C0B)
 )
 
-/** Syne, the loud one: display sizes and titles only, so a screen has one voice that carries. */
-val Syne = FontFamily(
-    Font(R.font.syne_variable, FontWeight.SemiBold),
-    Font(R.font.syne_variable, FontWeight.Bold),
-    Font(R.font.syne_variable, FontWeight.ExtraBold)
-)
-
 /** Space Grotesk, the family face. */
 val SpaceGrotesk = FontFamily(
     Font(R.font.space_grotesk_regular, FontWeight.Normal),
@@ -108,12 +103,26 @@ val SpaceGrotesk = FontFamily(
     Font(R.font.space_grotesk_bold, FontWeight.Bold)
 )
 
+/**
+ * Fira Code, the site's second face, for numbers the app measured: slider values, sizes,
+ * dimensions. Fixed-width digits keep a changing value from jittering as it updates.
+ */
+@OptIn(ExperimentalTextApi::class)
+val FiraCode = FontFamily(
+    // The file is variable; without the axis set, Android draws its lightest instance.
+    Font(R.font.fira_code_variable, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.fira_code_variable, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600)))
+)
+
+/** A measured number in a pill or beside a label. */
+val Numerals = TextStyle(fontFamily = FiraCode, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.sp)
+
 private val StillTypography = Typography(
-    displayLarge = TextStyle(fontFamily = Syne, fontSize = 54.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.6).sp, lineHeight = 54.sp),
-    displayMedium = TextStyle(fontFamily = Syne, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.2).sp, lineHeight = 46.sp),
-    headlineMedium = TextStyle(fontFamily = Syne, fontSize = 32.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp, lineHeight = 36.sp),
-    headlineSmall = TextStyle(fontFamily = Syne, fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontFamily = Syne, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+    displayLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 52.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2.0).sp, lineHeight = 54.sp),
+    displayMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 42.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.5).sp, lineHeight = 46.sp),
+    headlineMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 32.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontFamily = SpaceGrotesk, fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, lineHeight = 30.sp),
+    titleLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
     titleMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
     bodyLarge = TextStyle(fontFamily = SpaceGrotesk, fontSize = 15.sp, fontWeight = FontWeight.Normal),
     bodyMedium = TextStyle(fontFamily = SpaceGrotesk, fontSize = 13.5.sp, fontWeight = FontWeight.Normal),

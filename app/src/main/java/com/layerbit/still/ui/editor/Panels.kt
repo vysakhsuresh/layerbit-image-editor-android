@@ -67,6 +67,7 @@ import com.layerbit.still.engine.Quad
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Scan
 import com.layerbit.still.engine.ScanMode
+import com.layerbit.still.engine.ToneStep
 import com.layerbit.still.engine.Tone
 import com.layerbit.still.files.ImageStore
 import com.layerbit.still.image.Budget
@@ -179,13 +180,14 @@ fun PerspectivePanel(s: PanelScope) {
 // ------------------------------------------------------------------ light and colour
 
 @Composable
-fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, showHistogram: Boolean, onAuto: () -> Unit) {
+fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, showHistogram: Boolean, onAuto: () -> Unit, autoStep: ToneStep? = null, onAutoAmount: (Float, Boolean) -> Unit = { _, _ -> }) {
     val t = s.recipe.tone
     if (showHistogram) HistogramView(histogram, Modifier.padding(bottom = 8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         PrimaryButton(stringResource(R.string.light_auto), onClick = onAuto, modifier = Modifier.weight(1f), tall = false, enabled = histogram?.let { com.layerbit.still.engine.AutoEnhance.worthwhile(it) } ?: false)
         SecondaryButton(stringResource(R.string.light_reset), onClick = { s.change { it.copy(tone = it.tone.copy(exposure = 0f, contrast = 0f, highlights = 0f, shadows = 0f, whites = 0f, blacks = 0f)) } }, modifier = Modifier.weight(1f), tall = false)
     }
+    AutoStrength(s, autoStep, onAutoAmount)
     Spacer(Modifier.height(6.dp))
     s.ToneKnob(stringResource(R.string.light_exposure), t.exposure, -2f..2f) { a, v -> a.copy(exposure = v) }
     s.ToneKnob(stringResource(R.string.light_contrast), t.contrast) { a, v -> a.copy(contrast = v) }
@@ -194,6 +196,20 @@ fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, s
     s.ToneKnob(stringResource(R.string.light_whites), t.whites) { a, v -> a.copy(whites = v) }
     s.ToneKnob(stringResource(R.string.light_blacks), t.blacks) { a, v -> a.copy(blacks = v) }
     Hint(stringResource(R.string.light_hint))
+}
+
+/**
+ * After an Auto press: how much of it to keep, from none to half again as much. Moving it adds
+ * the difference to the sliders, so a hand-made change since stays.
+ */
+@Composable
+private fun AutoStrength(s: PanelScope, step: ToneStep?, onAmount: (Float, Boolean) -> Unit) {
+    if (step == null || step.isEmpty) return
+    Knob(
+        stringResource(R.string.auto_strength), step.amount, ToneStep.RANGE,
+        onChange = { onAmount(it, false) }, onDone = { onAmount(step.amount, true) }, onReset = { onAmount(1f, true) },
+        haptics = s.haptics, format = { "${(it * 100).roundToInt()}%" }, modifier = Modifier.padding(top = 8.dp)
+    )
 }
 
 @Composable
@@ -212,9 +228,15 @@ fun ColourPanel(s: PanelScope) {
 
 /** Colour, plus the eyedropper: tap something that should be grey or white and the cast goes. */
 @Composable
-fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) -> Unit) {
-    PrimaryButton(stringResource(if (picking) R.string.colour_neutral_cancel else R.string.colour_neutral), onClick = { onPick(!picking) }, modifier = Modifier.fillMaxWidth(), tall = false, iconRes = R.drawable.ic_tool_neutral)
-    Hint(stringResource(if (picking) R.string.colour_neutral_tap else R.string.colour_neutral_hint))
+fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) -> Unit, onAuto: () -> Unit = {}, autoStep: ToneStep? = null, onAutoAmount: (Float, Boolean) -> Unit = { _, _ -> }) {
+    // Auto first, then the user steers: a tap on something that should be white overrides it.
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        PrimaryButton(stringResource(R.string.colour_auto), onClick = onAuto, modifier = Modifier.weight(1f), tall = false)
+        if (picking) PrimaryButton(stringResource(R.string.colour_neutral_cancel), onClick = { onPick(false) }, modifier = Modifier.weight(1f), tall = false, iconRes = R.drawable.ic_tool_neutral)
+        else SecondaryButton(stringResource(R.string.colour_neutral), onClick = { onPick(true) }, modifier = Modifier.weight(1f), tall = false, iconRes = R.drawable.ic_tool_neutral)
+    }
+    Hint(stringResource(if (picking) R.string.colour_neutral_tap else R.string.colour_auto_hint))
+    AutoStrength(s, autoStep, onAutoAmount)
     Spacer(Modifier.height(4.dp))
     ColourPanel(s)
 }
@@ -403,7 +425,7 @@ fun markLabel(kind: MarkKind): String = stringResource(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FramePanel(s: PanelScope) {
+fun FramePanel(s: PanelScope, swatches: List<Int> = emptyList()) {
     val f = s.recipe.frame
     fun set(block: (Frame) -> Frame) = s.change { it.copy(frame = block(it.frame)) }
     fun live(block: (Frame) -> Frame) = s.draft(s.recipe.copy(frame = block(s.recipe.frame)))
@@ -414,6 +436,12 @@ fun FramePanel(s: PanelScope) {
     Knob(stringResource(R.string.frame_border), f.border, 0f..0.1f, onChange = { v -> live { it.copy(border = v) } }, onDone = s.commit, onReset = { set { it.copy(border = 0f) } }, haptics = s.haptics)
     Knob(stringResource(R.string.frame_corners), f.cornerRadius, 0f..0.3f, onChange = { v -> live { it.copy(cornerRadius = v) } }, onDone = s.commit, onReset = { set { it.copy(cornerRadius = 0f) } }, haptics = s.haptics)
     SectionHeading(stringResource(R.string.frame_background), modifier = Modifier.padding(top = 6.dp))
+    if (swatches.isNotEmpty()) {
+        // The picture's own colours first: a frame that belongs to it.
+        Text(stringResource(R.string.frame_from_picture), style = MaterialTheme.typography.labelMedium, color = StillColors.Muted, modifier = Modifier.padding(top = 2.dp, bottom = 4.dp))
+        ColourRow(swatches, if (f.blurredFill) -1 else f.background, { c -> set { it.copy(background = c, blurredFill = false) } })
+        Spacer(Modifier.height(8.dp))
+    }
     FlowRow {
         Swatch(0xFFFFFFFF.toInt(), stringResource(R.string.frame_white), f.background == 0xFFFFFFFF.toInt() && !f.blurredFill) { set { it.copy(background = 0xFFFFFFFF.toInt(), blurredFill = false) } }
         Swatch(0xFF111111.toInt(), stringResource(R.string.frame_black), f.background == 0xFF111111.toInt() && !f.blurredFill) { set { it.copy(background = 0xFF111111.toInt(), blurredFill = false) } }
@@ -423,7 +451,7 @@ fun FramePanel(s: PanelScope) {
         Swatch(0xFF7A8699.toInt(), stringResource(R.string.frame_blurred), f.blurredFill) { set { it.copy(blurredFill = true) } }
     }
     SectionHeading(stringResource(R.string.frame_border_colour), modifier = Modifier.padding(top = 6.dp))
-    ColourRow(InkColours, f.borderColor, { c -> set { it.copy(borderColor = c) } }, Modifier.padding(top = 4.dp))
+    ColourRow(swatches + InkColours, f.borderColor, { c -> set { it.copy(borderColor = c) } }, Modifier.padding(top = 4.dp))
     Hint(stringResource(R.string.frame_hint))
 }
 
@@ -474,9 +502,10 @@ fun ExportPanel(options: ExportOptions, onOptions: (ExportOptions) -> Unit, canv
  * corrects the guess, and the numbers say how much of the picture stays.
  */
 @Composable
-fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: Float, onWidth: (Float) -> Unit, kept: Float?, onClearStrokes: () -> Unit) {
+fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: Float, onWidth: (Float) -> Unit, kept: Float?, onClearStrokes: () -> Unit, swatches: List<Int> = emptyList()) {
     val c = s.recipe.cutout
-    val colours = listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt())
+    // The picture's own pale and deep colours lead; the fixed set follows.
+    val colours = (swatches + listOf(0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFFF2A531.toInt(), 0xFF5BA9E8.toInt(), 0xFF4CCB8F.toInt(), 0xFFE62E80.toInt())).distinct()
     ChipRow(listOf(CutoutMode.SUBJECT to stringResource(R.string.cutout_subject), CutoutMode.INK to stringResource(R.string.cutout_ink)), c.mode, { m -> s.change { it.copy(cutout = it.cutout.copy(mode = m)) } })
     when {
         c.mode == CutoutMode.SUBJECT && !c.enabled -> {

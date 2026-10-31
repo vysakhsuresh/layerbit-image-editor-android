@@ -321,6 +321,7 @@
     <string name="frame_border">Border</string>
     <string name="frame_corners">Rounded corners</string>
     <string name="frame_background">Background</string>
+    <string name="frame_from_picture">From the picture</string>
     <string name="frame_border_colour">Border colour</string>
     <string name="frame_white">White</string>
     <string name="frame_black">Black</string>
@@ -416,8 +417,8 @@
     <string name="engine_strip_lossless_detail">%1$s. The picture itself is byte for byte the same: %2$s → %3$s.</string>
     <string name="engine_strip_reencoded_detail">Re-encoded losslessly as %1$s with nothing hidden, %2$s.</string>
     <string name="engine_title_enhance">Enhance automatically</string>
-    <string name="engine_enhance_nothing">Already well exposed. Left as it is.</string>
-    <string name="engine_enhance_detail">Exposure %1$.2f, whites %2$d, blacks %3$d.</string>
+    <string name="engine_enhance_nothing">Already well exposed and colour-true. Left as it is.</string>
+    <string name="engine_enhance_detail">Exposure %1$.2f, whites %2$d, blacks %3$d, warmth %4$d.</string>
     <string name="engine_title_recipe">Recipe “%1$s”</string>
     <string name="engine_title_watermark">Watermark “%1$s”</string>
     <string name="engine_title_collage">Collage, %1$s</string>
@@ -534,7 +535,7 @@
     <string name="about_rate">Rate on Google Play</string>
     <string name="about_privacy">Privacy policy</string>
     <string name="about_made_by">Made by %1$s · %2$s</string>
-    <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk and Syne are under the SIL Open Font Licence. No other third-party code is bundled.</string>
+    <string name="about_licences">Kotlin and AndroidX are Apache-2.0. Space Grotesk and Fira Code are under the SIL Open Font Licence. No other third-party code is bundled.</string>
 
     <!-- Home, one gesture -->
     <string name="home_open_pictures">Open pictures</string>
@@ -651,8 +652,11 @@
     <string name="colour_neutral">Tap a white</string>
     <string name="colour_neutral_cancel">Cancel the tap</string>
     <string name="colour_neutral_tap">Tap something in the picture that should be grey or white.</string>
-    <string name="colour_neutral_hint">A grey card, a white wall, a sheet of paper: tap it and the cast goes.</string>
     <string name="colour_neutral_done">Temperature and tint set from the tap.</string>
+    <string name="colour_auto">Auto colour</string>
+    <string name="colour_auto_hint">Auto finds what should be grey and takes the cast away. Not right? Tap something white and it follows your tap.</string>
+    <string name="colour_auto_nothing">No colour cast to take away.</string>
+    <string name="auto_strength">Auto strength</string>
     <string name="retouch_redeye">Red eye</string>
     <string name="retouch_redeye_hint">Tap each flash-red pupil. Only red far beyond the green and blue is darkened, so skin and lips are left alone.</string>
     <string name="export_sticker">Sticker</string>
