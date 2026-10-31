@@ -27,6 +27,8 @@ import com.layerbit.still.engine.Quad
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.engine.Tone
+import com.layerbit.still.engine.TextPreset
+import com.layerbit.still.engine.TextStyle
 import com.layerbit.still.image.Codecs
 import com.layerbit.still.image.ExportOptions
 import com.layerbit.still.image.OutputFormat
@@ -292,6 +294,43 @@ class RendererTest {
         assertTrue(renderer.difference(plain, blurred) > 1.0)
         assertEquals(plain.getPixel(2, 2), blurred.getPixel(2, 2))
         plain.recycle(); blurred.recycle()
+    }
+
+    @Test
+    fun styledTextPreviewPredictsExport() = runBlocking {
+        val src = scene(1200, 800)
+        val styles = listOf(
+            TextPreset.STICKER.apply(Color.rgb(230, 46, 128)),
+            TextPreset.CAPTION.apply(Color.WHITE),
+            TextPreset.ARCHED.apply(Color.YELLOW),
+            TextPreset.NEON.apply(Color.CYAN)
+        )
+        val marks = styles.mapIndexed { i, (colour, style) ->
+            Mark(MarkKind.TEXT, listOf(Pt(0.5f, 0.15f + i * 0.22f)), text = "Still styles\nat any size", color = colour, width = 0.03f, angle = if (i == 1) 8f else 0f, style = style)
+        }
+        val r = Recipe(marks = marks)
+        val small = renderer.render(src, r, maxPixels = 300 * 200)
+        val large = renderer.render(src, r, maxPixels = 1200 * 800)
+        val plain = renderer.render(src, Recipe(), maxPixels = 300 * 200)
+        val shrunk = renderer.scale(large, small.width, small.height)
+        val diff = renderer.difference(small, shrunk)
+        val effect = renderer.difference(small, plain)
+        assertTrue("the text shows: $effect", effect > 4.0)
+        assertTrue("preview and export agree: $diff vs $effect", diff < 4.0 && diff < effect / 3.0)
+        small.recycle(); large.recycle(); plain.recycle(); shrunk.recycle()
+    }
+
+    @Test
+    fun aTextBoxSitsBehindTheTextAtAnySize() = runBlocking {
+        val src = scene(400, 300)
+        val style = TextStyle(boxColor = Color.GREEN, boxOpacity = 1f, boxPadding = 0.5f, shadowColor = 0)
+        val mark = Mark(MarkKind.TEXT, listOf(Pt(0.5f, 0.5f)), text = " ", color = Color.WHITE, width = 0.05f, style = style)
+        for (pixels in listOf(40_000L, 120_000L)) {
+            val b = renderer.render(src, Recipe(marks = listOf(mark)), maxPixels = pixels)
+            assertEquals(Color.GREEN, b.getPixel(b.width / 2, b.height / 2))
+            assertEquals(Color.GREEN, b.getPixel(b.width / 2 + (b.height * 0.05f * 3.2f * 0.4f).toInt(), b.height / 2))
+            b.recycle()
+        }
     }
 
     @Test

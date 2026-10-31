@@ -220,7 +220,7 @@ fun EditorScreen(
     }
 
     fun addMark(points: List<Pt>, kind: MarkKind) {
-        val mark = Mark(kind, points, brush.color, brush.width, brush.text, source = brush.cloneSource.takeIf { kind == MarkKind.CLONE })
+        val mark = Mark(kind, points, brush.color, brush.width, brush.text, source = brush.cloneSource.takeIf { kind == MarkKind.CLONE }, style = if (kind == MarkKind.TEXT) brush.style else com.layerbit.still.engine.TextStyle.DEFAULT)
         if (!mark.valid) return
         if (recipe.marks.size >= com.layerbit.still.engine.Recipe.MAX_MARKS) { vm.message(context.getString(R.string.layers_full)); return }
         vm.change { it.copy(marks = it.marks + mark) }
@@ -459,7 +459,12 @@ fun EditorScreen(
                                 selected = recipe.marks.getOrNull(selectedMark)?.takeIf { moving && it.kind in Movable },
                                 onSelectedWidth = { w, done -> val i = selectedMark; if (i in recipe.marks.indices) { if (done) vm.commit() else vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).copy(width = w)) })) } },
                                 onSelectedColour = { c -> editSelected { it.copy(color = c) } },
-                                onDeleteSelected = { val i = selectedMark; if (i in recipe.marks.indices) { vm.change { r -> r.copy(marks = r.marks.filterIndexed { k, _ -> k != i }) }; selectedMark = -1 } }
+                                onDeleteSelected = { val i = selectedMark; if (i in recipe.marks.indices) { vm.change { r -> r.copy(marks = r.marks.filterIndexed { k, _ -> k != i }) }; selectedMark = -1 } },
+                                onSelectedStyle = { c, st, done ->
+                                    val i = selectedMark
+                                    if (i in recipe.marks.indices) { if (done) editSelected { it.copy(color = c, style = st) } else vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).copy(color = c, style = st)) })) }
+                                },
+                                onSelectedStyleDone = { vm.commit() }
                             )
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE, MarkKind.HEAL)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
@@ -498,6 +503,7 @@ fun EditorScreen(
         val m = recipe.marks[editingText]
         var text by remember(editingText) { mutableStateOf(m.text) }
         var angle by remember(editingText) { mutableFloatStateOf(m.angle) }
+        var look by remember(editingText) { mutableStateOf(m.color to m.style) }
         AlertDialog(
             onDismissRequest = { editingText = -1 }, containerColor = StillColors.Surface,
             title = { Text(stringResource(R.string.layers_edit_text), color = StillColors.Text) },
@@ -505,9 +511,10 @@ fun EditorScreen(
                 Column {
                     OutlinedTextField(text, { text = it.take(Mark.MAX_TEXT) }, colors = fieldColours(), maxLines = 4)
                     Knob(stringResource(R.string.layers_angle), angle, -180f..180f, onChange = { angle = it }, onDone = {}, onReset = { angle = 0f }, haptics = settings.haptics, format = { "${it.toInt()}°" })
+                    if (m.kind == MarkKind.TEXT) TextStyleStrip(text, look.first, look.second, onPick = { c, st -> look = c to st })
                 }
             },
-            confirmButton = { TextButton(onClick = { val i = editingText; vm.change { it.copy(marks = it.marks.toMutableList().apply { set(i, get(i).copy(text = text, angle = angle)) }) }; editingText = -1 }) { Text(stringResource(R.string.app_save), color = StillColors.BandBright) } },
+            confirmButton = { TextButton(onClick = { val i = editingText; vm.change { it.copy(marks = it.marks.toMutableList().apply { set(i, get(i).copy(text = text, angle = angle).let { if (it.kind == MarkKind.TEXT) it.copy(color = look.first, style = look.second) else it }) }) }; editingText = -1 }) { Text(stringResource(R.string.app_save), color = StillColors.BandBright) } },
             dismissButton = { TextButton(onClick = { editingText = -1 }) { Text(stringResource(R.string.app_cancel), color = StillColors.Muted) } }
         )
     }
@@ -700,8 +707,11 @@ fun panelLabel(p: ToolId.Panel): String = stringResource(
 
 /** Brush survives rotation; the clone source and picking state do not need to. */
 val BrushSaver = androidx.compose.runtime.saveable.Saver<Brush, List<Any>>(
-    save = { listOf(it.kind.name, it.color, it.width, it.text) },
-    restore = { Brush(MarkKind.valueOf(it[0] as String), it[1] as Int, it[2] as Float, it[3] as String) }
+    save = { listOf(it.kind.name, it.color, it.width, it.text, com.layerbit.still.engine.Json.write(com.layerbit.still.engine.RecipeJson.textStyle(it.style))) },
+    restore = {
+        val style = runCatching { com.layerbit.still.engine.RecipeJson.readTextStyle(com.layerbit.still.engine.Json.parse(it[4] as String)) }.getOrDefault(com.layerbit.still.engine.TextStyle.DEFAULT)
+        Brush(MarkKind.valueOf(it[0] as String), it[1] as Int, it[2] as Float, it[3] as String, style = style)
+    }
 )
 
 /** The marks Markup can pick up and move: what it draws, not what Retouch does to pixels. */

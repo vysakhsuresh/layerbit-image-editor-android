@@ -167,8 +167,38 @@ object RecipeJson {
         "kind" to m.kind.name.json(), "points" to points(m.points), "color" to m.color.json(), "width" to m.width.json(),
         "text" to m.text.json(), "opacity" to m.opacity.json(), "visible" to m.visible.json(),
         "source" to m.source?.let { listOf(it.x.json(), it.y.json()).json() }, "angle" to m.angle.json(),
-        "place" to m.place.takeIf { it != WatermarkPlace.TILED }?.name?.json()
+        "place" to m.place.takeIf { it != WatermarkPlace.TILED }?.name?.json(),
+        "style" to m.style.takeIf { it != TextStyle.DEFAULT }?.let { textStyle(it) }
     )
+
+    /** A text style; written only when it differs from the default, so old apps see the same JSON. */
+    fun textStyle(s: TextStyle): JsonValue = jsonOf(
+        "font" to s.font.name.json(), "weight" to s.weight.json(), "italic" to s.italic.json(), "caps" to s.caps.json(),
+        "align" to s.align.name.json(), "letterSpacing" to s.letterSpacing.json(), "lineHeight" to s.lineHeight.json(),
+        "outline" to s.outline.json(), "outlineColor" to s.outlineColor.json(),
+        "shadowBlur" to s.shadowBlur.json(), "shadowX" to s.shadowX.json(), "shadowY" to s.shadowY.json(), "shadowColor" to s.shadowColor.json(),
+        "boxColor" to s.boxColor.json(), "boxOpacity" to s.boxOpacity.json(), "boxPadding" to s.boxPadding.json(), "boxRadius" to s.boxRadius.json(),
+        "boxPerLine" to s.boxPerLine.json(), "arc" to s.arc.json()
+    )
+
+    /** Absent is the default look; each missing field keeps its default, and values are brought into range. */
+    fun readTextStyle(v: JsonValue?): TextStyle {
+        if (v == null || v !is JsonValue.Obj) return TextStyle.DEFAULT
+        val d = TextStyle.DEFAULT
+        fun fl(key: String, def: Float) = v[key]?.num()?.toFloat() ?: def
+        fun col(key: String, def: Int) = v[key]?.num()?.toLong()?.toInt() ?: def
+        return TextStyle(
+            // A face this app does not ship falls back to the phone's own.
+            font = v["font"]?.str()?.let { name -> TextFont.entries.firstOrNull { it.name == name } } ?: d.font,
+            weight = v["weight"]?.num()?.toInt() ?: d.weight, italic = v["italic"]?.bool() ?: d.italic, caps = v["caps"]?.bool() ?: d.caps,
+            align = v["align"]?.str()?.let { name -> TextAlign.entries.firstOrNull { it.name == name } } ?: d.align,
+            letterSpacing = fl("letterSpacing", d.letterSpacing), lineHeight = fl("lineHeight", d.lineHeight),
+            outline = fl("outline", d.outline), outlineColor = col("outlineColor", d.outlineColor),
+            shadowBlur = fl("shadowBlur", d.shadowBlur), shadowX = fl("shadowX", d.shadowX), shadowY = fl("shadowY", d.shadowY), shadowColor = col("shadowColor", d.shadowColor),
+            boxColor = col("boxColor", d.boxColor), boxOpacity = fl("boxOpacity", d.boxOpacity), boxPadding = fl("boxPadding", d.boxPadding), boxRadius = fl("boxRadius", d.boxRadius),
+            boxPerLine = v["boxPerLine"]?.bool() ?: d.boxPerLine, arc = fl("arc", d.arc)
+        ).clamped()
+    }
 
     private fun points(ps: List<Pt>) = ps.map { listOf(it.x.json(), it.y.json()).json() }.json()
 
@@ -267,7 +297,9 @@ object RecipeJson {
         source = m["source"]?.let { pt(it) },
         angle = m["angle"]?.num()?.toFloat() ?: 0f,
         // Older apps never wrote a place, and a name this app does not know falls back to tiled.
-        place = m["place"]?.str()?.let { name -> WatermarkPlace.entries.firstOrNull { it.name == name } } ?: WatermarkPlace.TILED
+        place = m["place"]?.str()?.let { name -> WatermarkPlace.entries.firstOrNull { it.name == name } } ?: WatermarkPlace.TILED,
+        // Recipes from before text styles have none: the default look.
+        style = readTextStyle(m["style"])
     )
 
     /**

@@ -14,8 +14,6 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
-import android.text.Layout
-import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.exifinterface.media.ExifInterface
 import com.layerbit.still.engine.Argb
@@ -24,6 +22,7 @@ import com.layerbit.still.engine.Expand
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.WatermarkLayout
+import com.layerbit.still.engine.TextLayout
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.Heal
 import com.layerbit.still.engine.LocalAdjustments
@@ -673,24 +672,14 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         }
     }
 
-    /** Wrapped at 80% of the canvas, anchored at the tap, turned by the layer's angle. */
-    private fun drawText(c: Canvas, m: Mark, at: FloatArray, size: Geometry2D.Size, p: Paint) {
-        val tp = TextPaint(p).apply {
-            style = Paint.Style.FILL
-            textSize = max(8f, Geometry2D.px(m.width, size) * 3.2f)
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            setShadowLayer(textSize * 0.08f, 0f, textSize * 0.04f, Color.argb((90 * m.opacity).roundToInt(), 0, 0, 0))
-        }
-        val maxWidth = max(16, (size.width * 0.8f).roundToInt())
-        val layout = StaticLayout.Builder.obtain(m.text.ifBlank { " " }, 0, m.text.ifBlank { " " }.length, tp, maxWidth)
-            .setAlignment(Layout.Alignment.ALIGN_NORMAL).setIncludePad(false).build()
-        val width = (0 until layout.lineCount).maxOf { layout.getLineWidth(it) }
-        c.save()
-        c.translate(at[0], at[1])
-        c.rotate(m.angle)
-        c.translate(-width / 2f, -layout.height / 2f)
-        layout.draw(c)
-        c.restore()
+    /**
+     * Wrapped at 80% of the canvas, centred on the tap, turned by the layer's angle, in the
+     * layer's style. Sizes are fractions of the short edge and the layout is decided in ems by
+     * [com.layerbit.still.engine.TextLayout], so the preview predicts the export.
+     */
+    private fun drawText(c: Canvas, m: Mark, at: FloatArray, size: Geometry2D.Size, @Suppress("UNUSED_PARAMETER") p: Paint) {
+        val px = TextLayout.textSizePx(m.width, size)
+        TextPainter.draw(c, m.text.ifBlank { " " }, m.color, m.opacity, m.style, px, TextLayout.WRAP * size.width, at[0], at[1], m.angle)
     }
 
     /**

@@ -382,7 +382,7 @@ fun DetailPanel(s: PanelScope) {
 // ------------------------------------------------------------------ markup and retouch
 
 /** The tool a stroke makes, with its colour, size and text. Kept by the screen across panels. */
-data class Brush(val kind: MarkKind = MarkKind.DRAW, val color: Int = Mark.DEFAULT_COLOR, val width: Float = 0.02f, val text: String = "", val cloneSource: Pt? = null, val pickingSource: Boolean = false)
+data class Brush(val kind: MarkKind = MarkKind.DRAW, val color: Int = Mark.DEFAULT_COLOR, val width: Float = 0.02f, val text: String = "", val cloneSource: Pt? = null, val pickingSource: Boolean = false, val style: com.layerbit.still.engine.TextStyle = com.layerbit.still.engine.TextStyle.DEFAULT)
 
 val InkColours = listOf(0xFFE62E80.toInt(), 0xFFF2A531.toInt(), 0xFF4CCB8F.toInt(), 0xFF5BA9E8.toInt(), 0xFFFFFFFF.toInt(), 0xFF111111.toInt())
 
@@ -390,7 +390,8 @@ val InkColours = listOf(0xFFE62E80.toInt(), 0xFFF2A531.toInt(), 0xFF4CCB8F.toInt
 fun MarkupPanel(
     brush: Brush, onBrush: (Brush) -> Unit, onPlaceCentre: () -> Unit, haptics: Boolean,
     moving: Boolean = false, onMoving: (Boolean) -> Unit = {}, selected: Mark? = null,
-    onSelectedWidth: (Float, Boolean) -> Unit = { _, _ -> }, onSelectedColour: (Int) -> Unit = {}, onDeleteSelected: () -> Unit = {}
+    onSelectedWidth: (Float, Boolean) -> Unit = { _, _ -> }, onSelectedColour: (Int) -> Unit = {}, onDeleteSelected: () -> Unit = {},
+    onSelectedStyle: (Int, com.layerbit.still.engine.TextStyle, Boolean) -> Unit = { _, _, _ -> }, onSelectedStyleDone: () -> Unit = {}
 ) {
     ToggleRow(stringResource(R.string.mark_move), moving, onMoving, detail = stringResource(R.string.mark_move_detail))
     if (moving) {
@@ -401,6 +402,11 @@ fun MarkupPanel(
             ColourRow(InkColours, selected?.color ?: 0, { if (held) onSelectedColour(it) }, Modifier.padding(top = 8.dp))
             Knob(stringResource(if (selected?.kind == MarkKind.TEXT) R.string.mark_text_size else R.string.mark_size), selected?.width ?: 0.02f, 0.004f..0.12f, onChange = { if (held) onSelectedWidth(it, false) }, onDone = { if (held) onSelectedWidth(selected!!.width, true) }, onReset = { if (held) onSelectedWidth(0.02f, true) }, haptics = haptics, format = { "${(it * 1000).roundToInt()}" })
             SecondaryButton(stringResource(R.string.mark_delete), onClick = onDeleteSelected, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), tall = false, enabled = held)
+            // Held text restyles in place: the same strip and controls as new text.
+            if (selected?.kind == MarkKind.TEXT) TextStyleEditor(
+                selected.text, selected.color, selected.style, haptics,
+                onSet = { c, st -> onSelectedStyle(c, st, true) }, onDraft = { c, st -> onSelectedStyle(c, st, false) }, onDone = onSelectedStyleDone
+            )
         }
         Hint(stringResource(R.string.mark_move_hint))
         return
@@ -415,6 +421,7 @@ fun MarkupPanel(
             SecondaryButton(stringResource(R.string.mark_place_centre), onClick = onPlaceCentre, tall = false, enabled = brush.text.isNotBlank())
         }
         Hint(stringResource(R.string.mark_text_hint))
+        TextStyleEditor(brush.text, brush.color, brush.style, haptics, onSet = { c, st -> onBrush(brush.copy(color = c, style = st)) })
     } else Hint(stringResource(R.string.mark_hint))
 }
 

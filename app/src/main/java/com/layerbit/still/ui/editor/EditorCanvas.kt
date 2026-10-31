@@ -83,7 +83,7 @@ sealed interface Overlay {
 
 /**
  * Where a mark sits on screen, padded by its stroke, for hit testing and the selection outline.
- * Text has no measured box here, so it is estimated from its size and length: generous, never tight.
+ * Text is measured with the layout the renderer uses.
  */
 fun markBounds(m: Mark, t: CanvasTransform): Rect {
     val r = t.rect
@@ -94,9 +94,16 @@ fun markBounds(m: Mark, t: CanvasTransform): Rect {
     var top = pts.minOf { it.y }; var bottom = pts.maxOf { it.y }
     val pad = m.width * short
     if (m.kind == MarkKind.TEXT) {
-        val w = m.text.lines().maxOfOrNull { it.length }.let { (it ?: 1) * pad * 0.62f }
-        val h = m.text.lines().size * pad * 1.25f
-        left -= w / 2; right += w / 2; top -= h / 2; bottom += h / 2
+        // The same layout the renderer draws, turned by the layer's angle: box, outline and all.
+        val canvas = com.layerbit.still.engine.Geometry2D.Size(r.width.toInt().coerceAtLeast(1), r.height.toInt().coerceAtLeast(1))
+        val px = com.layerbit.still.engine.TextLayout.textSizePx(m.width, canvas)
+        val b = com.layerbit.still.image.TextPainter.layout(m.text.ifBlank { " " }, m.style, com.layerbit.still.engine.TextLayout.wrapEms(canvas, px)).bounds
+        val a = Math.toRadians(m.angle.toDouble()); val c = kotlin.math.cos(a).toFloat(); val s = kotlin.math.sin(a).toFloat()
+        val xs = listOf(b.left, b.right, b.left, b.right).zip(listOf(b.top, b.top, b.bottom, b.bottom)).map { (x, y) -> (x * c - y * s) * px to (x * s + y * c) * px }
+        val at = pts.first()
+        left = at.x + xs.minOf { it.first }; right = at.x + xs.maxOf { it.first }
+        top = at.y + xs.minOf { it.second }; bottom = at.y + xs.maxOf { it.second }
+        return Rect(left - pad, top - pad, right + pad, bottom + pad)
     }
     return Rect(left - pad, top - pad, right + pad, bottom + pad)
 }

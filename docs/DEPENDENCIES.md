@@ -14,7 +14,9 @@ Runtime dependencies are deliberately few:
 | AndroidX DocumentFile | Display names; folder writes through a granted tree | Apache-2.0 |
 | AndroidX ProfileInstaller | Installs the baseline profile below API 31 | Apache-2.0 |
 | Space Grotesk (four weights) | The family typeface | SIL Open Font Licence 1.1 |
-| Fira Code (variable weight) | Measured numbers: slider values, sizes | SIL Open Font Licence 1.1 (docs/licences/FIRA-CODE-OFL.txt) |
+| Fira Code (variable weight) | Measured numbers: slider values, sizes; the Typewriter face for text layers | SIL Open Font Licence 1.1 (docs/licences/FIRA-CODE-OFL.txt) |
+| DM Serif Display (regular, 77 KB) | The Serif face for text layers | SIL Open Font Licence 1.1 (docs/licences/DM-SERIF-DISPLAY-OFL.txt), from github.com/google/fonts ofl/dmserifdisplay |
+| Dancing Script (variable weight, 134 KB) | The Script face for text layers | SIL Open Font Licence 1.1 (docs/licences/DANCING-SCRIPT-OFL.txt), from github.com/google/fonts ofl/dancingscript |
 
 Build and test only: Gradle and AGP (Apache-2.0), JUnit 4 (EPL-1.0), Hamcrest (BSD-3), Robolectric (MIT), AndroidX Test, UI Automator and Macrobenchmark (Apache-2.0). `tools/jvm-check.sh` fetches the Kotlin compiler and JUnit from Maven Central for the engine check; none of that reaches the APK.
 

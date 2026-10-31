@@ -224,12 +224,14 @@ data class Mark(
     /** Degrees, for text and watermarks. */
     val angle: Float = 0f,
     /** Where a watermark goes; other kinds ignore it. */
-    val place: WatermarkPlace = WatermarkPlace.TILED
+    val place: WatermarkPlace = WatermarkPlace.TILED,
+    /** How a text layer looks; other kinds ignore it. The default is the look text always had. */
+    val style: TextStyle = TextStyle.DEFAULT
 ) {
     val valid: Boolean
         get() = points.isNotEmpty() && points.size <= MAX_POINTS && points.all { it.finite && it.x in 0f..1f && it.y in 0f..1f } &&
             width in 0.002f..0.3f && opacity in 0f..1f && text.length <= MAX_TEXT && angle.isFinite() &&
-            (source?.finite ?: true) && (kind !in SOURCED || source != null)
+            (source?.finite ?: true) && (kind !in SOURCED || source != null) && style.valid
 
     companion object {
         const val DEFAULT_COLOR = 0xFFE62E80.toInt()

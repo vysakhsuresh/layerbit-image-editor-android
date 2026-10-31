@@ -8,6 +8,7 @@ import com.layerbit.still.files.ImageStore
 import com.layerbit.still.files.Workspace
 import com.layerbit.still.image.Codecs
 import com.layerbit.still.image.Renderer
+import com.layerbit.still.image.TextFonts
 import com.layerbit.still.jobs.JobRunner
 import com.layerbit.still.prefs.Prompts
 import com.layerbit.still.prefs.StillSettings
@@ -42,6 +43,7 @@ class StillApplication : Application() {
         // First, so a crash anywhere after this is written down where Settings can offer it.
         CrashLog.install(this)
         Strings.install(this)
+        TextFonts.install(this)
         // Bounded scratch, at startup rather than on a timer, so there is no background job.
         applicationScope.launch { workspace.trimTo(Workspace.DEFAULT_LIMIT_BYTES) }
     }
