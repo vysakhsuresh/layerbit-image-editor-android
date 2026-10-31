@@ -209,7 +209,7 @@ fun HistogramView(h: Histogram?, modifier: Modifier = Modifier) {
  * edge removes it. The curve is the same monotone spline the engine tabulates.
  */
 @Composable
-fun CurveEditor(points: List<Pt>, onChange: (List<Pt>) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier, accent: Color = StillColors.Band) {
+fun CurveEditor(points: List<Pt>, onChange: (List<Pt>) -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier, accent: Color = StillColors.Band, histogram: FloatArray? = null) {
     var dragging by remember { mutableIntStateOf(-1) }
     var local by remember(points) { mutableStateOf(points) }
     val description = stringResource(R.string.editor_curve_description)
@@ -250,6 +250,15 @@ fun CurveEditor(points: List<Pt>, onChange: (List<Pt>) -> Unit, onDone: () -> Un
                 )
             }
     ) {
+        // The picture's tones behind the curve, so a point is placed where the picture has something.
+        if (histogram != null) {
+            val shape = Path().apply {
+                moveTo(0f, size.height)
+                for (i in 0..255) lineTo(size.width * i / 255f, size.height * (1f - histogram[i] * 0.9f))
+                lineTo(size.width, size.height); close()
+            }
+            drawPath(shape, accent.copy(alpha = 0.16f))
+        }
         for (i in 1..3) {
             drawLine(StillColors.Border, Offset(size.width * i / 4, 0f), Offset(size.width * i / 4, size.height), 1f)
             drawLine(StillColors.Border, Offset(0f, size.height * i / 4), Offset(size.width, size.height * i / 4), 1f)

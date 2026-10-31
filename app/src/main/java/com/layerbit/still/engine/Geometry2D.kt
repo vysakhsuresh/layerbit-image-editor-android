@@ -46,6 +46,22 @@ object Geometry2D {
         return Size(max(1, ceil(w * c + h * s - 1e-6).toInt()), max(1, ceil(w * s + h * c - 1e-6).toInt()))
     }
 
+    /**
+     * The largest crop of a [w]×[h] picture turned by [degrees] that has the picture's own shape
+     * and no empty corners, centred, as fractions of the turned bounding box. Straightening with
+     * this crop is what a photographer expects: level, and nothing transparent at the edges.
+     */
+    fun innerCrop(w: Int, h: Int, degrees: Float): Crop {
+        if (abs(degrees) < 0.01f) return Crop.FULL
+        val r = Math.toRadians(degrees.toDouble())
+        val c = abs(cos(r)); val s = abs(sin(r))
+        val bw = w * c + h * s; val bh = w * s + h * c
+        // A W×H box fits inside the turned picture when W·c + H·s ≤ w and W·s + H·c ≤ h.
+        val k = min(w / (w * c + h * s), h / (w * s + h * c))
+        val fw = (k * w / bw).toFloat().coerceIn(0.05f, 1f); val fh = (k * h / bh).toFloat().coerceIn(0.05f, 1f)
+        return Crop((1f - fw) / 2f, (1f - fh) / 2f, (1f + fw) / 2f, (1f + fh) / 2f)
+    }
+
     /** The size after quarter turns: odd turns swap the edges. */
     fun turned(size: Size, quarterTurns: Int): Size = if (quarterTurns % 2 == 1) Size(size.height, size.width) else size
 

@@ -60,4 +60,17 @@ class HistogramTest {
         val h = Histogram.of(intArrayOf(0, Argb.pack(255, 10, 10, 10)), 1)
         assertEquals(1L, h.total)
     }
+
+    @Test
+    fun clippingMarksOnlyWhatIsLostInEveryChannel() {
+        val px = intArrayOf(
+            Argb.pack(255, 255, 255, 255), Argb.pack(255, 0, 0, 0), Argb.pack(255, 255, 0, 0),
+            Argb.pack(255, 128, 128, 128), Argb.pack(0, 255, 255, 255)
+        )
+        val (blown, crushed) = Clipping.paint(px)
+        assertEquals(1, blown); assertEquals(1, crushed)
+        assertEquals(Clipping.BLOWN, px[0]); assertEquals(Clipping.CRUSHED, px[1])
+        assertEquals(Argb.pack(255, 255, 0, 0), px[2])
+        assertEquals(Argb.pack(255, 128, 128, 128), px[3])
+    }
 }

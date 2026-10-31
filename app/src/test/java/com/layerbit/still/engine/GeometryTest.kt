@@ -96,4 +96,23 @@ class GeometryTest {
         assertEquals(1f, Geometry2D.resolutionScale(Geometry2D.Size(1000, 2000)), 1e-6f)
         assertEquals(0.5f, Geometry2D.resolutionScale(Geometry2D.Size(500, 2000)), 1e-6f)
     }
+
+    @Test
+    fun innerCropHasNoEmptyCornersAndKeepsTheShape() {
+        assertEquals(Crop.FULL, Geometry2D.innerCrop(1600, 1000, 0f))
+        for (deg in listOf(-12f, -6f, 3f, 6f, 20f)) {
+            val c = Geometry2D.innerCrop(1600, 1000, deg)
+            assertTrue(c.valid)
+            val b = Geometry2D.rotatedBounds(1600, 1000, deg)
+            // Same shape as the picture.
+            assertEquals(1.6f, c.width * b.width / (c.height * b.height), 0.02f)
+            // Every corner of the crop lies inside the turned picture: rotate it back and check.
+            val r = Math.toRadians(deg.toDouble())
+            for ((fx, fy) in listOf(c.left to c.top, c.right to c.top, c.right to c.bottom, c.left to c.bottom)) {
+                val x = (fx - 0.5f) * b.width; val y = (fy - 0.5f) * b.height
+                val ux = x * kotlin.math.cos(-r) - y * kotlin.math.sin(-r); val uy = x * kotlin.math.sin(-r) + y * kotlin.math.cos(-r)
+                assertTrue("deg $deg corner $ux,$uy", kotlin.math.abs(ux) <= 800.5 && kotlin.math.abs(uy) <= 500.5)
+            }
+        }
+    }
 }

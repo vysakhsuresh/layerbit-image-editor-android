@@ -129,3 +129,28 @@ object AutoEnhance {
         return min(255, best + 1)
     }
 }
+
+/**
+ * The clipping warning painted on the picture itself, as editors do while you pull a slider:
+ * where every channel is blown the pixel turns red, where every channel is crushed it turns blue.
+ * A single channel at its end is colour, not lost detail, and is left alone.
+ */
+object Clipping {
+    const val HIGH = 254
+    const val LOW = 1
+    val BLOWN: Int = Argb.pack(255, 255, 40, 70)
+    val CRUSHED: Int = Argb.pack(255, 40, 110, 255)
+
+    /** Paints [pixels] in place; returns how many were blown and how many crushed. */
+    fun paint(pixels: IntArray): Pair<Int, Int> {
+        var blown = 0; var crushed = 0
+        for (i in pixels.indices) {
+            val c = pixels[i]
+            if ((c ushr 24) == 0) continue
+            val r = (c shr 16) and 0xFF; val g = (c shr 8) and 0xFF; val b = c and 0xFF
+            if (r >= HIGH && g >= HIGH && b >= HIGH) { pixels[i] = BLOWN; blown++ }
+            else if (r <= LOW && g <= LOW && b <= LOW) { pixels[i] = CRUSHED; crushed++ }
+        }
+        return blown to crushed
+    }
+}

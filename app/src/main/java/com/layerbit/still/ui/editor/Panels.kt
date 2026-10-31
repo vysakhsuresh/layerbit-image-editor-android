@@ -108,7 +108,7 @@ fun Hint(text: String) = Text(text, style = MaterialTheme.typography.bodySmall, 
 // ------------------------------------------------------------------ crop
 
 @Composable
-fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit) {
+fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit, onAutoStraighten: () -> Unit = {}) {
     val g = s.recipe.geometry
     val turned = Geometry2D.turned(s.source, g.quarterTurns)
     val canvas = if (kotlin.math.abs(g.straighten) < 0.01f) turned else Geometry2D.rotatedBounds(turned.width, turned.height, g.straighten)
@@ -121,6 +121,7 @@ fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit) {
     Hint(stringResource(R.string.crop_hint))
     Knob(stringResource(R.string.crop_straighten), g.straighten, -45f..45f, onChange = { v -> s.draft(s.recipe.copy(geometry = g.copy(straighten = v))) }, onDone = s.commit,
         onReset = { s.change { it.copy(geometry = it.geometry.copy(straighten = 0f)) } }, haptics = s.haptics, format = { "${(it * 10).roundToInt() / 10f}°" })
+    PrimaryButton(stringResource(R.string.level_auto), onClick = onAutoStraighten, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), tall = false)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         SecondaryButton(stringResource(R.string.crop_turn_left), onClick = { s.change { it.copy(geometry = it.geometry.copy(rotation = (it.geometry.rotation + 270) % 360, crop = Geometry2D.rotateCrop(it.geometry.crop, 270, false, false))) } }, modifier = Modifier.weight(1f), tall = false)
         SecondaryButton(stringResource(R.string.crop_turn_right), onClick = { s.change { it.copy(geometry = it.geometry.copy(rotation = (it.geometry.rotation + 90) % 360, crop = Geometry2D.rotateCrop(it.geometry.crop, 90, false, false))) } }, modifier = Modifier.weight(1f), tall = false)
@@ -168,8 +169,9 @@ fun fieldColours() = OutlinedTextFieldDefaults.colors(
 // ------------------------------------------------------------------ perspective
 
 @Composable
-fun PerspectivePanel(s: PanelScope) {
+fun PerspectivePanel(s: PanelScope, onFindPage: () -> Unit = {}) {
     Text(stringResource(R.string.perspective_hint), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted)
+    PrimaryButton(stringResource(R.string.page_find), onClick = onFindPage, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), tall = false, iconRes = R.drawable.ic_tool_scan)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
         SecondaryButton(stringResource(R.string.perspective_inset), onClick = { s.change { it.copy(geometry = it.geometry.copy(quad = Quad(Pt(0.08f, 0.08f), Pt(0.92f, 0.08f), Pt(0.92f, 0.92f), Pt(0.08f, 0.92f)))) } }, modifier = Modifier.weight(1f), tall = false)
         SecondaryButton(stringResource(R.string.perspective_reset), onClick = { s.change { it.copy(geometry = it.geometry.copy(quad = Quad.IDENTITY)) } }, modifier = Modifier.weight(1f), tall = false, enabled = !s.recipe.geometry.quad.isIdentity)
@@ -180,7 +182,7 @@ fun PerspectivePanel(s: PanelScope) {
 // ------------------------------------------------------------------ light and colour
 
 @Composable
-fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, showHistogram: Boolean, onAuto: () -> Unit, autoStep: ToneStep? = null, onAutoAmount: (Float, Boolean) -> Unit = { _, _ -> }) {
+fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, showHistogram: Boolean, onAuto: () -> Unit, autoStep: ToneStep? = null, onAutoAmount: (Float, Boolean) -> Unit = { _, _ -> }, showClipping: Boolean = false, onShowClipping: (Boolean) -> Unit = {}) {
     val t = s.recipe.tone
     if (showHistogram) HistogramView(histogram, Modifier.padding(bottom = 8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -195,6 +197,7 @@ fun LightPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram?, s
     s.ToneKnob(stringResource(R.string.light_shadows), t.shadows) { a, v -> a.copy(shadows = v) }
     s.ToneKnob(stringResource(R.string.light_whites), t.whites) { a, v -> a.copy(whites = v) }
     s.ToneKnob(stringResource(R.string.light_blacks), t.blacks) { a, v -> a.copy(blacks = v) }
+    ToggleRow(stringResource(R.string.light_show_clipping), showClipping, onShowClipping, detail = stringResource(R.string.light_show_clipping_detail))
     Hint(stringResource(R.string.light_hint))
 }
 
@@ -242,14 +245,15 @@ fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) ->
 }
 
 @Composable
-fun CurvesPanel(s: PanelScope) {
+fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? = null) {
     var channel by rememberSaveable { mutableStateOf("master") }
     val c = s.recipe.curves
     ChipRow(listOf("master" to stringResource(R.string.curves_master), "red" to stringResource(R.string.curves_red), "green" to stringResource(R.string.curves_green), "blue" to stringResource(R.string.curves_blue)), channel, { channel = it })
     val points = when (channel) { "red" -> c.red; "green" -> c.green; "blue" -> c.blue; else -> c.master }
     val accent = when (channel) { "red" -> androidx.compose.ui.graphics.Color(0xFFE8705F); "green" -> androidx.compose.ui.graphics.Color(0xFF4CCB8F); "blue" -> androidx.compose.ui.graphics.Color(0xFF5BA9E8); else -> StillColors.Band }
     fun with(p: List<Pt>): Curves = when (channel) { "red" -> c.copy(red = p); "green" -> c.copy(green = p); "blue" -> c.copy(blue = p); else -> c.copy(master = p) }
-    CurveEditor(points, onChange = { p -> s.draft(s.recipe.copy(curves = with(p))) }, onDone = s.commit, modifier = Modifier.padding(top = 8.dp), accent = accent)
+    val shape = histogram?.let { h -> h.normalised(when (channel) { "red" -> h.red; "green" -> h.green; "blue" -> h.blue; else -> h.luma }) }
+    CurveEditor(points, onChange = { p -> s.draft(s.recipe.copy(curves = with(p))) }, onDone = s.commit, modifier = Modifier.padding(top = 8.dp), accent = accent, histogram = shape)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
         SecondaryButton(stringResource(R.string.curves_reset_channel), onClick = { s.change { it.copy(curves = with(Curves.IDENTITY_POINTS)) } }, modifier = Modifier.weight(1f), tall = false)
         SecondaryButton(stringResource(R.string.curves_reset_all), onClick = { s.change { it.copy(curves = Curves()) } }, modifier = Modifier.weight(1f), tall = false, enabled = !c.isIdentity)
@@ -364,7 +368,7 @@ fun MarkupPanel(brush: Brush, onBrush: (Brush) -> Unit, onPlaceCentre: () -> Uni
 }
 
 @Composable
-fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean) {
+fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean, onFindRedEyes: () -> Unit = {}) {
     val kinds = listOf(MarkKind.BLUR to stringResource(R.string.retouch_blur), MarkKind.PIXELATE to stringResource(R.string.retouch_pixelate), MarkKind.COVER to stringResource(R.string.retouch_cover), MarkKind.ERASE to stringResource(R.string.retouch_erase), MarkKind.CLONE to stringResource(R.string.retouch_clone), MarkKind.REDEYE to stringResource(R.string.retouch_redeye))
     val kind = if (brush.kind in kinds.map { it.first }) brush.kind else MarkKind.BLUR
     ChipRow(kinds, kind, { onBrush(brush.copy(kind = it, pickingSource = it == MarkKind.CLONE && brush.cloneSource == null)) })
@@ -377,7 +381,10 @@ fun RetouchPanel(brush: Brush, onBrush: (Brush) -> Unit, haptics: Boolean) {
         }
         MarkKind.ERASE -> Hint(stringResource(R.string.retouch_erase_hint))
         MarkKind.COVER -> Hint(stringResource(R.string.retouch_cover_hint))
-        MarkKind.REDEYE -> Hint(stringResource(R.string.retouch_redeye_hint))
+        MarkKind.REDEYE -> {
+            PrimaryButton(stringResource(R.string.redeye_find), onClick = onFindRedEyes, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), tall = false, iconRes = R.drawable.ic_tool_redeye)
+            Hint(stringResource(R.string.redeye_steer_hint))
+        }
         else -> Hint(stringResource(R.string.retouch_blur_hint))
     }
 }
@@ -569,8 +576,13 @@ fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: 
 // ------------------------------------------------------------------ scan
 
 @Composable
-fun ScanPanel(s: PanelScope) {
+fun ScanPanel(s: PanelScope, onFindPage: () -> Unit = {}, onAdjustCorners: () -> Unit = {}) {
     val sc = s.recipe.scan
+    // The page first: found and flattened, with its corners one tap away.
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        PrimaryButton(stringResource(R.string.page_find), onClick = onFindPage, modifier = Modifier.weight(1f), tall = false)
+        SecondaryButton(stringResource(R.string.page_adjust), onClick = onAdjustCorners, modifier = Modifier.weight(1f), tall = false)
+    }
     ChipRow(listOf(ScanMode.OFF to stringResource(R.string.scan_off), ScanMode.COLOUR to stringResource(R.string.scan_colour), ScanMode.GREY to stringResource(R.string.scan_grey), ScanMode.INK to stringResource(R.string.scan_ink)), sc.mode, { m -> s.change { it.copy(scan = it.scan.copy(mode = m)) } })
     if (sc.mode != ScanMode.OFF) {
         Knob(stringResource(R.string.scan_strength), sc.strength, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(scan = sc.copy(strength = v))) }, onDone = s.commit, onReset = { s.change { it.copy(scan = it.scan.copy(strength = 1f)) } }, haptics = s.haptics, format = { "${(it * 100).roundToInt()}" })

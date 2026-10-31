@@ -12,6 +12,13 @@ import com.layerbit.still.R
 import com.layerbit.still.StillApplication
 import com.layerbit.still.engine.AutoEnhance
 import com.layerbit.still.engine.AutoWhite
+import com.layerbit.still.engine.Clipping
+import com.layerbit.still.engine.RedEyes
+import com.layerbit.still.engine.PageQuad
+import com.layerbit.still.engine.Level
+import kotlin.math.min
+import kotlin.math.max
+import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.ToneStep
 import com.layerbit.still.engine.Crop
 import com.layerbit.still.engine.Frame
@@ -102,6 +109,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val autoPanel: ToolId.Panel? = null,
         /** Backgrounds in the picture's own colours, a pale and a deep one per colour, for Frame and Cut out. */
         val swatches: List<Int> = emptyList(),
+        /** On the Light panel: blown pixels painted red and crushed ones blue on the preview. */
+        val showClipping: Boolean = false,
         val loading: Boolean = true
     )
 
@@ -169,7 +178,13 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             // The remover opens on the wash and the question; nothing is removed until the user says so.
             ToolId.CUTOUT -> if (p.recipe.cutout.isIdentity) change { it.copy(cutout = it.cutout.copy(enabled = false, mode = CutoutMode.SUBJECT)) }
             ToolId.STICKER -> { if (!p.recipe.cutout.enabled) change { it.copy(cutout = it.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT)) }; options = options.copy(sticker = true) }
-            ToolId.SCAN -> if (p.recipe.scan.isIdentity) change { it.copy(scan = Scan(ScanMode.COLOUR)) }
+            ToolId.SCAN -> if (p.recipe.scan.isIdentity) {
+                change { it.copy(scan = Scan(ScanMode.COLOUR)) }
+                // A scanner finds the page first; the corners stay adjustable on the Perspective panel.
+                if (p.recipe.geometry.quad.isIdentity) pagePending = true
+            }
+            // Red-eye opens already looking: the eyes it finds are corrected, and a tap undoes any it got wrong.
+            ToolId.RED_EYE -> redEyesPending = true
             else -> Unit
         }
         requestRender()
@@ -284,6 +299,97 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Reads the strongest horizon or upright in the picture as the Crop panel shows it, before
+     * any straightening, and sets Straighten to level it. The slider stays the user's to nudge.
+     */
+    fun autoStraighten() {
+        val project = _ui.value.project ?: return
+        val g = _ui.value.recipe.geometry.copy(straighten = 0f, crop = Crop.FULL, width = 0, height = 0)
+        viewModelScope.launch {
+            val suggestion = try {
+                withContext(Dispatchers.Default) {
+                    val upright = renderer.geometry(project.file.file, g, 600_000L).bitmap
+                    try {
+                        val px = IntArray(upright.width * upright.height)
+                        upright.getPixels(px, 0, upright.width, 0, 0, upright.width, upright.height)
+                        Level.suggest(px, upright.width, upright.height)
+                    } finally { upright.recycle() }
+                }
+            } catch (c: CancellationException) { throw c } catch (e: Exception) { null }
+            if (suggestion == null) { message(Strings.get(R.string.level_none)); return@launch }
+            // Level, and cropped in so no empty corner shows; the crop stays draggable.
+            val degrees = suggestion.degrees.coerceIn(-45f, 45f)
+            change {
+                val turned = Geometry2D.turned(Geometry2D.Size(project.file.width, project.file.height), it.geometry.quarterTurns)
+                it.copy(geometry = it.geometry.copy(straighten = degrees, crop = Geometry2D.innerCrop(turned.width, turned.height, degrees)))
+            }
+            message(Strings.get(R.string.level_done, String.format(java.util.Locale.getDefault(), "%+.1f°", suggestion.degrees)))
+        }
+    }
+
+    /** Set when Scan opens before the picture is ready; the first render looks for the page. */
+    private var pagePending = false
+
+    /**
+     * Finds the page's four corners on the upright picture and flattens it. The corners are the
+     * Perspective handles, so a wrong guess is a drag away from right.
+     */
+    fun findPage(quiet: Boolean = false) {
+        val o = _ui.value.original?.takeIf { !it.isRecycled }
+        if (o == null) { pagePending = true; return }
+        pagePending = false
+        val w = o.width; val h = o.height
+        val px = IntArray(w * h)
+        o.getPixels(px, 0, w, 0, 0, w, h)
+        viewModelScope.launch {
+            val found = withContext(Dispatchers.Default) { PageQuad.find(px, w, h) }
+            if (found == null) { if (!quiet) message(Strings.get(R.string.page_not_found)); return@launch }
+            change { it.copy(geometry = it.geometry.copy(quad = found.quad)) }
+            message(Strings.get(R.string.page_found))
+        }
+    }
+
+    /** Set when the red-eye tool opens before the picture is ready; the first render runs the search. */
+    private var redEyesPending = false
+
+    /**
+     * Finds flash red-eye and adds a correction on each, skipping eyes already corrected. The
+     * user then taps a wrong one away or taps a missed eye; nothing here is final.
+     */
+    fun findRedEyes() {
+        val b = base?.takeIf { !it.isRecycled }
+        if (b == null) { redEyesPending = true; return }
+        redEyesPending = false
+        val w = b.width; val h = b.height
+        val px = IntArray(w * h)
+        b.getPixels(px, 0, w, 0, 0, w, h)
+        viewModelScope.launch {
+            val eyes = withContext(Dispatchers.Default) { RedEyes.find(px, w, h) }
+            val existing = _ui.value.recipe.marks.filter { it.kind == MarkKind.REDEYE }
+            val fresh = eyes.map { it.mark() }.filter { m -> existing.none { e -> near(e.points.first(), m.points.first(), w, h, max(e.width, m.width)) } }
+            val room = (Recipe.MAX_MARKS - _ui.value.recipe.marks.size).coerceAtLeast(0)
+            val adding = fresh.take(room)
+            if (adding.isNotEmpty()) change { it.copy(marks = it.marks + adding) }
+            message(
+                if (eyes.isEmpty()) Strings.get(R.string.redeye_none_found)
+                else Strings.plural(R.plurals.redeye_found, adding.size, adding.size)
+            )
+        }
+    }
+
+    /** Whether two normalised points are within [radius] (a fraction of the short edge) of each other. */
+    private fun near(a: Pt, b: Pt, w: Int, h: Int, radius: Float): Boolean {
+        val short = min(w, h).toFloat()
+        val dx = (a.x - b.x) * w; val dy = (a.y - b.y) * h
+        return dx * dx + dy * dy <= (radius * short) * (radius * short)
+    }
+
+    fun setShowClipping(on: Boolean) {
+        _ui.update { it.copy(showClipping = on) }
+        requestRender()
+    }
+
     /** Turns the last Auto up or down; slider moves made since are kept. */
     fun setAutoAmount(amount: Float, done: Boolean) {
         val step = _ui.value.autoStep ?: return
@@ -386,6 +492,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     val fresh = withContext(Dispatchers.Default) { renderer.geometry(project.file.file, geometry, Budget.PREVIEW_PIXELS, check) }
                     dropBase()
                     base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
+                    if (redEyesPending) findRedEyes()
                     val swatches = withContext(Dispatchers.Default) {
                         val bmp = fresh.bitmap
                         val px = IntArray(bmp.width * bmp.height)
@@ -410,15 +517,23 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
                 val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
-                val (histogram, palette) = withContext(Dispatchers.Default) {
+                val (histogram, palette, shown2) = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)
                     finished.getPixels(px, 0, finished.width, 0, 0, finished.width, finished.height)
-                    Histogram.of(px) to (if (fast) state.palette else Palette.of(px))
+                    val h = Histogram.of(px)
+                    val pal = if (fast) state.palette else Palette.of(px)
+                    // The clipping warning is drawn on a copy, after the histogram has been read from the real pixels.
+                    val display = if (state.showClipping && state.panel == ToolId.Panel.LIGHT) {
+                        Clipping.paint(px)
+                        finished.copy(finished.config ?: android.graphics.Bitmap.Config.ARGB_8888, true).also { it.setPixels(px, 0, it.width, 0, 0, it.width, it.height) }
+                    } else finished
+                    Triple(h, pal, display)
                 }
                 val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
-                _ui.update { it.copy(preview = finished, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, previewFast = fast, palette = palette) }
+                _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, previewFast = fast, palette = palette) }
+                if (pagePending) findPage(quiet = true)
             } catch (c: CancellationException) {
                 throw c
             } catch (e: OutOfMemoryError) {

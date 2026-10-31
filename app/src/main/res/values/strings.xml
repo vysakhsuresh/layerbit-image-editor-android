@@ -224,6 +224,9 @@
     <string name="crop_original">Original</string>
     <string name="crop_hint">Drag a corner or an edge of the frame; drag inside it to move it. Two fingers zoom.</string>
     <string name="crop_straighten">Straighten</string>
+    <string name="level_auto">Auto-straighten</string>
+    <string name="level_done">Straightened by %1$s from the strongest line. Nudge the slider if it is off.</string>
+    <string name="level_none">No clear horizon or upright to level by. Use the slider.</string>
     <string name="crop_turn_left">Turn left</string>
     <string name="crop_turn_right">Turn right</string>
     <string name="crop_flip_h">Flip across</string>
@@ -239,7 +242,11 @@
 
     <!-- Perspective -->
     <string name="perspective_hint">Drag the four corners onto the corners of the page, screen or sign. The picture is pulled square between them.</string>
-    <string name="perspective_inset">Start from the corners</string>
+    <string name="page_find">Find the page</string>
+    <string name="page_adjust">Adjust corners</string>
+    <string name="page_found">Page found and flattened. Drag a corner on Perspective if it is off.</string>
+    <string name="page_not_found">No clear page edges here. Drag the four corners to the page.</string>
+    <string name="perspective_inset">Inset corners</string>
     <string name="perspective_reset">Reset</string>
     <string name="perspective_note">Works on the picture as the camera saw it, before any crop or turn. Strong corrections stretch the far edge; crop after.</string>
 
@@ -253,6 +260,8 @@
     <string name="light_whites">Whites</string>
     <string name="light_blacks">Blacks</string>
     <string name="light_hint">Auto sets whites, blacks and exposure from the histogram and leaves them as sliders you can see and undo. Red marks at the histogram\'s ends mean clipping.</string>
+    <string name="light_show_clipping">Show clipping</string>
+    <string name="light_show_clipping_detail">Pure white turns red and pure black blue on the picture, so you see what a slider is losing.</string>
 
     <!-- Colour -->
     <string name="colour_temperature">Temperature</string>
@@ -686,7 +695,13 @@
     <string name="colour_auto_nothing">No colour cast to take away.</string>
     <string name="auto_strength">Auto strength</string>
     <string name="retouch_redeye">Red eye</string>
-    <string name="retouch_redeye_hint">Tap each flash-red pupil. Only red far beyond the green and blue is darkened, so skin and lips are left alone.</string>
+    <string name="redeye_find">Find red eyes</string>
+    <string name="redeye_steer_hint">Still looks for red eyes and fixes each one it finds. Tap a fix to take it away, or tap an eye it missed.</string>
+    <string name="redeye_none_found">No red eyes found. Tap each eye to fix it by hand.</string>
+    <plurals name="redeye_found">
+        <item quantity="one">Fixed %d red eye. Tap it to undo, or tap one it missed.</item>
+        <item quantity="other">Fixed %d red eyes. Tap one to undo, or tap one it missed.</item>
+    </plurals>
     <string name="export_sticker">Sticker</string>
     <string name="export_sticker_detail">512 × 512 WebP with transparency under 100 KB, the way WhatsApp and Telegram take one.</string>
     <string name="engine_note_sticker">Sticker: 512 × 512 WebP with transparency, under 100 KB.</string>

@@ -205,7 +205,12 @@ fun EditorScreen(
         ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else viewOrScrub
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
             brush.pickingSource -> TouchMode.Tap { p -> brush = brush.copy(cloneSource = p, pickingSource = false) }
-            brush.kind == MarkKind.REDEYE && panel == ToolId.Panel.RETOUCH -> TouchMode.Tap { p -> addMark(listOf(p), MarkKind.REDEYE) }
+            // A tap on a correction takes it away; anywhere else adds one. Found and hand-placed eyes behave the same.
+            brush.kind == MarkKind.REDEYE && panel == ToolId.Panel.RETOUCH -> TouchMode.Tap { p ->
+                val at = transform.toOffset(p)
+                val hit = recipe.marks.indexOfLast { m -> m.kind == MarkKind.REDEYE && m.visible && (transform.toOffset(m.points.first()) - at).getDistance() <= reach * 1.4f }
+                if (hit >= 0) vm.change { it.copy(marks = it.marks.filterIndexed { i, _ -> i != hit }) } else addMark(listOf(p), MarkKind.REDEYE)
+            }
             brush.kind == MarkKind.TEXT && panel == ToolId.Panel.MARKUP -> TouchMode.Handles(
                 hit = { at -> recipe.marks.indices.firstOrNull { i -> val m = recipe.marks[i]; m.kind == MarkKind.TEXT && m.visible && (transform.toOffset(m.points.first()) - at).getDistance() <= reach * 1.6f } },
                 onDrag = { i, pt, _ -> draggingText = i; vm.draft(recipe.copy(marks = recipe.marks.toMutableList().apply { set(i, get(i).copy(points = listOf(pt))) })) },
@@ -286,20 +291,20 @@ fun EditorScreen(
                     PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false; scrubHost.target = null })
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when (panel) {
-                            ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it })
-                            ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope)
-                            ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.LIGHT }, onAutoAmount = vm::setAutoAmount)
+                            ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it }, onAutoStraighten = vm::autoStraighten)
+                            ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope, onFindPage = { vm.findPage() })
+                            ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.LIGHT }, onAutoAmount = vm::setAutoAmount, showClipping = ui.showClipping, onShowClipping = vm::setShowClipping)
                             ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it }, onAuto = { pickingNeutral = false; vm.autoColour() }, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.COLOUR }, onAutoAmount = vm::setAutoAmount)
                             ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles, swatches = ui.swatches)
-                            ToolId.Panel.SCAN -> ScanPanel(scope)
-                            ToolId.Panel.CURVES -> CurvesPanel(scope)
+                            ToolId.Panel.SCAN -> ScanPanel(scope, onFindPage = { vm.findPage() }, onAdjustCorners = { vm.setPanel(ToolId.Panel.PERSPECTIVE) })
+                            ToolId.Panel.CURVES -> CurvesPanel(scope, ui.histogram)
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
-                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics)
+                            ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> FramePanel(scope, ui.swatches)
                             ToolId.Panel.DETAILS -> DetailsPanel(remember(project) { project?.let { still.store.details(it.file) } ?: emptyList() }, onStrip = { project?.let { onStripMetadata(it.file) } })

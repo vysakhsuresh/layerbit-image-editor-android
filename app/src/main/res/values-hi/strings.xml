@@ -224,6 +224,9 @@
     <string name="crop_original">मूल</string>
     <string name="crop_hint">फ़्रेम का कोना या किनारा खींचें; हिलाने के लिए उसके अंदर खींचें. दो उंगलियों से ज़ूम.</string>
     <string name="crop_straighten">सीधा करें</string>
+    <string name="level_auto">अपने-आप सीधा करें</string>
+    <string name="level_done">सबसे मज़बूत रेखा से %1$s सीधा किया. गलत लगे तो स्लाइडर खिसकाएँ.</string>
+    <string name="level_none">सीधा करने के लिए कोई साफ़ क्षितिज या खड़ी रेखा नहीं मिली. स्लाइडर इस्तेमाल करें.</string>
     <string name="crop_turn_left">बाएं घुमाएं</string>
     <string name="crop_turn_right">दाएं घुमाएं</string>
     <string name="crop_flip_h">आड़ा पलटें</string>
@@ -239,7 +242,11 @@
 
     <!-- Perspective -->
     <string name="perspective_hint">चारों कोनों को पन्ने, स्क्रीन या बोर्ड के कोनों पर खींचें. तस्वीर उनके बीच चौकोर खिंच जाती है.</string>
-    <string name="perspective_inset">कोनों से शुरू करें</string>
+    <string name="page_find">पेज खोजें</string>
+    <string name="page_adjust">कोने ठीक करें</string>
+    <string name="page_found">पेज मिला और सीधा किया. कोई कोना गलत हो तो Perspective पर खींचें.</string>
+    <string name="page_not_found">यहाँ पेज के साफ़ किनारे नहीं मिले. चारों कोनों को पेज तक खींचें.</string>
+    <string name="perspective_inset">भीतरी कोने</string>
     <string name="perspective_reset">रीसेट</string>
     <string name="perspective_note">यह तस्वीर पर वैसे काम करता है जैसे कैमरे ने देखा, किसी क्रॉप या घुमाव से पहले. ज़्यादा सुधार दूर का किनारा खींचते हैं; बाद में क्रॉप करें.</string>
 
@@ -253,6 +260,8 @@
     <string name="light_whites">सफ़ेद</string>
     <string name="light_blacks">काला</string>
     <string name="light_hint">ऑटो हिस्टोग्राम से सफ़ेद, काला और एक्सपोज़र तय करता है और उन्हें स्लाइडर के रूप में छोड़ता है जिन्हें आप देख और पलट सकते हैं. हिस्टोग्राम के सिरों पर लाल निशान क्लिपिंग बताते हैं.</string>
+    <string name="light_show_clipping">क्लिपिंग दिखाएँ</string>
+    <string name="light_show_clipping_detail">पूरा सफ़ेद लाल और पूरा काला नीला दिखता है, ताकि पता चले स्लाइडर क्या खो रहा है.</string>
 
     <!-- Colour -->
     <string name="colour_temperature">तापमान</string>
@@ -686,7 +695,13 @@
     <string name="colour_auto_nothing">हटाने लायक कोई रंग की छाया नहीं.</string>
     <string name="auto_strength">ऑटो की मात्रा</string>
     <string name="retouch_redeye">लाल आंख</string>
-    <string name="retouch_redeye_hint">फ़्लैश से लाल हुई हर पुतली पर टैप करें. सिर्फ़ हरे और नीले से कहीं ज़्यादा लाल को गहरा किया जाता है, इसलिए त्वचा और होंठ अछूते रहते हैं.</string>
+    <string name="redeye_find">लाल आँखें खोजें</string>
+    <string name="redeye_steer_hint">Still लाल आँखें खोजकर हर एक ठीक करता है. किसी सुधार पर टैप करके उसे हटाएँ, या छूटी आँख पर टैप करें.</string>
+    <string name="redeye_none_found">कोई लाल आँख नहीं मिली. हर आँख पर टैप करके खुद ठीक करें.</string>
+    <plurals name="redeye_found">
+        <item quantity="one">%d लाल आँख ठीक की. हटाने के लिए उस पर टैप करें, या छूटी आँख पर टैप करें.</item>
+        <item quantity="other">%d लाल आँखें ठीक कीं. हटाने के लिए किसी पर टैप करें, या छूटी आँख पर टैप करें.</item>
+    </plurals>
     <string name="export_sticker">स्टिकर</string>
     <string name="export_sticker_detail">512 × 512 WebP, पारदर्शिता के साथ, 100 KB से कम, जैसा WhatsApp और Telegram लेते हैं.</string>
     <string name="engine_note_sticker">स्टिकर: 512 × 512 WebP पारदर्शिता के साथ, 100 KB से कम.</string>
