@@ -40,6 +40,8 @@ import com.layerbit.still.engine.Recipe
 import com.layerbit.still.BuildConfig
 import com.layerbit.still.engine.Palette
 import com.layerbit.still.engine.Look
+import com.layerbit.still.engine.Effect
+import com.layerbit.still.engine.EffectKind
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.Scan
 import com.layerbit.still.engine.ScanMode
@@ -112,6 +114,10 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val cutoutKept: Float? = null,
         /** The picture under each look, small, for the Looks strip. Filled the first time the panel opens. */
         val lookThumbs: Map<Look, Bitmap> = emptyMap(),
+        /** Each effect over a small copy of the picture in the user's own colour, for the Effects strip. */
+        val effectThumbs: Map<EffectKind, Bitmap> = emptyMap(),
+        /** Every style of an effect the user has opened, the same way. */
+        val effectStyleThumbs: Map<EffectKind, List<Bitmap>> = emptyMap(),
         /** True while the preview is the quick half-size one shown during a slider move. */
         val previewFast: Boolean = false,
         /** The few colours that carry the picture, for the glow behind the editor. */
@@ -196,6 +202,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun install(p: ImageStore.Project, panel: ToolId.Panel, tool: ToolId? = null) {
         dropBase()
+        effectJob?.cancel(); effectSmall = null; effectThumbKey = null
         undo.clear(); redo.clear()
         baseline = p.recipe
         _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), lastEdits = store.lastEdits(), loading = false) }
@@ -615,6 +622,45 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 // The strip falls back to labels alone; the looks themselves are unaffected.
                 android.util.Log.w("Still", "look thumbnails", e)
+            }
+        }
+    }
+
+    private var effectJob: Job? = null
+    private var effectSmall: Bitmap? = null
+    private var effectThumbKey: Recipe? = null
+
+    /** What effect thumbnails are drawn over: the user's own light and colour, without effects, layers or frame. */
+    private fun effectThumbBase(r: Recipe) = Recipe(tone = r.tone, curves = r.curves, look = r.look, lookStrength = r.lookStrength, mix = r.mix)
+
+    /**
+     * Renders every effect over a small copy of the picture, again whenever the user's own
+     * colour has changed since, and every style of [kind] when one is open.
+     */
+    fun ensureEffectThumbs(kind: EffectKind?) {
+        val project = _ui.value.project ?: return
+        val baseRecipe = effectThumbBase(_ui.value.recipe)
+        if (effectThumbKey == baseRecipe && (kind == null || _ui.value.effectStyleThumbs[kind] != null)) return
+        effectJob?.cancel()
+        effectJob = viewModelScope.launch {
+            try {
+                val small = effectSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { effectSmall = it }
+                fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf(Effect(k, style = style, strength = 0.8f, size = 0.12f)))
+                if (effectThumbKey != baseRecipe) {
+                    val thumbs = LinkedHashMap<EffectKind, Bitmap>()
+                    for (k in EffectKind.entries) thumbs[k] = renderer.finish(small, sample(k, 0))
+                    effectThumbKey = baseRecipe
+                    _ui.update { it.copy(effectThumbs = thumbs, effectStyleThumbs = emptyMap()) }
+                }
+                if (kind != null && _ui.value.effectStyleThumbs[kind] == null) {
+                    val styles = (0 until kind.styles).map { renderer.finish(small, sample(kind, it)) }
+                    _ui.update { it.copy(effectStyleThumbs = it.effectStyleThumbs + (kind to styles)) }
+                }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (e: Exception) {
+                // The strip falls back to names alone; the effects themselves are unaffected.
+                android.util.Log.w("Still", "effect thumbnails", e)
             }
         }
     }

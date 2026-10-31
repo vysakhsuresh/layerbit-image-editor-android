@@ -424,4 +424,23 @@ class RendererTest {
         assertEquals(0.0, renderer.difference(plain, missing), 0.0)
         plain.recycle(); missing.recycle()
     }
+
+    @Test
+    fun filterEffectsPreviewPredictsExport() = runBlocking {
+        // A stack from every stage - tone, lens and surface - through the real renderer at two sizes.
+        val src = scene(1200, 800)
+        val r = Recipe(effects = listOf(
+            com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.HDR_SCAPE, strength = 0.6f),
+            com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.LENS_BLUR, style = 1, strength = 0.8f, size = 0.15f),
+            com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.RETROLUX, strength = 0.7f, seed = 3)
+        ))
+        val small = renderer.render(src, r, maxPixels = 300 * 200)
+        val large = renderer.render(src, r, maxPixels = 1200 * 800)
+        val shrunk = renderer.scale(large, small.width, small.height)
+        val diff = renderer.difference(small, shrunk)
+        assertTrue("mean difference $diff", diff < 7.0)
+        val plain = renderer.render(src, Recipe(), maxPixels = 300 * 200)
+        assertTrue("effects change the picture", renderer.difference(small, plain) > 3.0)
+        small.recycle(); large.recycle(); shrunk.recycle(); plain.recycle()
+    }
 }

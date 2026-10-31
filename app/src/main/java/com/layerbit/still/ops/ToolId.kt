@@ -28,6 +28,7 @@ enum class ToolId(
     COLOUR(R.string.tool_colour_title, R.string.tool_colour_summary, R.string.tool_colour_action, Group.EDIT, Mode.EDITOR, Panel.COLOUR),
     CURVES(R.string.tool_curves_title, R.string.tool_curves_summary, R.string.tool_curves_action, Group.EDIT, Mode.EDITOR, Panel.CURVES),
     LOOKS(R.string.tool_looks_title, R.string.tool_looks_summary, R.string.tool_looks_action, Group.EDIT, Mode.EDITOR, Panel.LOOKS),
+    EFFECTS(R.string.tool_effects_title, R.string.tool_effects_summary, R.string.tool_effects_action, Group.EDIT, Mode.EDITOR, Panel.EFFECTS),
     DETAIL(R.string.tool_detail_title, R.string.tool_detail_summary, R.string.tool_detail_action, Group.EDIT, Mode.EDITOR, Panel.DETAIL),
 
     MARKUP(R.string.tool_markup_title, R.string.tool_markup_summary, R.string.tool_markup_action, Group.MARK, Mode.EDITOR, Panel.MARKUP),
@@ -66,7 +67,7 @@ enum class ToolId(
     enum class Mode { EDITOR, BATCH }
 
     /** The editor's panels. Order here is the order of the strip under the canvas. */
-    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, LOCAL, PORTRAIT, CUTOUT, DOUBLE, SCAN, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
+    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, EFFECTS, DETAIL, LOCAL, PORTRAIT, CUTOUT, DOUBLE, SCAN, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
 
     /** How the home board groups the tools. Order here is the order on screen. */
     enum class Group(@StringRes val titleRes: Int) {

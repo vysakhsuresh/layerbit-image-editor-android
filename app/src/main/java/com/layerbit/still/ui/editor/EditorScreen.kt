@@ -137,6 +137,8 @@ fun EditorScreen(
     var split by rememberSaveable { mutableStateOf(false) }
     var splitAt by rememberSaveable { mutableFloatStateOf(0.5f) }
     val localTools = remember { LocalTools() }
+    // The effect the Effects panel has open, by index into the stack; -1 follows the last added.
+    var effectChosen by rememberSaveable { mutableIntStateOf(-1) }
     LaunchedEffect(startTool) { if (startTool == ToolId.RED_EYE) brush = brush.copy(kind = MarkKind.REDEYE, width = 0.03f) }
 
     val density = LocalDensity.current
@@ -204,6 +206,8 @@ fun EditorScreen(
             stroke = if (portraitTool == PortraitTool.BRUSH) Overlay.Stroke(MarkKind.DRAW, strokePoints, if (skinAdd) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), skinWidth, null) else null
         )
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
+        panel == ToolId.Panel.EFFECTS -> recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))
+            ?.takeIf { it.kind == com.layerbit.still.engine.EffectKind.LENS_BLUR }?.let { lensOverlay(it) } ?: Overlay.None
         else -> Overlay.None
     }
 
@@ -321,6 +325,15 @@ fun EditorScreen(
                 onCancel = { strokePoints = emptyList() }
             )
         }
+        ToolId.Panel.EFFECTS -> {
+            val sel = effectSelection(recipe.effects, effectChosen)
+            if (recipe.effects.getOrNull(sel)?.kind != com.layerbit.still.engine.EffectKind.LENS_BLUR) viewOrScrub
+            else lensTouch(
+                effect = { vm.ui.value.recipe.effects.getOrNull(sel) }, t = transform, reach = reach,
+                update = { e -> val r = vm.ui.value.recipe; if (sel in r.effects.indices) vm.draft(r.copy(effects = r.effects.toMutableList().apply { set(sel, e) })) },
+                commit = vm::commit
+            )
+        }
         else -> viewOrScrub
     }
 
@@ -407,6 +420,11 @@ fun EditorScreen(
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, ui.suggestedLooks, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
+                            }
+                            ToolId.Panel.EFFECTS -> {
+                                val openKind = recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.kind
+                                LaunchedEffect(ui.project?.id, openKind) { vm.ensureEffectThumbs(openKind) }
+                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) })
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.LOCAL -> LocalPanel(
@@ -649,7 +667,7 @@ private fun AllToolsSheet(panels: List<ToolId.Panel>, current: ToolId.Panel, onP
 fun panelLabel(p: ToolId.Panel): String = stringResource(
     when (p) {
         ToolId.Panel.NONE, ToolId.Panel.CROP -> R.string.panel_crop; ToolId.Panel.PERSPECTIVE -> R.string.panel_perspective; ToolId.Panel.LIGHT -> R.string.panel_light
-        ToolId.Panel.COLOUR -> R.string.panel_colour; ToolId.Panel.CURVES -> R.string.panel_curves; ToolId.Panel.LOOKS -> R.string.panel_looks; ToolId.Panel.DETAIL -> R.string.panel_detail
+        ToolId.Panel.COLOUR -> R.string.panel_colour; ToolId.Panel.CURVES -> R.string.panel_curves; ToolId.Panel.LOOKS -> R.string.panel_looks; ToolId.Panel.EFFECTS -> R.string.panel_effects; ToolId.Panel.DETAIL -> R.string.panel_detail
         ToolId.Panel.LOCAL -> R.string.panel_local
         ToolId.Panel.MARKUP -> R.string.panel_markup; ToolId.Panel.RETOUCH -> R.string.panel_retouch; ToolId.Panel.LAYERS -> R.string.panel_layers; ToolId.Panel.FRAME -> R.string.panel_frame
         ToolId.Panel.DETAILS -> R.string.panel_details; ToolId.Panel.EXPORT -> R.string.panel_export

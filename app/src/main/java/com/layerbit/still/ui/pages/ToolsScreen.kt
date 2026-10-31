@@ -141,6 +141,7 @@ private fun searchWords(tool: ToolId): String {
         ToolId.COLOUR -> R.string.tool_words_colour
         ToolId.CURVES -> R.string.tool_words_curves
         ToolId.LOOKS -> R.string.tool_words_looks
+        ToolId.EFFECTS -> R.string.tool_words_effects
         ToolId.DETAIL -> R.string.tool_words_detail
         ToolId.MARKUP -> R.string.tool_words_markup
         ToolId.RETOUCH -> R.string.tool_words_retouch

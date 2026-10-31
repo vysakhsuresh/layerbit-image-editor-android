@@ -15,6 +15,7 @@ fun iconFor(tool: ToolId): Int = when (tool) {
     ToolId.COLOUR -> R.drawable.ic_tool_colour
     ToolId.CURVES -> R.drawable.ic_tool_curves
     ToolId.LOOKS -> R.drawable.ic_tool_looks
+    ToolId.EFFECTS -> R.drawable.ic_tool_effects
     ToolId.DETAIL -> R.drawable.ic_tool_detail
     ToolId.MARKUP -> R.drawable.ic_tool_markup
     ToolId.RETOUCH -> R.drawable.ic_tool_retouch
@@ -49,6 +50,7 @@ fun iconFor(panel: ToolId.Panel): Int = when (panel) {
     ToolId.Panel.COLOUR -> R.drawable.ic_tool_colour
     ToolId.Panel.CURVES -> R.drawable.ic_tool_curves
     ToolId.Panel.LOOKS -> R.drawable.ic_tool_looks
+    ToolId.Panel.EFFECTS -> R.drawable.ic_tool_effects
     ToolId.Panel.DETAIL -> R.drawable.ic_tool_detail
     ToolId.Panel.LOCAL -> R.drawable.ic_tool_local
     ToolId.Panel.MARKUP -> R.drawable.ic_tool_markup

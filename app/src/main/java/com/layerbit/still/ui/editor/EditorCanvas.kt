@@ -72,6 +72,11 @@ sealed interface Overlay {
     data class Spots(val spots: List<Pt>, val radii: List<Float>, val stroke: Stroke? = null) : Overlay
     /** Markup in move mode: every movable mark faintly outlined, the chosen one strongly. */
     data class Selection(val marks: List<Mark>, val selected: Mark?) : Overlay
+    /** Drawn by the panel that owns it, such as the lens-blur focus; [key] decides when it changes. */
+    data class Custom(val key: Any, val draw: DrawScope.(CanvasTransform) -> Unit) : Overlay {
+        override fun equals(other: Any?) = other is Custom && other.key == key
+        override fun hashCode() = key.hashCode()
+    }
 }
 
 /**
@@ -224,6 +229,7 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
     when (overlay) {
         Overlay.None -> Unit
         is LocalOverlay -> drawLocalOverlay(overlay, t)
+        is Overlay.Custom -> overlay.draw(this, t)
         is Overlay.CropOverlay -> {
             val c = overlay.crop
             val cr = Rect(r.left + c.left * r.width, r.top + c.top * r.height, r.left + c.right * r.width, r.top + c.bottom * r.height)

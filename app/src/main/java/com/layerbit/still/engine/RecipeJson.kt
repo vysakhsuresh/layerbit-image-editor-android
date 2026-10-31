@@ -46,7 +46,8 @@ object RecipeJson {
         ),
         "locals" to if (r.locals.isEmpty()) null else r.locals.map { local(it) }.json(),
         "portrait" to if (r.portrait.isIdentity) null else portrait(r.portrait),
-        "double" to if (r.double.isIdentity) null else double(r.double)
+        "double" to if (r.double.isIdentity) null else double(r.double),
+        "effects" to if (r.effects.isEmpty()) null else r.effects.map { effect(it) }.json()
     )
 
     private fun local(l: LocalAdjust) = jsonOf(
@@ -121,6 +122,24 @@ object RecipeJson {
             scale = v["scale"]?.num()?.toFloat() ?: d.scale, angle = v.f("angle"),
             mode = v["mode"]?.str()?.let { name -> BlendMode.entries.firstOrNull { it.name == name } } ?: d.mode,
             opacity = v["opacity"]?.num()?.toFloat() ?: d.opacity, insideSubject = v["insideSubject"]?.bool() ?: false
+        )
+    }
+
+    private fun effect(e: Effect) = jsonOf(
+        "kind" to e.kind.name.json(), "style" to e.style.json(), "strength" to e.strength.json(), "extra" to e.extra.json(),
+        "seed" to e.seed.json(), "center" to listOf(e.center.x.json(), e.center.y.json()).json(), "size" to e.size.json(),
+        "angle" to e.angle.json(), "aspect" to e.aspect.json()
+    )
+
+    /** An effect this app does not know, from a newer one, is left out rather than refusing the recipe. */
+    private fun readEffect(v: JsonValue): Effect? {
+        val kind = v["kind"]?.str()?.let { name -> EffectKind.entries.firstOrNull { it.name == name } } ?: return null
+        val d = Effect(kind)
+        return Effect(
+            kind = kind, style = v["style"]?.num()?.toInt() ?: 0, strength = v["strength"]?.num()?.toFloat() ?: d.strength,
+            extra = v["extra"]?.num()?.toFloat() ?: d.extra, seed = v["seed"]?.num()?.toInt() ?: d.seed,
+            center = v["center"]?.let { pt(it) } ?: d.center, size = v["size"]?.num()?.toFloat() ?: d.size,
+            angle = v["angle"]?.num()?.toFloat() ?: d.angle, aspect = v["aspect"]?.num()?.toFloat() ?: d.aspect
         )
     }
 
@@ -219,7 +238,8 @@ object RecipeJson {
             ),
             locals = o["locals"]?.arr()?.mapNotNull { readLocal(it) } ?: emptyList(),
             portrait = readPortrait(o["portrait"]),
-            double = readDouble(o["double"])
+            double = readDouble(o["double"]),
+            effects = o["effects"]?.arr()?.mapNotNull { readEffect(it) } ?: emptyList()
         )
     }
 

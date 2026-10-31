@@ -32,6 +32,7 @@ import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Cutout
+import com.layerbit.still.engine.Effects
 import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Parallel
 import com.layerbit.still.engine.Blend
@@ -257,6 +258,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
         // Noise out before any sharpening, so sharpening has clean edges to work on.
         if (r.tone.noise > 0f) working = Spatial.denoise(working, w, h, r.tone.noise, check)
+        // Filter effects: tone ones before sharpening, the lens after it, film surfaces last.
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
             working = Spatial.detail(working, w, h, tone, check)
         }
@@ -267,8 +270,10 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             if (skinPreview && skin != null) Portrait.paintMask(working, w, h, skin)
         }
         if (r.double.active && assets != null) doubleStage(working, w, h, base, r.double, assets, maskKey, check)
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.LENS, check)
         if (tone.vignette != 0f) Spatial.vignette(working, w, h, tone.vignette, check)
         if (tone.grain > 0f) Spatial.grain(working, w, h, tone.grain, check = check)
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.SURFACE, check)
         check()
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         out.setPixels(working, 0, w, 0, 0, w, h)
