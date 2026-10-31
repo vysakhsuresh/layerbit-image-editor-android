@@ -13,6 +13,9 @@ import com.layerbit.still.engine.Histogram
 import com.layerbit.still.engine.Look
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.PageQuad
+import com.layerbit.still.engine.Paper
+import com.layerbit.still.engine.PdfPages
+import com.layerbit.still.engine.Names
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
@@ -23,7 +26,9 @@ import com.layerbit.still.image.Codecs
 import com.layerbit.still.image.ExportOptions
 import com.layerbit.still.image.OutputFormat
 import com.layerbit.still.text.Strings
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -56,7 +61,9 @@ data class Pipeline(
     val keepCamera: Boolean = false,
     val allowShrink: Boolean = true,
     /** Blank means the step's own default: "{name}-clean" for a cleaning-only run, "{name}" otherwise. */
-    val pattern: String = ""
+    val pattern: String = "",
+    /** Every result as a page of one PDF on this paper, in the order given; null for a file per picture. */
+    val pdf: Paper? = null
 ) {
     data class Watermark(val text: String, val opacity: Float = 0.35f, val angle: Float = -30f, val size: Float = 0.03f, val color: Int = 0xFFFFFFFF.toInt(), val place: WatermarkPlace = WatermarkPlace.TILED)
 
@@ -76,7 +83,8 @@ data class Pipeline(
         frame?.let { add(Strings.get(R.string.step_frame)) }
         cutout?.let { add(Strings.get(R.string.step_cutout)) }
         scan?.let { add(Strings.get(R.string.step_scan)) }
-        format?.let { add(it.label) }
+        if (pdf == null) format?.let { add(it.label) }
+        pdf?.let { add(Strings.get(R.string.step_pdf_summary, Strings.get(PdfOp.paperLabel(it)))) }
         if (isEmpty()) add(Strings.get(R.string.step_clean_only))
     }.joinToString(" · ")
 }
@@ -121,7 +129,8 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
         else -> OutputFormat.JPEG
     }
 
-    private suspend fun recipeFor(input: StillFile, context: OpContext): Recipe {
+    /** The steps for [input] as one recipe: also what a page of a PDF is rendered with. */
+    internal suspend fun recipeFor(input: StillFile, context: OpContext): Recipe {
         var r = p.recipe?.asPreset() ?: Recipe()
         if (p.look != Look.NONE) r = r.copy(look = p.look, lookStrength = p.lookStrength)
         if (p.enhance) {
@@ -171,5 +180,89 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
             }
         }
         return r
+    }
+}
+
+/**
+ * Pages to one PDF: every picture through the pipeline's steps (typically Scan), then each one a
+ * page of a single PDF in the order given. Many in, one out, so the batch shape holds.
+ *
+ * A page is rendered no larger than [PdfPages.DPI] needs on its paper, encoded once as a JPEG at
+ * the pipeline's quality and streamed into the file, then let go: one page in memory at a time.
+ * The size and the page count shown are read back from the PDF that was written.
+ */
+class PdfOp(private val p: Pipeline) : Op {
+
+    private val paper: Paper = p.pdf ?: Paper.A4
+    override val tool = ToolId.PROCESS
+    override val title: String = p.summary()
+    override val arity: Op.Arity = Op.Arity.Together(1)
+
+    override suspend fun run(inputs: List<StillFile>, context: OpContext, onProgress: (Progress) -> Unit): List<OpOutcome> {
+        val steps = PipelineOp(p)
+        val total = inputs.size + 1
+        val problems = ArrayList<OpOutcome>()
+        var firstPage: Pair<Int, Int>? = null
+        val out = context.workspace.newOutput("pages", "pdf", "pdf")
+        try {
+            out.outputStream().buffered(256 * 1024).use { stream ->
+                val writer = PdfPages.Writer(stream)
+                for ((i, input) in inputs.withIndex()) {
+                    context.checkCancelled()
+                    onProgress(Progress(i, total, input.displayName))
+                    try {
+                        val (jpeg, w, h) = page(input, steps, context)
+                        val page = PdfPages.page(paper, w, h)
+                        writer.addPage(jpeg, page, PdfPages.place(paper, page, w, h))
+                        if (firstPage == null) firstPage = w to h
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: OutOfMemoryError) {
+                        problems += OpOutcome.Failed(input.displayName, Strings.get(R.string.engine_out_of_memory))
+                    } catch (e: Exception) {
+                        problems += OpOutcome.Failed(input.displayName, e.message ?: Strings.get(R.string.engine_unreadable))
+                    }
+                }
+                onProgress(Progress(inputs.size, total, Strings.get(R.string.engine_encoding)))
+                writer.finish()
+            }
+        } catch (e: Throwable) {
+            out.delete()
+            throw e
+        }
+        val (w, h) = firstPage ?: run { out.delete(); return problems }
+        // Read back off the file: its bytes and its pages, not what the writer meant to write.
+        val bytes = out.length()
+        val pages = out.inputStream().buffered().use { PdfPages.countPages(it) }
+        val name = (if (p.pattern.isBlank()) Names.safe("pages-${today()}") else Names.pattern(p.pattern, inputs.first().displayName, 1, w, h, today())) + ".pdf"
+        val detail = Strings.get(R.string.engine_pdf_detail, Strings.plural(R.plurals.engine_pdf_pages, pages), Strings.get(paperLabel(paper)), FitSize.sizeText(bytes))
+        onProgress(Progress(total, total, ""))
+        val pdf = StillFile(out, name, StillFile.Origin.Derived("pdf"), StillFile.MIME_PDF, w, h)
+        return listOf<OpOutcome>(OpOutcome.Produced(pdf, detail, before = inputs.sumOf { it.sizeBytes })) + problems
+    }
+
+    /** One picture through the steps, at the pixels its page needs, as JPEG bytes and their size. */
+    private suspend fun page(input: StillFile, steps: PipelineOp, context: OpContext): Triple<ByteArray, Int, Int> {
+        val recipe = steps.recipeFor(input, context)
+        val rendered = context.renderer.render(input.file, recipe, min(Budget.exportPixels, PdfPages.budget(paper)), context.check)
+        // A page has no transparency: a cut-out goes onto white paper.
+        val flat = try { context.renderer.flatten(rendered) } finally { rendered.recycle() }
+        try {
+            val page = PdfPages.page(paper, flat.width, flat.height)
+            val (tw, th) = PdfPages.pixels(PdfPages.place(paper, page, flat.width, flat.height), flat.width, flat.height)
+            val sized = context.renderer.scale(flat, tw, th)
+            try {
+                context.checkCancelled()
+                return Triple(context.codecs.encode(sized, OutputFormat.JPEG, p.quality), sized.width, sized.height)
+            } finally { if (sized !== flat) sized.recycle() }
+        } finally { flat.recycle() }
+    }
+
+    companion object {
+        fun paperLabel(paper: Paper): Int = when (paper) {
+            Paper.A4 -> R.string.pdf_paper_a4
+            Paper.LETTER -> R.string.pdf_paper_letter
+            Paper.FIT -> R.string.pdf_paper_fit
+        }
     }
 }

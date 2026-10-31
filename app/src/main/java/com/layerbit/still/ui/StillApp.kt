@@ -257,7 +257,7 @@ fun StillApp(
 private fun presetFor(tool: ToolId): String? = when (tool) {
     ToolId.RESIZE -> "resize"; ToolId.RESIZE_KB -> "under"; ToolId.COMPRESS, ToolId.CONVERT -> "convert"; ToolId.STRIP_METADATA -> "clean"
     ToolId.ENHANCE -> "enhance"; ToolId.APPLY_RECIPE -> "look"; ToolId.WATERMARK -> "watermark"; ToolId.PASSPORT -> "passport"
-    ToolId.CUTOUT -> "cutout"; ToolId.SCAN -> "scan"; else -> null
+    ToolId.CUTOUT -> "cutout"; ToolId.SCAN -> "scan"; ToolId.SCAN_PDF -> "pdf"; else -> null
 }
 
 private fun adoptAndEdit(still: StillApplication, file: StillFile, scope: kotlinx.coroutines.CoroutineScope, open: (String) -> Unit) {

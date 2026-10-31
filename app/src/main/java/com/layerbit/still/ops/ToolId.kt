@@ -55,7 +55,9 @@ enum class ToolId(
     SCAN(R.string.tool_scan_title, R.string.tool_scan_summary, R.string.tool_scan_action, Group.EDIT, Mode.EDITOR, Panel.SCAN),
     RED_EYE(R.string.tool_redeye_title, R.string.tool_redeye_summary, R.string.tool_redeye_action, Group.MARK, Mode.EDITOR, Panel.RETOUCH),
     WHITE_BALANCE(R.string.tool_neutral_title, R.string.tool_neutral_summary, R.string.tool_neutral_action, Group.EDIT, Mode.EDITOR, Panel.COLOUR),
-    PASSPORT(R.string.tool_passport_title, R.string.tool_passport_summary, R.string.tool_passport_action, Group.SIZE, Mode.BATCH);
+    PASSPORT(R.string.tool_passport_title, R.string.tool_passport_summary, R.string.tool_passport_action, Group.SIZE, Mode.BATCH),
+    /** The batch screen with Scan and "Pages to one PDF" switched on: what every scanner app does. */
+    SCAN_PDF(R.string.tool_scan_pdf_title, R.string.tool_scan_pdf_summary, R.string.tool_scan_pdf_action, Group.BATCH, Mode.BATCH);
 
     val title: String get() = Strings.get(titleRes)
     val summary: String get() = Strings.get(summaryRes)

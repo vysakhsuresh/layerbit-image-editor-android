@@ -62,6 +62,8 @@ import com.layerbit.still.image.OutputFormat
 import com.layerbit.still.jobs.JobState
 import com.layerbit.still.jobs.belongsTo
 import com.layerbit.still.ops.OpOutcome
+import com.layerbit.still.ops.PdfOp
+import com.layerbit.still.engine.Paper
 import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ui.components.AmbientBackdrop
 import com.layerbit.still.ui.components.ChipRow
@@ -146,7 +148,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                 }
                 items(shown.outcomes.size) { i ->
                     Box(rise(i + 1)) { when (val o = shown.outcomes[i]) {
-                        is OpOutcome.Produced -> ResultRow(o, vm::thumbnail, onSave = { save(o.file) }, onShare = { context.startActivity(vm.shareIntent(listOf(o.file))) }, onEdit = { onOpenInEditor(o.file) })
+                        is OpOutcome.Produced -> ResultRow(o, vm::thumbnail, onSave = { save(o.file) }, onShare = { context.startActivity(vm.shareIntent(listOf(o.file))) }, onEdit = if (o.file.isPdf) null else ({ onOpenInEditor(o.file) }))
                         is OpOutcome.Failed -> Panel(Modifier.fillMaxWidth(), tint = StillColors.Failed, inset = 12.dp) { Text(o.inputName, color = StillColors.Text); Text(o.reason, style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
                         is OpOutcome.Skipped -> Panel(Modifier.fillMaxWidth(), tint = StillColors.Skipped, inset = 12.dp) { Text(o.inputName, color = StillColors.Text); Text(o.reason, style = MaterialTheme.typography.bodySmall, color = StillColors.Muted) }
                     } }
@@ -222,7 +224,7 @@ private fun InputRow(files: List<StillFile>, thumbnail: suspend (StillFile) -> a
     }
 }
 
-private val STEP_ORDER = listOf("resize", "under", "format", "enhance", "look", "watermark", "frame", "cutout", "scan")
+private val STEP_ORDER = listOf("resize", "under", "format", "enhance", "look", "watermark", "frame", "cutout", "scan", "pdf")
 
 /** One panel per step: a switch in its header, the options under it when it is on. */
 @Composable
@@ -308,6 +310,11 @@ private fun StepsList(s: Steps, set: (Steps) -> Unit, presets: List<String>, che
             Knob(stringResource(R.string.scan_strength), s.scanStrength, 0f..1f, onChange = { set(s.copy(scanStrength = it)) }, onDone = {}, onReset = { set(s.copy(scanStrength = 1f)) }, format = { "${(it * 100).roundToInt()}" })
             Knob(stringResource(R.string.scan_whiten), s.scanWhiten, 0f..1f, onChange = { set(s.copy(scanWhiten = it)) }, onDone = {}, onReset = { set(s.copy(scanWhiten = 0.5f)) }, format = { "${(it * 100).roundToInt()}" })
             Hint(stringResource(R.string.scan_hint))
+        }
+        Step("pdf", stringResource(R.string.step_pdf_title), stringResource(R.string.step_pdf_detail), R.drawable.ic_tool_scan, Color(0xFF5B9DFF), s.pdfOn, { set(s.copy(pdfOn = it)) }) {
+            ChipRow(Paper.entries.map { it to stringResource(PdfOp.paperLabel(it)) }, s.pdfPaper, { set(s.copy(pdfPaper = it)) })
+            Knob(stringResource(R.string.export_quality), s.quality / 100f, 0.4f..1f, onChange = { set(s.copy(quality = (it * 100).roundToInt())) }, onDone = {}, onReset = { set(s.copy(quality = 90)) }, format = { "${(it * 100).roundToInt()}" })
+            Hint(stringResource(R.string.step_pdf_hint))
         }
         Panel(Modifier.fillMaxWidth(), tint = StillColors.Done, inset = 14.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {

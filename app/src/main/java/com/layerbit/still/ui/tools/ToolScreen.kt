@@ -255,7 +255,7 @@ fun InputChip(f: StillFile, thumbnail: suspend (StillFile) -> Bitmap?, onRemove:
 }
 
 @Composable
-fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StillFile) -> Bitmap?, onSave: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit) {
+fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StillFile) -> Bitmap?, onSave: () -> Unit, onShare: () -> Unit, onEdit: (() -> Unit)?) {
     val image by produceState<Bitmap?>(null, o.file.file.path) { value = thumbnail(o.file) }
     Panel(Modifier.fillMaxWidth(), inset = 12.dp) {
         Row(verticalAlignment = Alignment.Top) {
@@ -279,7 +279,8 @@ fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StillFile) -> Bitmap?, 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
             PrimaryButton(stringResource(R.string.app_save), onClick = onSave, modifier = Modifier.weight(1f), tall = false)
             SecondaryButton(stringResource(R.string.app_share), onClick = onShare, modifier = Modifier.weight(1f), tall = false)
-            SecondaryButton(stringResource(R.string.tools_edit_result), onClick = onEdit, modifier = Modifier.weight(1f), tall = false)
+            // A PDF is a result to save or send, not a picture the editor opens.
+            if (onEdit != null) SecondaryButton(stringResource(R.string.tools_edit_result), onClick = onEdit, modifier = Modifier.weight(1f), tall = false)
         }
     }
 }

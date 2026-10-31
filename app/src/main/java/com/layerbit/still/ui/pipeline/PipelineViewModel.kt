@@ -24,6 +24,8 @@ import com.layerbit.still.image.OutputFormat
 import com.layerbit.still.jobs.JobState
 import com.layerbit.still.ops.Pipeline
 import com.layerbit.still.ops.PipelineOp
+import com.layerbit.still.ops.PdfOp
+import com.layerbit.still.engine.Paper
 import com.layerbit.still.ops.ResizeOp
 import com.layerbit.still.text.Strings
 import androidx.compose.runtime.snapshotFlow
@@ -66,13 +68,14 @@ data class Steps(
     val frameOn: Boolean = false, val frame: Frame = Frame(padding = 0.05f),
     val cutoutOn: Boolean = false, val cutoutMode: CutoutMode = CutoutMode.SUBJECT, val cutoutBackdrop: Backdrop = Backdrop.TRANSPARENT, val cutoutColor: Int = 0xFFFFFFFF.toInt(), val cutoutBlur: Float = 0.03f,
     val scanOn: Boolean = false, val scanMode: ScanMode = ScanMode.COLOUR, val scanStrength: Float = 1f, val scanWhiten: Float = 0.5f,
+    val pdfOn: Boolean = false, val pdfPaper: Paper = Paper.A4,
     val keepCamera: Boolean = false, val allowShrink: Boolean = true,
     val pattern: String = ""
 ) {
-    val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn || cutoutOn || scanOn
+    val anyOn: Boolean get() = resizeOn || underOn || formatOn || enhance || lookOn || watermarkOn || frameOn || cutoutOn || scanOn || pdfOn
 
-    /** A step whose whole point is the file's size or pixels: worth a size check. */
-    val changesSize: Boolean get() = resizeOn || underOn || formatOn
+    /** A step whose whole point is the file's size or pixels: worth a size check. One PDF has its own size, so none. */
+    val changesSize: Boolean get() = !pdfOn && (resizeOn || underOn || formatOn)
 
     /** Whether a trial run on the first picture has anything to show. */
     val wantsCheck: Boolean get() = changesSize || watermarkOn
@@ -201,6 +204,7 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
             "watermark" -> steps = steps.copy(watermarkOn = true)
             "cutout" -> steps = steps.copy(cutoutOn = true)
             "scan" -> steps = steps.copy(scanOn = true)
+            "pdf" -> steps = steps.copy(scanOn = true, pdfOn = true)
             "enhance" -> steps = steps.copy(enhance = true)
             "look" -> steps = steps.copy(lookOn = true)
         }
@@ -255,7 +259,8 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
             frame = if (s.frameOn) s.frame else null,
             cutout = if (s.cutoutOn) Cutout(enabled = true, mode = s.cutoutMode, backdrop = s.cutoutBackdrop, color = s.cutoutColor, blur = s.cutoutBlur) else null,
             scan = if (s.scanOn) Scan(s.scanMode, s.scanStrength, s.scanWhiten) else null,
-            format = if (s.formatOn) s.format else null, quality = s.quality, keepCamera = s.keepCamera, allowShrink = s.allowShrink, pattern = s.pattern
+            format = if (s.formatOn) s.format else null, quality = s.quality, keepCamera = s.keepCamera, allowShrink = s.allowShrink, pattern = s.pattern,
+            pdf = if (s.pdfOn) s.pdfPaper else null
         )
     }
 
@@ -263,7 +268,9 @@ class PipelineViewModel(app: Application) : AndroidViewModel(app) {
         val files = _ui.value.files
         if (files.isEmpty()) { message(Strings.get(R.string.tools_add_first)); return }
         val p = pipeline() ?: return
-        if (!still.jobRunner.submit(PipelineOp(p), files)) message(Strings.get(R.string.tools_busy))
+        // One PDF is many-to-one: every picture through the same steps, then all of them as its pages.
+        val op = if (p.pdf != null) PdfOp(p) else PipelineOp(p)
+        if (!still.jobRunner.submit(op, files)) message(Strings.get(R.string.tools_busy))
     }
 
     fun cancel() = still.jobRunner.cancel()

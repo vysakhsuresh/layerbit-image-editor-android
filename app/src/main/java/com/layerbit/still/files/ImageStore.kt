@@ -2,7 +2,9 @@ package com.layerbit.still.files
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.LruCache
 import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
@@ -211,8 +213,24 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
     }
 
     suspend fun thumbnail(f: StillFile): Bitmap? = withContext(Dispatchers.IO) {
-        thumbs.get(f.file.path) ?: Renderer.thumbnail(f.file)?.also { thumbs.put(f.file.path, it) }
+        thumbs.get(f.file.path) ?: (if (f.isPdf) pdfThumbnail(f.file) else Renderer.thumbnail(f.file))?.also { thumbs.put(f.file.path, it) }
     }
+
+    /** The first page of a PDF the app wrote itself, read-only from its private copy, on white. */
+    private fun pdfThumbnail(file: File): Bitmap? = runCatching {
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { pdf ->
+                pdf.openPage(0).use { page ->
+                    val k = kotlin.math.sqrt(Budget.THUMB_PIXELS.toDouble() / (page.width.toLong() * page.height).coerceAtLeast(1))
+                    val w = (page.width * k).toInt().coerceAtLeast(1); val h = (page.height * k).toInt().coerceAtLeast(1)
+                    Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { b ->
+                        b.eraseColor(android.graphics.Color.WHITE)
+                        page.render(b, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    }
+                }
+            }
+        }
+    }.getOrNull()
 
     // ------------------------------------------------------------------ details
 

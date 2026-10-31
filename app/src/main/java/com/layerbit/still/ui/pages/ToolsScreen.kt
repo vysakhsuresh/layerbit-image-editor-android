@@ -148,6 +148,7 @@ private fun searchWords(tool: ToolId): String {
         ToolId.SIGNATURE -> R.string.tool_words_signature
         ToolId.STICKER -> R.string.tool_words_sticker
         ToolId.SCAN -> R.string.tool_words_scan
+        ToolId.SCAN_PDF -> R.string.tool_words_scan_pdf
         ToolId.RED_EYE -> R.string.tool_words_red_eye
         ToolId.WHITE_BALANCE -> R.string.tool_words_white_balance
         ToolId.PASSPORT -> R.string.tool_words_passport

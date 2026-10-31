@@ -304,4 +304,34 @@ class OpsTest {
         assertEquals(640, scanned.file.width)
         assertTrue(Pipeline(scan = Scan(ScanMode.INK)).summary().isNotBlank())
     }
+
+    @Test
+    fun pagesToOnePdfWritesEveryPictureAsAPageOfOneFile() {
+        val pages = listOf(picture(640, 900, jpeg = true, name = "p1.jpg"), picture(900, 640, jpeg = false, name = "p2.png"), picture(500, 700, jpeg = true, name = "p3.jpg"))
+        val p = Pipeline(scan = Scan(ScanMode.GREY), pdf = com.layerbit.still.engine.Paper.A4, quality = 80)
+        val outcomes = run(com.layerbit.still.ops.PdfOp(p), *pages.toTypedArray())
+        val pdf = outcomes.single() as OpOutcome.Produced
+        assertEquals(StillFile.MIME_PDF, pdf.file.mimeType)
+        assertTrue(pdf.file.displayName, pdf.file.displayName.endsWith(".pdf"))
+        val bytes = pdf.file.file.readBytes()
+        assertTrue(String(bytes, 0, 8, Charsets.ISO_8859_1).startsWith("%PDF-"))
+        assertEquals(3, com.layerbit.still.engine.PdfPages.countPages(bytes))
+        // The landscape picture got a landscape page.
+        assertTrue(String(bytes, Charsets.ISO_8859_1).contains("/MediaBox [0 0 841.89 595.28]"))
+        assertTrue(pdf.detail!!.contains(com.layerbit.still.engine.FitSize.sizeText(pdf.file.sizeBytes)))
+        // The inputs are untouched and nothing but the PDF is left behind for them.
+        pages.forEach { assertTrue(it.file.exists()) }
+    }
+
+    @Test
+    fun aPdfPageThatCannotBeReadIsReportedAndTheRestStillMakeTheFile() {
+        val good = picture(400, 600, jpeg = true, name = "good.jpg")
+        val broken = File(dir, "broken.jpg").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val bad = StillFile(broken, "broken.jpg", StillFile.Origin.Derived("test"), StillFile.MIME_JPEG, 10, 10)
+        val outcomes = run(com.layerbit.still.ops.PdfOp(Pipeline(pdf = com.layerbit.still.engine.Paper.FIT)), good, bad)
+        assertEquals(2, outcomes.size)
+        val pdf = outcomes[0] as OpOutcome.Produced
+        assertEquals(1, com.layerbit.still.engine.PdfPages.countPages(pdf.file.file.readBytes()))
+        assertTrue(outcomes[1] is OpOutcome.Failed)
+    }
 }

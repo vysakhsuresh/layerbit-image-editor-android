@@ -130,6 +130,7 @@ fun HomeScreen(
                 val quickAll = listOf(
                     QuickTool(Glyph.CUTOUT, R.string.home_quick_cutout, ToolId.CUTOUT) { onQuickTool(ToolId.CUTOUT) },
                     QuickTool(Glyph.SCAN, R.string.home_quick_scan, ToolId.SCAN) { onQuickTool(ToolId.SCAN) },
+                    QuickTool(Glyph.SCAN, R.string.home_quick_scan_pdf, ToolId.SCAN_PDF) { onProcessMany("pdf") },
                     QuickTool(Glyph.SIGNATURE, R.string.home_quick_signature, ToolId.SIGNATURE) { onQuickTool(ToolId.SIGNATURE) },
                     QuickTool(Glyph.RESIZE_KB, R.string.home_quick_under, ToolId.RESIZE_KB) { onProcessMany("under") },
                     QuickTool(Glyph.PASSPORT, R.string.home_quick_passport, ToolId.PASSPORT) { onProcessMany("passport") },

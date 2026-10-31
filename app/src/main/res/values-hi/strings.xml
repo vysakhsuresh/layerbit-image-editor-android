@@ -760,6 +760,7 @@
 
     <string name="home_quick_cutout">बैकग्राउंड हटाएं</string>
     <string name="home_quick_scan">पन्ना स्कैन</string>
+    <string name="home_quick_scan_pdf">स्कैन से PDF</string>
     <string name="home_quick_signature">हस्ताक्षर उठाएं</string>
     <string name="home_quick_passport">पासपोर्ट फ़ोटो</string>
     <string name="home_quick_redeye">लाल आंख</string>
@@ -826,4 +827,20 @@
     <string name="watermark_place_bottom_left">नीचे बाएं</string>
     <string name="watermark_place_bottom_right">नीचे दाएं</string>
     <string name="watermark_preview">आपकी पहली तस्वीर पर</string>
+    <string name="step_pdf_title">सारे पन्ने एक PDF में</string>
+    <string name="step_pdf_detail">हर तस्वीर एक PDF का एक पन्ना, उसी क्रम में जिसमें आपने जोड़ीं</string>
+    <string name="step_pdf_summary">एक PDF, %1$s</string>
+    <string name="step_pdf_hint">हर पन्ना 200 dpi पर, ऊपर चुनी गुणवत्ता के JPEG में रखा जाता है. आकार और फ़ॉर्मैट वाले चरण अलग तस्वीरों के लिए हैं, इसलिए PDF उन्हें छोड़ देता है.</string>
+    <string name="pdf_paper_a4">A4</string>
+    <string name="pdf_paper_letter">लेटर</string>
+    <string name="pdf_paper_fit">तस्वीर के नाप का</string>
+    <string name="engine_pdf_detail">%1$s · %2$s · %3$s</string>
+    <plurals name="engine_pdf_pages">
+        <item quantity="one">%d पन्ना</item>
+        <item quantity="other">%d पन्ने</item>
+    </plurals>
+    <string name="tool_scan_pdf_title">स्कैन से PDF</string>
+    <string name="tool_scan_pdf_summary">पन्ने ढूँढे, सीधे और साफ़ किए, फिर एक साथ एक PDF में सहेजे</string>
+    <string name="tool_scan_pdf_action">PDF बनाएं</string>
+    <string name="tool_words_scan_pdf">पीडीएफ दस्तावेज़ पन्ने स्कैनर pdf document pages scanner merge</string>
 </resources>

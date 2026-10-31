@@ -37,6 +37,7 @@ fun iconFor(tool: ToolId): Int = when (tool) {
     ToolId.RED_EYE -> R.drawable.ic_tool_redeye
     ToolId.WHITE_BALANCE -> R.drawable.ic_tool_neutral
     ToolId.PASSPORT -> R.drawable.ic_tool_passport
+    ToolId.SCAN_PDF -> R.drawable.ic_tool_scan
 }
 
 /** The panel's icon, for the strip under the editor canvas. */

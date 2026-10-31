@@ -760,6 +760,7 @@
 
     <string name="home_quick_cutout">Remove background</string>
     <string name="home_quick_scan">Scan a page</string>
+    <string name="home_quick_scan_pdf">Scan to PDF</string>
     <string name="home_quick_signature">Lift a signature</string>
     <string name="home_quick_passport">Passport photo</string>
     <string name="home_quick_redeye">Fix red eye</string>
@@ -826,4 +827,20 @@
     <string name="watermark_place_bottom_left">Bottom left</string>
     <string name="watermark_place_bottom_right">Bottom right</string>
     <string name="watermark_preview">On your first picture</string>
+    <string name="step_pdf_title">Pages to one PDF</string>
+    <string name="step_pdf_detail">Every picture a page of one PDF, in the order you added them</string>
+    <string name="step_pdf_summary">One PDF, %1$s</string>
+    <string name="step_pdf_hint">Each page is kept at 200 dpi, as a JPEG at the quality above. Size and format steps are for separate pictures, so the PDF leaves them out.</string>
+    <string name="pdf_paper_a4">A4</string>
+    <string name="pdf_paper_letter">Letter</string>
+    <string name="pdf_paper_fit">Fit to picture</string>
+    <string name="engine_pdf_detail">%1$s · %2$s · %3$s</string>
+    <plurals name="engine_pdf_pages">
+        <item quantity="one">%d page</item>
+        <item quantity="other">%d pages</item>
+    </plurals>
+    <string name="tool_scan_pdf_title">Scan to PDF</string>
+    <string name="tool_scan_pdf_summary">Pages found, flattened and cleaned, then saved together as one PDF</string>
+    <string name="tool_scan_pdf_action">Make a PDF</string>
+    <string name="tool_words_scan_pdf">pdf document pages scanner multi page combine merge receipt notes</string>
 </resources>

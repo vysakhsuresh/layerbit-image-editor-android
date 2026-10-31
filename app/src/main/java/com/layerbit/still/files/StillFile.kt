@@ -23,6 +23,7 @@ data class StillFile(
 ) {
     val sizeBytes: Long get() = file.length()
     val isJpeg: Boolean get() = mimeType == MIME_JPEG
+    val isPdf: Boolean get() = mimeType == MIME_PDF
 
     sealed interface Origin {
         /** Picked through the photo picker or SAF, or received via a share. */
@@ -36,5 +37,7 @@ data class StillFile(
         const val MIME_JPEG = "image/jpeg"
         const val MIME_PNG = "image/png"
         const val MIME_WEBP = "image/webp"
+        /** Many pages in one document: what "Pages to one PDF" writes. Not a picture; the editor does not open it. */
+        const val MIME_PDF = "application/pdf"
     }
 }
