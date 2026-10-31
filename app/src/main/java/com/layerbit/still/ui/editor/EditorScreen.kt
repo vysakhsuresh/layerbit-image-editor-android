@@ -322,7 +322,7 @@ fun EditorScreen(
                             ToolId.Panel.CURVES -> CurvesPanel(scope, ui.histogram)
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
-                                LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
+                                LooksPanel(scope, ui.presets, ui.lookThumbs, ui.suggestedLooks, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.MARKUP -> MarkupPanel(

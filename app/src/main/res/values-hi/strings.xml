@@ -299,6 +299,7 @@
     <string name="looks_moves">यह लुक बदलता है: %1$s. आपके अपने स्लाइडर इसके ऊपर लगते हैं.</string>
     <string name="looks_presets">आपकी रेसिपी</string>
     <string name="looks_no_presets">मौजूदा संपादन को रेसिपी के रूप में सहेजें और वह यहां दिखेगी, और पूरे बैच के लिए “रेसिपी लागू करें” में भी.</string>
+    <string name="looks_for_this">इसके लिए</string>
     <string name="looks_save_preset">रेसिपी के रूप में सहेजें</string>
     <string name="looks_preset_hold_hint">लगाने के लिए प्रीसेट पर टैप करें. नाम बदलने या हटाने के लिए दबाकर रखें.</string>
     <string name="looks_preset_edit_title">प्रीसेट</string>

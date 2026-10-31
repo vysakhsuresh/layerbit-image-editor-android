@@ -299,6 +299,7 @@
     <string name="looks_moves">This look moves: %1$s. Your own sliders apply on top.</string>
     <string name="looks_presets">Your recipes</string>
     <string name="looks_no_presets">Save the edit you have as a recipe and it appears here, and in Apply a recipe for a whole batch.</string>
+    <string name="looks_for_this">For this</string>
     <string name="looks_save_preset">Save as recipe</string>
     <string name="looks_preset_hold_hint">Tap a preset to apply it. Hold one to rename or delete it.</string>
     <string name="looks_preset_edit_title">Preset</string>

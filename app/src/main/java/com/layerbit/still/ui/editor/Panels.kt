@@ -270,8 +270,8 @@ fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? =
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look, Bitmap>, onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit, onRenamePreset: (ImageStore.Preset, String) -> Unit = { _, _ -> }) {
-    LookStrip(s.recipe.look, thumbs, onSelect = { look -> s.change { it.copy(look = look, lookStrength = if (it.lookStrength == 0f) 1f else it.lookStrength) } })
+fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look, Bitmap>, suggested: List<Look> = emptyList(), onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit, onRenamePreset: (ImageStore.Preset, String) -> Unit = { _, _ -> }) {
+    LookStrip(s.recipe.look, thumbs, suggested, onSelect = { look -> s.change { it.copy(look = look, lookStrength = if (it.lookStrength == 0f) 1f else it.lookStrength) } })
     if (s.recipe.look != Look.NONE) {
         Knob(stringResource(R.string.looks_strength), s.recipe.lookStrength, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(lookStrength = v)) }, onDone = s.commit, onReset = { s.change { it.copy(lookStrength = 1f) } }, haptics = s.haptics)
         val moved = Looks.recipeFor(s.recipe.look).tone
@@ -313,11 +313,13 @@ private fun PresetChip(name: String, onApply: () -> Unit, onEdit: () -> Unit) {
 
 /** Every look shown on the picture itself, in a strip; the chosen one framed in the band colour. */
 @Composable
-private fun LookStrip(selected: Look, thumbs: Map<Look, Bitmap>, onSelect: (Look) -> Unit) {
+private fun LookStrip(selected: Look, thumbs: Map<Look, Bitmap>, suggested: List<Look>, onSelect: (Look) -> Unit) {
     val shape = RoundedCornerShape(14.dp)
+    // None first, then the looks that suit this picture, then the rest in their usual order.
+    val order = remember(suggested) { listOf(Look.NONE) + suggested.filter { it != Look.NONE } + Look.entries.filter { it != Look.NONE && it !in suggested } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(vertical = 2.dp), modifier = Modifier.fillMaxWidth().testTag("lookStrip")) {
-        items(Look.entries.size) { i ->
-            val look = Look.entries[i]
+        items(order.size, key = { order[it].name }) { i ->
+            val look = order[i]
             val active = look == selected
             val frame by animateColorAsState(if (active) StillColors.Band else StillColors.Border, label = "lookFrame")
             val interaction = remember { MutableInteractionSource() }
@@ -326,6 +328,10 @@ private fun LookStrip(selected: Look, thumbs: Map<Look, Bitmap>, onSelect: (Look
                 Box(Modifier.size(72.dp).clip(shape).background(StillColors.SurfaceDim).border(if (active) 2.5.dp else 1.dp, frame, shape), contentAlignment = Alignment.Center) {
                     val bmp = thumbs[look]
                     if (bmp != null) Image(bmp.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(shape).testTag("lookThumb"))
+                    if (look in suggested) Text(
+                        stringResource(R.string.looks_for_this), style = MaterialTheme.typography.labelSmall, color = StillColors.OnBand, maxLines = 1,
+                        modifier = Modifier.align(Alignment.TopStart).padding(4.dp).clip(RoundedCornerShape(999.dp)).background(StillColors.Band).padding(horizontal = 6.dp, vertical = 1.dp)
+                    )
                 }
                 Text(lookLabel(look), style = MaterialTheme.typography.labelMedium, color = if (active) StillColors.Text else StillColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
             }

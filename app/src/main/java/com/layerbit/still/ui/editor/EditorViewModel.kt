@@ -12,6 +12,7 @@ import com.layerbit.still.R
 import com.layerbit.still.StillApplication
 import com.layerbit.still.engine.AutoEnhance
 import com.layerbit.still.engine.AutoWhite
+import com.layerbit.still.engine.LookAdvice
 import com.layerbit.still.engine.Clipping
 import com.layerbit.still.engine.RedEyes
 import com.layerbit.still.engine.PageQuad
@@ -109,6 +110,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val autoPanel: ToolId.Panel? = null,
         /** Backgrounds in the picture's own colours, a pale and a deep one per colour, for Frame and Cut out. */
         val swatches: List<Int> = emptyList(),
+        /** The looks that suit this picture, best first, read once per picture. */
+        val suggestedLooks: List<Look> = emptyList(),
         /** On the Light panel: blown pixels painted red and crushed ones blue on the preview. */
         val showClipping: Boolean = false,
         val loading: Boolean = true
@@ -505,9 +508,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                         val bmp = fresh.bitmap
                         val px = IntArray(bmp.width * bmp.height)
                         bmp.getPixels(px, 0, bmp.width, 0, 0, bmp.width, bmp.height)
-                        Palette.matched(px)
+                        Palette.matched(px) to LookAdvice.suggest(px)
                     }
-                    _ui.update { it.copy(swatches = swatches) }
+                    _ui.update { it.copy(swatches = swatches.first, suggestedLooks = swatches.second) }
                     fresh.bitmap
                 }
                 val cutoutPanel = state.panel == ToolId.Panel.CUTOUT && !state.recipe.cutout.enabled
