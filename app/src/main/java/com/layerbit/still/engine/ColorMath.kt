@@ -326,7 +326,8 @@ object Looks {
             dehaze = (user.dehaze + l.tone.dehaze * s).coerceIn(0f, 1f),
             sharpness = (user.sharpness + l.tone.sharpness * s).coerceIn(0f, 1f),
             vignette = (user.vignette + l.tone.vignette * s).coerceIn(-1f, 1f),
-            grain = (user.grain + l.tone.grain * s).coerceIn(0f, 1f)
+            grain = (user.grain + l.tone.grain * s).coerceIn(0f, 1f),
+            noise = user.noise
         )
         val c = Curves(
             master = blend(userCurves.master, l.curves.master, s),

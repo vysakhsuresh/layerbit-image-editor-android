@@ -104,4 +104,30 @@ class SpatialTest {
         Spatial.pixelate(p, w, h, 0, 0, w, h, 4)
         assertTrue(p.all { Argb.red(it) == 100 })
     }
+
+    @Test
+    fun denoiseCalmsNoiseAndKeepsAnEdge() {
+        val w = 200; val h = 120
+        val rnd = java.util.Random(3)
+        // Left half dark, right half light, with strong per-pixel colour noise.
+        val src = IntArray(w * h) { i ->
+            val x = i % w
+            val base = if (x < w / 2) 60 else 190
+            fun n() = (rnd.nextGaussian() * 18).toInt()
+            Argb.pack(255, (base + n()).coerceIn(0, 255), (base + n()).coerceIn(0, 255), (base + n()).coerceIn(0, 255))
+        }
+        val out = Spatial.denoise(src, w, h, 1f)
+        fun spread(px: IntArray, x0: Int, x1: Int): Double {
+            val v = ArrayList<Int>()
+            for (y in 10 until h - 10) for (x in x0 until x1) v += Argb.red(px[y * w + x])
+            val m = v.average(); return kotlin.math.sqrt(v.sumOf { (it - m) * (it - m) } / v.size)
+        }
+        assertTrue("noise down ${spread(src, 20, 80)} -> ${spread(out, 20, 80)}", spread(out, 20, 80) < spread(src, 20, 80) * 0.6)
+        // The edge stays: the step across the middle is still almost the full 130.
+        val row = 60
+        val left = (0 until 10).map { Argb.red(out[row * w + w / 2 - 8 + it - 5]) }.average()
+        val right = (0 until 10).map { Argb.red(out[row * w + w / 2 + 3 + it]) }.average()
+        assertTrue("edge kept ${right - left}", right - left > 110)
+        assertEquals(src.toList(), Spatial.denoise(src, w, h, 0f).toList())
+    }
 }

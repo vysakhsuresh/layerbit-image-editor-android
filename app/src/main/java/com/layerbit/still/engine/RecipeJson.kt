@@ -55,7 +55,7 @@ object RecipeJson {
         "shadows" to t.shadows.json(), "whites" to t.whites.json(), "blacks" to t.blacks.json(),
         "saturation" to t.saturation.json(), "vibrance" to t.vibrance.json(), "temperature" to t.temperature.json(),
         "tint" to t.tint.json(), "hue" to t.hue.json(), "fade" to t.fade.json(), "clarity" to t.clarity.json(),
-        "dehaze" to t.dehaze.json(), "sharpness" to t.sharpness.json(), "vignette" to t.vignette.json(), "grain" to t.grain.json()
+        "dehaze" to t.dehaze.json(), "sharpness" to t.sharpness.json(), "vignette" to t.vignette.json(), "grain" to t.grain.json(), "noise" to t.noise.json()
     )
 
     private fun mark(m: Mark) = jsonOf(
@@ -99,7 +99,7 @@ object RecipeJson {
                 exposure = t.f("exposure"), contrast = t.f("contrast"), highlights = t.f("highlights"), shadows = t.f("shadows"),
                 whites = t.f("whites"), blacks = t.f("blacks"), saturation = t.f("saturation"), vibrance = t.f("vibrance"),
                 temperature = t.f("temperature"), tint = t.f("tint"), hue = t.f("hue"), fade = t.f("fade"),
-                clarity = t.f("clarity"), dehaze = t.f("dehaze"), sharpness = t.f("sharpness"), vignette = t.f("vignette"), grain = t.f("grain")
+                clarity = t.f("clarity"), dehaze = t.f("dehaze"), sharpness = t.f("sharpness"), vignette = t.f("vignette"), grain = t.f("grain"), noise = t.f("noise").coerceIn(0f, 1f)
             ),
             curves = if (c == null) Curves() else Curves(
                 master = c["master"]?.let { pts(it) } ?: Curves.IDENTITY_POINTS,

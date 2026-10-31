@@ -146,20 +146,22 @@ data class Tone(
     /** Darkened corners, 0..1; negative brightens them. */
     val vignette: Float = 0f,
     /** Film grain, 0..1. */
-    val grain: Float = 0f
+    val grain: Float = 0f,
+    /** Noise reduction, 0..1: colour blotches cleaned hard, brightness grain gently, edges kept. */
+    val noise: Float = 0f
 ) {
     val isIdentity: Boolean get() = this == Tone()
 
     /** Everything that is decided per pixel from its own value: no neighbours, no position. */
     val pointIdentity: Boolean
-        get() = copy(clarity = 0f, dehaze = 0f, sharpness = 0f, vignette = 0f, grain = 0f) == Tone()
+        get() = copy(clarity = 0f, dehaze = 0f, sharpness = 0f, vignette = 0f, grain = 0f, noise = 0f) == Tone()
 
     /** The values a user may enter. Any slider outside its range is a corrupt recipe, not a taste. */
     val valid: Boolean
         get() = exposure in -2f..2f && contrast in -1f..1f && highlights in -1f..1f && shadows in -1f..1f &&
             whites in -1f..1f && blacks in -1f..1f && saturation in -1f..1f && vibrance in -1f..1f &&
             temperature in -1f..1f && tint in -1f..1f && hue in -1f..1f && fade in 0f..1f &&
-            clarity in -1f..1f && dehaze in 0f..1f && sharpness in 0f..1f && vignette in -1f..1f && grain in 0f..1f
+            clarity in -1f..1f && dehaze in 0f..1f && sharpness in 0f..1f && vignette in -1f..1f && grain in 0f..1f && noise in 0f..1f
 }
 
 /**

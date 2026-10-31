@@ -237,6 +237,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         var working = pixels
         // Paper cleanup before detail, so sharpening works on clean ink.
         if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
+        // Noise out before any sharpening, so sharpening has clean edges to work on.
+        if (r.tone.noise > 0f) working = Spatial.denoise(working, w, h, r.tone.noise, check)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
             working = Spatial.detail(working, w, h, tone, check)
         }

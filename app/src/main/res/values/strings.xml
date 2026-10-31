@@ -310,6 +310,7 @@
     <string name="looks_preset_keeps">A recipe keeps light, colour, curves, look, detail and frame. The crop and the layers drawn on this picture are left out.</string>
 
     <!-- Detail -->
+    <string name="detail_noise">Noise reduction</string>
     <string name="detail_sharpness">Sharpness</string>
     <string name="detail_clarity">Clarity</string>
     <string name="detail_dehaze">Dehaze</string>

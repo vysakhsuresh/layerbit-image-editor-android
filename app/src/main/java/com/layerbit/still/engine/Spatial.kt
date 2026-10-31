@@ -95,6 +95,82 @@ object Spatial {
     }
 
     /**
+     * Noise reduction that keeps edges. The picture is split into brightness and colour: colour
+     * noise, the blotchy part people notice, is smoothed hard with a plain blur; brightness is
+     * smoothed by a self-guided filter, which flattens small wobbles and leaves edges and text
+     * alone because their local variance is far above the noise floor. Radii follow the
+     * picture's size, so the preview predicts the export.
+     */
+    fun denoise(src: IntArray, w: Int, h: Int, amount: Float, check: () -> Unit = {}): IntArray {
+        if (amount <= 0f || w < 3 || h < 3) return src
+        val a = amount.coerceIn(0f, 1f)
+        val scale = Geometry2D.resolutionScale(Geometry2D.Size(w, h))
+        val n = w * h
+        val y = FloatArray(n); val cb = FloatArray(n); val cr = FloatArray(n)
+        for (i in 0 until n) {
+            val c = src[i]
+            val r = (c shr 16 and 0xFF) / 255f; val g = (c shr 8 and 0xFF) / 255f; val b = (c and 0xFF) / 255f
+            val l = 0.299f * r + 0.587f * g + 0.114f * b
+            y[i] = l; cb[i] = b - l; cr[i] = r - l
+        }
+        check()
+        // Colour: a wide blur, blended in by the amount.
+        val cRadius = max(1, (3f * scale * (0.5f + a)).roundToInt())
+        val cbS = boxMean(cb, w, h, cRadius); val crS = boxMean(cr, w, h, cRadius)
+        check()
+        // Brightness: self-guided filter. eps is the variance treated as noise.
+        val radius = max(1, (2f * scale).roundToInt())
+        val eps = (0.012f + 0.05f * a).let { it * it }
+        val mean = boxMean(y, w, h, radius)
+        val sq = FloatArray(n) { y[it] * y[it] }
+        val meanSq = boxMean(sq, w, h, radius)
+        val ak = FloatArray(n); val bk = FloatArray(n)
+        for (i in 0 until n) {
+            val v = (meanSq[i] - mean[i] * mean[i]).coerceAtLeast(0f)
+            val k = v / (v + eps)
+            ak[i] = k; bk[i] = mean[i] - k * mean[i]
+        }
+        check()
+        val am = boxMean(ak, w, h, radius); val bm = boxMean(bk, w, h, radius)
+        val out = IntArray(n)
+        val lumaMix = 0.35f + 0.65f * a
+        for (i in 0 until n) {
+            val l = y[i] + ((am[i] * y[i] + bm[i]) - y[i]) * lumaMix
+            val cbv = cb[i] + (cbS[i] - cb[i]) * a
+            val crv = cr[i] + (crS[i] - cr[i]) * a
+            val r = l + crv; val b = l + cbv
+            val g = (l - 0.299f * r - 0.114f * b) / 0.587f
+            out[i] = (src[i] and 0xFF000000.toInt()) or (to8(r) shl 16) or (to8(g) shl 8) or to8(b)
+        }
+        return out
+    }
+
+    private fun to8(v: Float): Int = (v * 255f + 0.5f).toInt().coerceIn(0, 255)
+
+    /** A box mean of radius [r] with clamped edges, in two separable running-sum passes. */
+    private fun boxMean(src: FloatArray, w: Int, h: Int, r: Int): FloatArray {
+        val tmp = FloatArray(src.size); val out = FloatArray(src.size)
+        for (y in 0 until h) {
+            val row = y * w
+            var sum = 0f
+            for (k in -r..r) sum += src[row + k.coerceIn(0, w - 1)]
+            for (x in 0 until w) {
+                tmp[row + x] = sum / (2 * r + 1)
+                sum += src[row + (x + r + 1).coerceAtMost(w - 1)] - src[row + (x - r).coerceAtLeast(0)]
+            }
+        }
+        for (x in 0 until w) {
+            var sum = 0f
+            for (k in -r..r) sum += tmp[k.coerceIn(0, h - 1) * w + x]
+            for (y in 0 until h) {
+                out[y * w + x] = sum / (2 * r + 1)
+                sum += tmp[(y + r + 1).coerceAtMost(h - 1) * w + x] - tmp[(y - r).coerceAtLeast(0) * w + x]
+            }
+        }
+        return out
+    }
+
+    /**
      * Darkens (or brightens) towards the corners. Smooth, centred, and sized to the picture.
      * Positive [amount] darkens, which is the usual meaning.
      */

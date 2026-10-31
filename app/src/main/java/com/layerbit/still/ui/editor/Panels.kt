@@ -359,6 +359,7 @@ fun describeTone(t: Tone): String {
 @Composable
 fun DetailPanel(s: PanelScope) {
     val t = s.recipe.tone
+    s.ToneKnob(stringResource(R.string.detail_noise), t.noise, 0f..1f) { a, v -> a.copy(noise = v) }
     s.ToneKnob(stringResource(R.string.detail_sharpness), t.sharpness, 0f..1f) { a, v -> a.copy(sharpness = v) }
     s.ToneKnob(stringResource(R.string.detail_clarity), t.clarity) { a, v -> a.copy(clarity = v) }
     s.ToneKnob(stringResource(R.string.detail_dehaze), t.dehaze, 0f..1f) { a, v -> a.copy(dehaze = v) }

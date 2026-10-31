@@ -91,7 +91,7 @@ data class ToneStep(val delta: Tone, val amount: Float = 1f) {
             temperature = (current.temperature + d.temperature * k).coerceIn(-1f, 1f),
             tint = (current.tint + d.tint * k).coerceIn(-1f, 1f),
             hue = current.hue, fade = current.fade, clarity = current.clarity, dehaze = current.dehaze,
-            sharpness = current.sharpness, vignette = current.vignette, grain = current.grain
+            sharpness = current.sharpness, vignette = current.vignette, grain = current.grain, noise = current.noise
         )
     }
 

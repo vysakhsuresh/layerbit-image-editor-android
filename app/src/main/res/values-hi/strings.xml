@@ -310,6 +310,7 @@
     <string name="looks_preset_keeps">रेसिपी में रोशनी, रंग, कर्व, लुक, बारीकी और फ़्रेम रहते हैं. क्रॉप और इस तस्वीर पर बनाई परतें छोड़ दी जाती हैं.</string>
 
     <!-- Detail -->
+    <string name="detail_noise">नॉइज़ हटाएँ</string>
     <string name="detail_sharpness">तीखापन</string>
     <string name="detail_clarity">स्पष्टता</string>
     <string name="detail_dehaze">धुंध हटाएं</string>
