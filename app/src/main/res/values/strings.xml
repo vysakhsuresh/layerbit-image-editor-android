@@ -1068,4 +1068,23 @@
     <string name="looks_scan_not_look">That code is not a Still look, so nothing was changed.</string>
     <string name="looks_scan_added">Added “%1$s” to your presets and applied it.</string>
     <string name="looks_scan_default_name">Scanned look</string>
+    <string name="tool_local_title">Local adjustments</string>
+    <string name="tool_local_summary">Brush, gradient, radial or a tap: light and colour in just one part, with sky and subject found for you</string>
+    <string name="tool_local_action">Adjust one part</string>
+    <string name="tool_portrait_title">Portrait</string>
+    <string name="tool_portrait_summary">Skin smoothed with its pores kept, even tone, face light, brighter eyes and whiter teeth</string>
+    <string name="tool_portrait_action">Retouch a portrait</string>
+    <string name="tool_expand_title">Expand</string>
+    <string name="tool_expand_summary">Grow the canvas to 1:1, 4:5, 9:16 or any size, filled from the picture itself</string>
+    <string name="tool_expand_action">Grow the canvas</string>
+    <string name="tool_double_title">Double exposure</string>
+    <string name="tool_double_summary">A second picture blended over the first, inside the subject if you like</string>
+    <string name="tool_double_action">Blend two pictures</string>
+    <string name="tool_words_local">selective brush dodge burn mask sky subject gradient radial part</string>
+    <string name="tool_words_portrait">portrait face skin smooth beauty retouch eyes teeth</string>
+    <string name="tool_words_expand">expand extend grow canvas outpaint fill bigger background</string>
+    <string name="tool_words_double">double exposure blend overlay two pictures silhouette</string>
+    <string name="home_quick_effects">Effects</string>
+    <string name="home_quick_portrait">Portrait</string>
+    <string name="home_quick_expand">Expand</string>
 </resources>

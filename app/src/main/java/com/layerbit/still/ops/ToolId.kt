@@ -29,6 +29,10 @@ enum class ToolId(
     CURVES(R.string.tool_curves_title, R.string.tool_curves_summary, R.string.tool_curves_action, Group.EDIT, Mode.EDITOR, Panel.CURVES),
     LOOKS(R.string.tool_looks_title, R.string.tool_looks_summary, R.string.tool_looks_action, Group.EDIT, Mode.EDITOR, Panel.LOOKS),
     EFFECTS(R.string.tool_effects_title, R.string.tool_effects_summary, R.string.tool_effects_action, Group.EDIT, Mode.EDITOR, Panel.EFFECTS),
+    LOCAL_EDIT(R.string.tool_local_title, R.string.tool_local_summary, R.string.tool_local_action, Group.EDIT, Mode.EDITOR, Panel.LOCAL),
+    PORTRAIT_EDIT(R.string.tool_portrait_title, R.string.tool_portrait_summary, R.string.tool_portrait_action, Group.EDIT, Mode.EDITOR, Panel.PORTRAIT),
+    EXPAND_CANVAS(R.string.tool_expand_title, R.string.tool_expand_summary, R.string.tool_expand_action, Group.EDIT, Mode.EDITOR, Panel.EXPAND),
+    DOUBLE_EXPOSURE(R.string.tool_double_title, R.string.tool_double_summary, R.string.tool_double_action, Group.MARK, Mode.EDITOR, Panel.DOUBLE),
     DETAIL(R.string.tool_detail_title, R.string.tool_detail_summary, R.string.tool_detail_action, Group.EDIT, Mode.EDITOR, Panel.DETAIL),
 
     MARKUP(R.string.tool_markup_title, R.string.tool_markup_summary, R.string.tool_markup_action, Group.MARK, Mode.EDITOR, Panel.MARKUP),

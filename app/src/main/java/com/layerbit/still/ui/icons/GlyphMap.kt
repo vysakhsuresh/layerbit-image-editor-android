@@ -16,6 +16,10 @@ fun iconFor(tool: ToolId): Int = when (tool) {
     ToolId.CURVES -> R.drawable.ic_tool_curves
     ToolId.LOOKS -> R.drawable.ic_tool_looks
     ToolId.EFFECTS -> R.drawable.ic_tool_effects
+    ToolId.LOCAL_EDIT -> R.drawable.ic_tool_local
+    ToolId.PORTRAIT_EDIT -> R.drawable.ic_tool_portrait
+    ToolId.EXPAND_CANVAS -> R.drawable.ic_tool_expand
+    ToolId.DOUBLE_EXPOSURE -> R.drawable.ic_tool_double
     ToolId.DETAIL -> R.drawable.ic_tool_detail
     ToolId.MARKUP -> R.drawable.ic_tool_markup
     ToolId.RETOUCH -> R.drawable.ic_tool_retouch

@@ -1068,4 +1068,23 @@
     <string name="looks_scan_not_look">वह कोड Still लुक नहीं है, इसलिए कुछ नहीं बदला.</string>
     <string name="looks_scan_added">“%1$s” को आपके प्रीसेट में जोड़कर लगा दिया गया.</string>
     <string name="looks_scan_default_name">स्कैन किया गया लुक</string>
+    <string name="tool_local_title">एक हिस्से में बदलाव</string>
+    <string name="tool_local_summary">ब्रश, ग्रेडिएंट, गोला या टैप: सिर्फ़ एक हिस्से की रोशनी और रंग; आसमान और मुख्य चीज़ अपने-आप</string>
+    <string name="tool_local_action">एक हिस्सा बदलें</string>
+    <string name="tool_portrait_title">पोर्ट्रेट</string>
+    <string name="tool_portrait_summary">त्वचा चिकनी पर रोमछिद्र बने रहें, एक-सा रंग, चेहरे पर रोशनी, चमकती आँखें और सफ़ेद दाँत</string>
+    <string name="tool_portrait_action">पोर्ट्रेट सुधारें</string>
+    <string name="tool_expand_title">फैलाएँ</string>
+    <string name="tool_expand_summary">कैनवस को 1:1, 4:5, 9:16 या किसी भी आकार तक बढ़ाएँ, तस्वीर से ही भरा हुआ</string>
+    <string name="tool_expand_action">कैनवस बढ़ाएँ</string>
+    <string name="tool_double_title">डबल एक्सपोज़र</string>
+    <string name="tool_double_summary">पहली तस्वीर पर दूसरी तस्वीर मिलाएँ, चाहें तो मुख्य आकृति के अंदर</string>
+    <string name="tool_double_action">दो तस्वीरें मिलाएँ</string>
+    <string name="tool_words_local">हिस्सा ब्रश आसमान selective brush dodge burn mask sky</string>
+    <string name="tool_words_portrait">पोर्ट्रेट चेहरा त्वचा portrait face skin smooth beauty</string>
+    <string name="tool_words_expand">फैलाएँ बढ़ाएँ expand extend grow canvas</string>
+    <string name="tool_words_double">डबल मिलाएँ double exposure blend overlay</string>
+    <string name="home_quick_effects">इफ़ेक्ट</string>
+    <string name="home_quick_portrait">पोर्ट्रेट</string>
+    <string name="home_quick_expand">फैलाएँ</string>
 </resources>

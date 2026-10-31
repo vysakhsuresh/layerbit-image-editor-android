@@ -131,7 +131,10 @@ fun HomeScreen(
                 val quickAll = listOf(
                     QuickTool(Glyph.CUTOUT, R.string.home_quick_cutout, ToolId.CUTOUT) { onQuickTool(ToolId.CUTOUT) },
                     QuickTool(Glyph.SCAN, R.string.home_quick_scan, ToolId.SCAN) { onQuickTool(ToolId.SCAN) },
-                    QuickTool(Glyph.SCAN, R.string.home_quick_scan_pdf, ToolId.SCAN_PDF) { onProcessMany("pdf") },
+                    QuickTool(null, R.string.home_quick_scan_pdf, ToolId.SCAN_PDF, R.drawable.ic_tool_export) { onProcessMany("pdf") },
+                    QuickTool(null, R.string.home_quick_effects, ToolId.EFFECTS, R.drawable.ic_tool_effects) { onQuickTool(ToolId.EFFECTS) },
+                    QuickTool(null, R.string.home_quick_portrait, ToolId.PORTRAIT_EDIT, R.drawable.ic_tool_portrait) { onQuickTool(ToolId.PORTRAIT_EDIT) },
+                    QuickTool(null, R.string.home_quick_expand, ToolId.EXPAND_CANVAS, R.drawable.ic_tool_expand) { onQuickTool(ToolId.EXPAND_CANVAS) },
                     QuickTool(Glyph.SIGNATURE, R.string.home_quick_signature, ToolId.SIGNATURE) { onQuickTool(ToolId.SIGNATURE) },
                     QuickTool(Glyph.RESIZE_KB, R.string.home_quick_under, ToolId.RESIZE_KB) { onProcessMany("under") },
                     QuickTool(Glyph.PASSPORT, R.string.home_quick_passport, ToolId.PASSPORT) { onProcessMany("passport") },
@@ -184,7 +187,7 @@ fun HomeScreen(
                 ) {
                     items(quick.size) { i ->
                         val q = quick[i]
-                        Quick(q.glyph, accents[i % accents.size], stringResource(q.label), i, Modifier.width(84.dp)) { onUsed(q.tool); q.action() }
+                        Quick(q.glyph, accents[i % accents.size], stringResource(q.label), i, Modifier.width(84.dp), iconRes = q.iconRes) { onUsed(q.tool); q.action() }
                     }
                 }
                 QuickScrollIndicator(quickState, Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp))
@@ -344,7 +347,7 @@ private fun QuickScrollIndicator(state: LazyListState, modifier: Modifier = Modi
 }
 
 /** One entry of the quick strip: what it shows, which tool it counts as, what a tap does. */
-private class QuickTool(val glyph: Glyph, @androidx.annotation.StringRes val label: Int, val tool: ToolId, val action: () -> Unit)
+private class QuickTool(val glyph: Glyph?, @androidx.annotation.StringRes val label: Int, val tool: ToolId, @androidx.annotation.DrawableRes val iconRes: Int = 0, val action: () -> Unit)
 
 /**
  * A quick tool as a small cousin of the doors below: a glossy tile in two neighbouring neons
@@ -352,7 +355,7 @@ private class QuickTool(val glyph: Glyph, @androidx.annotation.StringRes val lab
  * in one after another, and a sheen runs along the strip every few seconds, tile by tile.
  */
 @Composable
-private fun Quick(glyph: Glyph, accent: Pair<Color, Color>, label: String, index: Int, modifier: Modifier, onClick: () -> Unit) {
+private fun Quick(glyph: Glyph?, accent: Pair<Color, Color>, label: String, index: Int, modifier: Modifier, iconRes: Int = 0, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val clock = LocalLivelyClock.current
     val (from, to) = accent
@@ -415,7 +418,8 @@ private fun Quick(glyph: Glyph, accent: Pair<Color, Color>, label: String, index
                 },
             contentAlignment = Alignment.Center
         ) {
-            AnimatedGlyph(glyph, Color.White, Modifier.size(34.dp), seed = glyph.ordinal * 11)
+            if (glyph != null) AnimatedGlyph(glyph, Color.White, Modifier.size(34.dp), seed = glyph.ordinal * 11)
+            else androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(iconRes), contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
         }
         Text(
             label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = StillColors.Text,
