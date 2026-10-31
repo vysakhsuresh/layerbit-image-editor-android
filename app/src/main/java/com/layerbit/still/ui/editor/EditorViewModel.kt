@@ -744,7 +744,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         effectJob = viewModelScope.launch {
             try {
                 val small = effectSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { effectSmall = it }
-                fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf(Effect(k, style = style, strength = 0.8f, size = 0.12f)))
+                fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf((if (k == EffectKind.VIGNETTE) Effect.added(k).copy(style = style, strength = 0.8f) else Effect(k, style = style, strength = 0.8f, size = 0.12f))))
                 if (effectThumbKey != baseRecipe) {
                     val thumbs = LinkedHashMap<EffectKind, Bitmap>()
                     for (k in EffectKind.entries) thumbs[k] = renderer.finish(small, sample(k, 0))

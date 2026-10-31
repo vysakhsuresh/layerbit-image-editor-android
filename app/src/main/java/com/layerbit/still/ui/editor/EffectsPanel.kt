@@ -73,6 +73,7 @@ fun effectLabelRes(kind: EffectKind): Int = when (kind) {
     EffectKind.RETROLUX -> R.string.effect_retrolux
     EffectKind.GRAINY_FILM -> R.string.effect_grainy_film
     EffectKind.LENS_BLUR -> R.string.effect_lens_blur
+    EffectKind.VIGNETTE -> R.string.effect_vignette
 }
 
 /** The style names, in the order of the engine's style tables. */
@@ -86,6 +87,7 @@ fun effectStyleRes(kind: EffectKind): List<Int> = when (kind) {
     EffectKind.RETROLUX -> listOf(R.string.effect_style_summer, R.string.effect_style_amber, R.string.effect_style_faded, R.string.effect_style_rose)
     EffectKind.GRAINY_FILM -> listOf(R.string.effect_style_neutral, R.string.effect_style_warm, R.string.effect_style_cool, R.string.effect_style_mono)
     EffectKind.LENS_BLUR -> listOf(R.string.effect_style_line, R.string.effect_style_round)
+    EffectKind.VIGNETTE -> listOf(R.string.effect_style_dark, R.string.effect_style_bright)
 }
 
 fun effectExtraRes(kind: EffectKind): Int = when (kind) {
@@ -96,6 +98,7 @@ fun effectExtraRes(kind: EffectKind): Int = when (kind) {
     EffectKind.RETROLUX -> R.string.effect_extra_scratches
     EffectKind.GRAINY_FILM -> R.string.effect_extra_grain_size
     EffectKind.LENS_BLUR -> R.string.effect_extra_transition
+    EffectKind.VIGNETTE -> R.string.effect_extra_softness
 }
 
 // ------------------------------------------------------------------ panel
@@ -140,7 +143,7 @@ fun EffectsPanel(
                 when {
                     at >= 0 -> onChoose(at)
                     effects.size >= Effect.MAX -> onFull()
-                    else -> { s.change { it.copy(effects = it.effects + Effect(kind)) }; onChoose(effects.size) }
+                    else -> { s.change { it.copy(effects = it.effects + Effect.added(kind)) }; onChoose(effects.size) }
                 }
             }
         }
@@ -236,7 +239,7 @@ private fun lensHandles(e: Effect, t: CanvasTransform): LensHandles? {
     val dir = Offset(cos(a).toFloat(), sin(a).toFloat())
     val normal = Offset(-dir.y, dir.x)
     val size = e.size * short
-    return if (e.style == 0) {
+    return if (e.linear) {
         LensHandles(c, c + normal * size, null, c + dir * (short * 0.32f), dir, normal, short)
     } else {
         LensHandles(c, c + dir * size, c + normal * (size * e.aspect), c - dir * (size + short * 0.1f), dir, normal, short)
@@ -252,7 +255,7 @@ fun lensOverlay(e: Effect): Overlay = Overlay.Custom(e, draw@{ t ->
     val dash = PathEffect.dashPathEffect(floatArrayOf(12f, 9f))
     val feather = (0.04f + 0.6f * e.extra) * h.short
     clipRect(r.left, r.top, r.right, r.bottom) {
-        if (e.style == 0) {
+        if (e.linear) {
             val far = h.dir * (r.width + r.height)
             for (sign in listOf(-1f, 1f)) {
                 val sharp = h.centre + h.normal * (e.size * h.short * sign)
@@ -309,12 +312,12 @@ fun lensTouch(
             fun along(axis: Offset) = abs(finger.x * axis.x + finger.y * axis.y) / h.short
             val next = when (handle) {
                 0 -> e.copy(center = Pt((e.center.x + delta.x).coerceIn(0f, 1f), (e.center.y + delta.y).coerceIn(0f, 1f)))
-                1 -> e.copy(size = (if (e.style == 0) along(h.normal) else along(h.dir)).coerceIn(Effect.MIN_SIZE, Effect.MAX_SIZE))
+                1 -> e.copy(size = (if (e.linear) along(h.normal) else along(h.dir)).coerceIn(Effect.MIN_SIZE, Effect.MAX_SIZE))
                 2 -> e.copy(aspect = (along(h.normal) / e.size).coerceIn(Effect.MIN_ASPECT, Effect.MAX_ASPECT))
                 else -> {
                     // The turn dot sits ahead of the line, or behind the ellipse's width.
                     var deg = Math.toDegrees(atan2(finger.y.toDouble(), finger.x.toDouble())).toFloat()
-                    if (e.style == 1) deg += 180f
+                    if (!e.linear) deg += 180f
                     while (deg > 180f) deg -= 360f
                     while (deg < -180f) deg += 360f
                     e.copy(angle = deg)

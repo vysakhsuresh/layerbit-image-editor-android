@@ -208,7 +208,7 @@ fun EditorScreen(
         )
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         panel == ToolId.Panel.EFFECTS -> recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))
-            ?.takeIf { it.kind == com.layerbit.still.engine.EffectKind.LENS_BLUR }?.let { lensOverlay(it) } ?: Overlay.None
+            ?.takeIf { it.kind == com.layerbit.still.engine.EffectKind.LENS_BLUR || it.kind == com.layerbit.still.engine.EffectKind.VIGNETTE }?.let { lensOverlay(it) } ?: Overlay.None
         else -> Overlay.None
     }
 
@@ -334,7 +334,7 @@ fun EditorScreen(
         }
         ToolId.Panel.EFFECTS -> {
             val sel = effectSelection(recipe.effects, effectChosen)
-            if (recipe.effects.getOrNull(sel)?.kind != com.layerbit.still.engine.EffectKind.LENS_BLUR) viewOrScrub
+            if (recipe.effects.getOrNull(sel)?.kind.let { it != com.layerbit.still.engine.EffectKind.LENS_BLUR && it != com.layerbit.still.engine.EffectKind.VIGNETTE }) viewOrScrub
             else lensTouch(
                 effect = { vm.ui.value.recipe.effects.getOrNull(sel) }, t = transform, reach = reach,
                 update = { e -> val r = vm.ui.value.recipe; if (sel in r.effects.indices) vm.draft(r.copy(effects = r.effects.toMutableList().apply { set(sel, e) })) },

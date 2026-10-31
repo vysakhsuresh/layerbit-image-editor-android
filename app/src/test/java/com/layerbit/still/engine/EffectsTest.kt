@@ -304,4 +304,17 @@ class EffectsTest {
         assertArrayEquals(Effects.applyOne(src, w, h, list[0]), tone)
         assertArrayEquals(src, Effects.apply(src, w, h, list, Effects.Stage.LENS))
     }
+
+    @Test
+    fun aPlacedVignetteDarkensOutsideItsOvalOnly() {
+        val w = 200; val h = 120
+        val px = IntArray(w * h) { Argb.pack(255, 180, 180, 180) }
+        val e = Effect.added(EffectKind.VIGNETTE).copy(center = Pt(0.3f, 0.5f), size = 0.3f, strength = 1f)
+        val out = Effects.apply(px, w, h, listOf(e), Effects.Stage.LENS)
+        org.junit.Assert.assertEquals(180, Argb.red(out[60 * w + 60]))
+        org.junit.Assert.assertTrue("edge darker", Argb.red(out[60 * w + 195]) < 80)
+        val bright = Effects.apply(px, w, h, listOf(e.copy(style = 1)), Effects.Stage.LENS)
+        org.junit.Assert.assertTrue("edge lighter", Argb.red(bright[60 * w + 195]) > 220)
+        org.junit.Assert.assertEquals(px.toList(), Effects.apply(px, w, h, listOf(e.copy(strength = 0f)), Effects.Stage.LENS).toList())
+    }
 }

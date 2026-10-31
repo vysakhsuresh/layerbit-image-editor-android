@@ -45,7 +45,9 @@ enum class EffectKind(
     /** Film grain of a chosen size on the colour of a film stock. */
     GRAINY_FILM(4, 0f..1f, 0f..1f, 0.35f, Effects.Stage.SURFACE, seeded = true),
     /** Tilt-shift or round focus: sharp where it is pointed, blurred into bright discs elsewhere. */
-    LENS_BLUR(2, 0f..1f, 0f..1f, 0.5f, Effects.Stage.LENS);
+    LENS_BLUR(2, 0f..1f, 0f..1f, 0.5f, Effects.Stage.LENS),
+    /** Darkened (or brightened) surroundings around an oval you place, size and turn; the extra is its softness. */
+    VIGNETTE(2, 0f..1f, 0f..1f, 0.5f, Effects.Stage.LENS);
 
     val defaultStrength: Float get() = 0.5f
 }
@@ -73,6 +75,10 @@ data class Effect(
 ) {
     val isIdentity: Boolean get() = strength == 0f
 
+    /** The focus is a band across the picture (tilt-shift); otherwise an oval. */
+    val linear: Boolean get() = kind == EffectKind.LENS_BLUR && style == 0
+
+
     val valid: Boolean
         get() = style in 0 until kind.styles && strength.isFinite() && strength in kind.strengthRange &&
             extra.isFinite() && extra in kind.extraRange && center.finite && center.x in 0f..1f && center.y in 0f..1f &&
@@ -80,6 +86,9 @@ data class Effect(
             aspect.isFinite() && aspect in MIN_ASPECT..MAX_ASPECT
 
     companion object {
+        /** A new effect as the panel adds it: a vignette starts as a wide oval round the middle. */
+        fun added(kind: EffectKind): Effect = if (kind == EffectKind.VIGNETTE) Effect(kind, strength = 0.6f, size = 0.55f, aspect = 1.25f) else Effect(kind)
+
         const val MIN_SIZE = 0.01f
         const val MAX_SIZE = 1.5f
         const val MIN_ASPECT = 0.15f
@@ -124,6 +133,7 @@ object Effects {
             EffectKind.RETROLUX -> retrolux(px, w, h, e, scale, check)
             EffectKind.GRAINY_FILM -> grainyFilm(px, w, h, e, scale, check)
             EffectKind.LENS_BLUR -> lensBlur(px, w, h, e, scale, check)
+            EffectKind.VIGNETTE -> vignette(px, w, h, e, check)
         }
     }
 
@@ -550,7 +560,7 @@ object Effects {
         private val cx = e.center.x * w; private val cy = e.center.y * h
         private val ca: Float; private val sa: Float
         init { val a = Math.toRadians(e.angle.toDouble()); ca = cos(a).toFloat(); sa = sin(a).toFloat() }
-        private val linear = e.style == 0
+        private val linear = e.linear
         private val size = e.size
         private val ry = e.size * e.aspect
         private val feather = 0.04f + 0.6f * e.extra
@@ -565,6 +575,33 @@ object Effects {
             }
             return smooth(0f, feather, d)
         }
+    }
+
+    /**
+     * Snapseed's vignette, placed: everything outside the oval is darkened (style 0) or brightened
+     * towards white (style 1), fading in over the softness. Only position decides it, so the
+     * same oval lands in the same place at any size.
+     */
+    private fun vignette(px: IntArray, w: Int, h: Int, e: Effect, check: () -> Unit): IntArray {
+        val focus = Focus(e.copy(extra = 0.1f + 0.9f * e.extra), w, h)
+        val out = IntArray(px.size)
+        val k = 0.85f * e.strength
+        val bright = e.style == 1
+        Parallel.bands(h) { from, to ->
+            for (y in from until to) {
+                if (y and 0x3F == 0) check()
+                for (x in 0 until w) {
+                    val i = y * w + x
+                    val c = px[i]
+                    val a = focus.weight(x + 0.5f, y + 0.5f) * k
+                    if (a <= 0f) { out[i] = c; continue }
+                    val r = (c shr 16) and 0xFF; val g = (c shr 8) and 0xFF; val b = c and 0xFF
+                    out[i] = if (bright) Argb.pack(Argb.alpha(c), (r + (255 - r) * a).roundToInt(), (g + (255 - g) * a).roundToInt(), (b + (255 - b) * a).roundToInt())
+                    else Argb.pack(Argb.alpha(c), (r * (1f - a)).roundToInt(), (g * (1f - a)).roundToInt(), (b * (1f - a)).roundToInt())
+                }
+            }
+        }
+        return out
     }
 
     private fun lensBlur(px: IntArray, w: Int, h: Int, e: Effect, scale: Float, check: () -> Unit): IntArray {
