@@ -127,8 +127,6 @@
     <string name="tool_export">निर्यात</string>
 
     <!-- Home -->
-    <string name="home_open_picture">तस्वीर खोलें</string>
-    <string name="home_under_kb">KB के नीचे</string>
     <string name="home_search_hint">टूल खोजें: छोटा, पासपोर्ट, लोकेशन…</string>
     <string name="home_no_match">इससे कुछ मेल नहीं खाता. खोज खाली होने पर सभी टूल दिखते हैं.</string>
     <string name="tools_search_clear">खोज साफ़ करें</string>
@@ -161,7 +159,6 @@
     <string name="tool_words_apply_recipe">कॉपी copy edits preset</string>
     <string name="home_pick_up">जहां छोड़ा था, वहीं से शुरू करें</string>
     <string name="home_recent_tools">हाल के टूल</string>
-    <string name="home_yours">आपके</string>
     <string name="home_pinned">पिन किया हुआ</string>
     <string name="home_pin_hint">किसी टूल को ऊपर पिन करने के लिए उसे दबाकर रखें.</string>
     <string name="home_footer">मुफ़्त, ऑफ़लाइन, और %1$s की ओर से</string>
@@ -429,7 +426,6 @@
     <string name="export_saved">%1$s सहेजी गई.</string>
     <string name="export_failed">निर्यात नहीं बन सका. आपकी मूल तस्वीर सुरक्षित है.</string>
     <string name="export_options_invalid">आकार की सीमा के लिए हानिपूर्ण फ़ॉर्मैट चाहिए: JPEG या WebP.</string>
-    <string name="export_ready">सहेजने के लिए तैयार</string>
     <string name="export_preview_description">निर्यात की गई तस्वीर</string>
     <string name="export_lossless_line">%1$s · बिना हानि</string>
     <string name="export_quality_line">%1$s · गुणवत्ता %2$d</string>
@@ -843,4 +839,15 @@
     <string name="tool_scan_pdf_summary">पन्ने ढूँढे, सीधे और साफ़ किए, फिर एक साथ एक PDF में सहेजे</string>
     <string name="tool_scan_pdf_action">PDF बनाएं</string>
     <string name="tool_words_scan_pdf">पीडीएफ दस्तावेज़ पन्ने स्कैनर pdf document pages scanner merge</string>
+    <string name="batch_channel">बैच</string>
+    <string name="batch_running">आपकी तस्वीरों पर काम चल रहा है</string>
+    <string name="batch_progress">%2$d में से %1$d</string>
+    <string name="batch_cancel">रद्द करें</string>
+    <string name="batch_done_title">बैच पूरा हुआ</string>
+    <plurals name="batch_done_all">
+        <item quantity="one">%d तस्वीर तैयार</item>
+        <item quantity="other">%d तस्वीरें तैयार</item>
+    </plurals>
+    <string name="batch_done_some">%1$d तैयार, %2$d को देखना होगा</string>
+    <string name="batch_cancelled">बैच रद्द. जो पूरा हुआ वह रखा गया.</string>
 </resources>

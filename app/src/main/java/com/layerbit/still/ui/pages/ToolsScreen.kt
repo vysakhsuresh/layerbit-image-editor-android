@@ -1,5 +1,6 @@
 package com.layerbit.still.ui.pages
 
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,7 +52,7 @@ import com.layerbit.still.ui.theme.StillColors
  * opens it: one-picture tools ask for the picture; batch tools open the steps with theirs on.
  */
 @Composable
-fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier, recent: List<String> = emptyList()) {
+fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier, recent: List<String> = emptyList(), pinned: Set<String> = emptySet(), onPin: (ToolId) -> Unit = {}) {
     val groups = ToolId.Group.entries
     var query by rememberSaveable { mutableStateOf("") }
     val all = remember { ToolId.entries.filter { it != ToolId.PROCESS } }
@@ -61,7 +62,8 @@ fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier, recent:
         val hay = (t.title + " " + t.summary + " " + t.action + " " + t.group.title + " " + searchWords(t)).lowercase()
         words.all { it in hay }
     }
-    val recentTools = recent.mapNotNull { ToolId.byName(it) }.filter { it in all }.take(4)
+    val pinnedTools = all.filter { it.name in pinned }
+    val recentTools = recent.mapNotNull { ToolId.byName(it) }.filter { it in all && it !in pinnedTools }.take(4)
     Box(modifier.fillMaxSize()) {
     AmbientBackdrop(strength = 0.7f)
     LazyColumn(
@@ -86,19 +88,23 @@ fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier, recent:
         }
         if (words.isNotEmpty()) {
             if (matches.isEmpty()) item(key = "none") { Text(stringResource(R.string.home_no_match), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, modifier = Modifier.padding(top = 10.dp)) }
-            items(matches.size, key = { "m-" + matches[it].name }) { i -> ToolRow(matches[i], i, onTool) }
+            items(matches.size, key = { "m-" + matches[it].name }) { i -> ToolRow(matches[i], i, onTool, matches[i] in pinnedTools, onPin) }
             return@LazyColumn
         }
-        item { Text(stringResource(R.string.tools_page_intro), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, modifier = Modifier.padding(bottom = 6.dp)) }
+        item { Text(stringResource(R.string.tools_page_intro) + " " + stringResource(R.string.home_pin_hint), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, modifier = Modifier.padding(bottom = 6.dp)) }
+        if (pinnedTools.isNotEmpty()) {
+            item(key = "g-pinned") { SectionHeading(stringResource(R.string.home_pinned), modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) }
+            items(pinnedTools.size, key = { "p-" + pinnedTools[it].name }) { i -> ToolRow(pinnedTools[i], i, onTool, true, onPin) }
+        }
         if (recentTools.isNotEmpty()) {
             item(key = "g-recent") { SectionHeading(stringResource(R.string.home_recent_tools), modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) }
-            items(recentTools.size, key = { "r-" + recentTools[it].name }) { i -> ToolRow(recentTools[i], i, onTool) }
+            items(recentTools.size, key = { "r-" + recentTools[it].name }) { i -> ToolRow(recentTools[i], i, onTool, false, onPin) }
         }
         for (group in groups) {
             val tools = all.filter { it.group == group }
             if (tools.isEmpty()) continue
             item(key = "g-" + group.name) { SectionHeading(group.title, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp)) }
-            items(tools.size, key = { "t-" + tools[it].name }) { i -> ToolRow(tools[i], i, onTool) }
+            items(tools.size, key = { "t-" + tools[it].name }) { i -> ToolRow(tools[i], i, onTool, tools[i] in pinnedTools, onPin) }
         }
     }
     }
@@ -106,9 +112,11 @@ fun ToolsScreen(onTool: (ToolId) -> Unit, modifier: Modifier = Modifier, recent:
 
 /** One tool: its moving icon in the group's colour, its name and one line on what it does. */
 @Composable
-private fun ToolRow(tool: ToolId, index: Int, onTool: (ToolId) -> Unit) {
+private fun ToolRow(tool: ToolId, index: Int, onTool: (ToolId) -> Unit, pinned: Boolean = false, onPin: (ToolId) -> Unit = {}) {
     val accent = GroupAccents.of(tool.group)
-    Panel(modifier = rise(index).fillMaxWidth(), onClick = { onTool(tool) }, inset = 12.dp) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    // A long press pins or unpins; a tap opens the tool.
+    Panel(modifier = rise(index).fillMaxWidth(), onClick = { onTool(tool) }, onLongClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); onPin(tool) }, highlighted = pinned, inset = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
                 val glyph = glyphFor(iconFor(tool))
@@ -118,6 +126,7 @@ private fun ToolRow(tool: ToolId, index: Int, onTool: (ToolId) -> Unit) {
                 Text(tool.title, style = MaterialTheme.typography.titleMedium, color = StillColors.Text)
                 Text(tool.summary, style = MaterialTheme.typography.bodySmall, color = StillColors.Dim)
             }
+            if (pinned) Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.home_pinned), tint = StillColors.BandBright, modifier = Modifier.padding(end = 8.dp).size(18.dp))
             Pill(stringResource(if (tool.mode == ToolId.Mode.EDITOR) R.string.tools_page_one else R.string.tools_page_many), if (tool.mode == ToolId.Mode.EDITOR) StillColors.Running else StillColors.Done)
         }
     }

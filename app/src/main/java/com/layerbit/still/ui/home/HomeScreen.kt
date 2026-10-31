@@ -105,6 +105,7 @@ fun HomeScreen(
     onProcessMany: (String?) -> Unit,
     onQuickTool: (ToolId) -> Unit,
     recentTools: List<String> = emptyList(),
+    pinnedTools: Set<String> = emptySet(),
     onUsed: (ToolId) -> Unit = {},
     onCollage: () -> Unit,
     onTools: () -> Unit,
@@ -144,9 +145,10 @@ fun HomeScreen(
                 )
                 // What you reached for last comes first; the rest keep their order. The colours stay with the position,
                 // so the strip keeps its sweep whatever leads it.
-                val quick = remember(recentTools) {
+                // Pinned first, then what you reached for last, then the rest in their order.
+                val quick = remember(recentTools, pinnedTools) {
                     val rank = recentTools.withIndex().associate { (i, n) -> n to i }
-                    quickAll.withIndex().sortedWith(compareBy({ rank[it.value.tool.name] ?: Int.MAX_VALUE }, { it.index })).map { it.value }
+                    quickAll.withIndex().sortedWith(compareBy({ if (it.value.tool.name in pinnedTools) 0 else 1 }, { rank[it.value.tool.name] ?: Int.MAX_VALUE }, { it.index })).map { it.value }
                 }
                 // Each tile is a pair of neighbouring neons, so the strip reads as one sweep of colour.
                 val accents = listOf(

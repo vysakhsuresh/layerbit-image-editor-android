@@ -24,7 +24,13 @@ class Prompts(context: Context) {
         get() = prefs.getBoolean(KEY_CROP_HINT, false)
         set(value) = prefs.edit().putBoolean(KEY_CROP_HINT, value).apply()
 
+    /** Whether the notification permission has been asked for, so it is asked once. */
+    var notificationsAsked: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATIONS, false)
+        set(value) = prefs.edit().putBoolean(KEY_NOTIFICATIONS, value).apply()
+
     private companion object {
+        const val KEY_NOTIFICATIONS = "notificationsAsked"
         const val KEY_INTRO_SEEN = "introSeen"
         const val KEY_SUCCESSES = "successfulJobs"
         const val KEY_CROP_HINT = "cropHintSeen"

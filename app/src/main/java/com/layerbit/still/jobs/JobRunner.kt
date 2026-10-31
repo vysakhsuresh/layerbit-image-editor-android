@@ -51,12 +51,10 @@ fun JobState.belongsTo(tool: ToolId?): Boolean = when (this) {
 /**
  * Runs one operation at a time on the application scope and reports how it is going.
  *
- * In-process rather than a foreground-service Worker, deliberately: an image batch is seconds
- * to a minute or two, the inputs are transient copies that would not survive a process death
- * intact either, and a notification permission ask on the first export is a poor first
- * impression. The cost is honest: leave the app for long enough during a batch and Android may
- * end the process, and the batch with it. Finished outputs stay on disk. A long-running
- * Worker is the change if that cost ever shows up in practice.
+ * In-process, with [BatchService] holding the app in the foreground while a job runs: the
+ * shade shows "4 of 12" with a Cancel, and the batch keeps going while the user looks away.
+ * The notification permission is asked once, before a batch of several pictures, never on the
+ * first open; refused, the batch runs exactly as before, only without the shade.
  */
 class JobRunner(private val app: StillApplication) {
 
@@ -73,6 +71,7 @@ class JobRunner(private val app: StillApplication) {
         if (isRunning) return false
         cancelled = false
         _state.value = JobState.Running(op.tool, op.title, 0, 0, "")
+        BatchService.start(app)
         val context = OpContext(app.workspace, app.renderer, app.codecs) { cancelled }
         current = app.applicationScope.launch {
             try {

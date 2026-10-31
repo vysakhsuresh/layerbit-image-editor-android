@@ -94,6 +94,7 @@ import kotlin.math.roundToInt
 @Composable
 fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: PipelineViewModel = viewModel()) {
     val context = LocalContext.current
+    val batchRun = com.layerbit.still.ui.components.rememberBatchRun({ vm.ui.value.files.size }, vm::run)
     val ui by vm.ui.collectAsState()
     val job by vm.jobState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
@@ -203,7 +204,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                     }
                 } else {
                     val label = if (vm.steps.anyOn) stringResource(R.string.pipeline_run, ui.files.size) else stringResource(R.string.pipeline_run_clean, ui.files.size)
-                    PrimaryButton(label, onClick = vm::run, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
+                    PrimaryButton(label, onClick = batchRun, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                 }
             }
         }

@@ -136,7 +136,7 @@ fun ToolRoute(
             thumbnail = vm::thumbnail,
             onAddPhotos = { pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             onAddFiles = { pickFiles.launch(arrayOf("image/*")) },
-            onRemove = vm::remove, onClear = vm::clear, onRun = vm::run, onCancel = vm::cancel, onDone = vm::acknowledge,
+            onRemove = vm::remove, onClear = vm::clear, onRun = com.layerbit.still.ui.components.rememberBatchRun({ vm.ui.value.files.size }, vm::run), onCancel = vm::cancel, onDone = vm::acknowledge,
             onSave = ::save, onSaveAll = ::saveInto, onShare = { files -> context.startActivity(vm.shareIntent(files)) },
             onOpenInEditor = onOpenInEditor, onBack = onBack,
             collage = if (tool == ToolId.COLLAGE) CollageHooks(

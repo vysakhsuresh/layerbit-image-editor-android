@@ -127,8 +127,6 @@
     <string name="tool_export">Export</string>
 
     <!-- Home -->
-    <string name="home_open_picture">Open a picture</string>
-    <string name="home_under_kb">Under KB</string>
     <string name="home_search_hint">Search tools: shrink, passport, location…</string>
     <string name="home_no_match">Nothing matches that. Every tool is listed when the search is empty.</string>
     <string name="tools_search_clear">Clear the search</string>
@@ -161,7 +159,6 @@
     <string name="tool_words_apply_recipe">copy paste edits same batch preset</string>
     <string name="home_pick_up">Pick up where you left off</string>
     <string name="home_recent_tools">Your recent tools</string>
-    <string name="home_yours">Yours</string>
     <string name="home_pinned">Pinned</string>
     <string name="home_pin_hint">Long-press a tool to pin it to the top.</string>
     <string name="home_footer">Free, offline, and from %1$s</string>
@@ -429,7 +426,6 @@
     <string name="export_saved">Saved %1$s.</string>
     <string name="export_failed">The export could not be made. Your original is safe.</string>
     <string name="export_options_invalid">A size limit needs a lossy format: JPEG or WebP.</string>
-    <string name="export_ready">Ready to save</string>
     <string name="export_preview_description">The exported picture</string>
     <string name="export_lossless_line">%1$s · lossless</string>
     <string name="export_quality_line">%1$s · quality %2$d</string>
@@ -843,4 +839,15 @@
     <string name="tool_scan_pdf_summary">Pages found, flattened and cleaned, then saved together as one PDF</string>
     <string name="tool_scan_pdf_action">Make a PDF</string>
     <string name="tool_words_scan_pdf">pdf document pages scanner multi page combine merge receipt notes</string>
+    <string name="batch_channel">Batches</string>
+    <string name="batch_running">Working on your pictures</string>
+    <string name="batch_progress">%1$d of %2$d</string>
+    <string name="batch_cancel">Cancel</string>
+    <string name="batch_done_title">Batch finished</string>
+    <plurals name="batch_done_all">
+        <item quantity="one">%d picture ready</item>
+        <item quantity="other">%d pictures ready</item>
+    </plurals>
+    <string name="batch_done_some">%1$d ready, %2$d need a look</string>
+    <string name="batch_cancelled">Batch cancelled. What was finished is kept.</string>
 </resources>
