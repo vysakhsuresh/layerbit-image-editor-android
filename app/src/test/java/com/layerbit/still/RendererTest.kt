@@ -386,4 +386,42 @@ class RendererTest {
         val decoded = renderer.decode(sticker.file, 2_000_000)
         assertEquals("sticker corner transparent", 0, Color.alpha(decoded.getPixel(2, 2))); decoded.recycle()
     }
+
+    /** A skin-coloured oval with fine texture on a cool ground: enough for the skin mask to find. */
+    private fun portraitFile(w: Int, h: Int): File {
+        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val rng = Random(4)
+        for (y in 0 until h) for (x in 0 until w) {
+            val dx = (x + 0.5f) / w - 0.5f; val dy = (y + 0.5f) / h - 0.5f
+            val d = (dx / 0.22f) * (dx / 0.22f) + (dy / 0.36f) * (dy / 0.36f)
+            val n = rng.nextInt(9) - 4
+            b.setPixel(x, y, if (d < 1f) Color.rgb(212 + n, 162 + n, 132 + n) else Color.rgb(70 + n, 95, 140))
+        }
+        val f = File(dir, "face.png"); f.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle()
+        return f
+    }
+
+    @Test
+    fun portraitAndDoubleExposurePreviewPredictsExport() = runBlocking {
+        val src = portraitFile(1200, 800)
+        // The second picture lives beside the source, as a project's private copy does.
+        scene(500, 700, name = "layer-test")
+        val portrait = com.layerbit.still.engine.PortraitEdit(smooth = 0.8f, even = 0.5f, light = 0.6f)
+        val double = com.layerbit.still.engine.DoubleExposure(file = "layer-test.png", x = 0.4f, y = 0.6f, scale = 1.2f, angle = 15f, mode = com.layerbit.still.engine.BlendMode.SCREEN, opacity = 0.7f)
+        val plain = renderer.render(src, Recipe(), maxPixels = 300 * 200)
+        for (r in listOf(Recipe(portrait = portrait), Recipe(double = double), Recipe(portrait = portrait, double = double.copy(insideSubject = true)))) {
+            assertTrue(r.valid)
+            val small = renderer.render(src, r, maxPixels = 300 * 200)
+            val large = renderer.render(src, r, maxPixels = 1200 * 800)
+            val shrunk = renderer.scale(large, small.width, small.height)
+            val diff = renderer.difference(small, shrunk)
+            assertTrue("mean difference $diff for $r", diff < 6.0)
+            assertTrue("changed something", renderer.difference(plain, small) > 0.5)
+            small.recycle(); large.recycle(); shrunk.recycle()
+        }
+        // A second picture that is not there draws nothing and breaks nothing.
+        val missing = renderer.render(src, Recipe(double = double.copy(file = "layer-gone")), maxPixels = 300 * 200)
+        assertEquals(0.0, renderer.difference(plain, missing), 0.0)
+        plain.recycle(); missing.recycle()
+    }
 }

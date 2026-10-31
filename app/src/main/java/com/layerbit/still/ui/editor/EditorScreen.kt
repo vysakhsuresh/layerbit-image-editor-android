@@ -130,6 +130,9 @@ fun EditorScreen(
     var healFocus by remember { mutableIntStateOf(-1) }
     var cutKeep by rememberSaveable { mutableStateOf(true) }
     var cutWidth by rememberSaveable { mutableFloatStateOf(0.06f) }
+    var portraitTool by rememberSaveable { mutableStateOf(PortraitTool.NONE) }
+    var skinAdd by rememberSaveable { mutableStateOf(true) }
+    var skinWidth by rememberSaveable { mutableFloatStateOf(0.05f) }
     var pickingNeutral by rememberSaveable { mutableStateOf(startTool == ToolId.WHITE_BALANCE) }
     var split by rememberSaveable { mutableStateOf(false) }
     var splitAt by rememberSaveable { mutableFloatStateOf(0.5f) }
@@ -151,6 +154,9 @@ fun EditorScreen(
             vm.saveInto(dest)
         }
     }
+
+    // The second picture for a double exposure: read once into the project's own folder.
+    val pickSecond = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked -> if (picked != null) vm.importDouble(picked) }
 
     BackHandler(enabled = ui.busy == null) { vm.commit(); onBack() }
 
@@ -192,6 +198,11 @@ fun EditorScreen(
             } else emptyList()
         )
         panel == ToolId.Panel.LOCAL -> localOverlay(recipe, ui.localSelected, localTools)
+        panel == ToolId.Panel.PORTRAIT -> Overlay.Spots(
+            spots = if (portraitTool == PortraitTool.EYE || portraitTool == PortraitTool.TEETH) recipe.portrait.taps.map { it.at } else emptyList(),
+            radii = recipe.portrait.taps.map { it.radius },
+            stroke = if (portraitTool == PortraitTool.BRUSH) Overlay.Stroke(MarkKind.DRAW, strokePoints, if (skinAdd) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), skinWidth, null) else null
+        )
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         else -> Overlay.None
     }
@@ -234,6 +245,30 @@ fun EditorScreen(
             onCancel = { strokePoints = emptyList() }
         ) else TouchMode.View
         ToolId.Panel.LOCAL -> localTouchMode(recipe, ui.localSelected, localTools, transform, reach, vm)
+        ToolId.Panel.PORTRAIT -> when (portraitTool) {
+            PortraitTool.BRUSH -> TouchMode.Draw(
+                onStart = { p -> strokePoints = listOf(p) },
+                onMove = { p -> if (strokePoints.size < Mark.MAX_POINTS) strokePoints = strokePoints + p },
+                onEnd = { val pts = strokePoints; strokePoints = emptyList(); if (pts.isNotEmpty()) vm.addSkinStroke(pts, skinWidth, skinAdd) },
+                onCancel = { strokePoints = emptyList() }
+            )
+            PortraitTool.EYE -> TouchMode.Tap { p -> vm.portraitTap(p, com.layerbit.still.engine.PortraitTapKind.EYE) }
+            PortraitTool.TEETH -> TouchMode.Tap { p -> vm.portraitTap(p, com.layerbit.still.engine.PortraitTapKind.TEETH) }
+            PortraitTool.NONE -> viewOrScrub
+        }
+        // With a second picture in place, one finger moves it and two pinch and turn it.
+        ToolId.Panel.DOUBLE -> if (recipe.double.file.isNotEmpty()) TouchMode.Transform(
+            onChange = { pan, zoom, turn ->
+                val d = recipe.double
+                val next = d.copy(
+                    x = (d.x + pan.x).coerceIn(-0.5f, 1.5f), y = (d.y + pan.y).coerceIn(-0.5f, 1.5f),
+                    scale = (d.scale * zoom).coerceIn(com.layerbit.still.engine.DoubleExposure.MIN_SCALE, com.layerbit.still.engine.DoubleExposure.MAX_SCALE),
+                    angle = ((d.angle + turn + 540f) % 360f) - 180f
+                )
+                vm.draft(recipe.copy(double = next))
+            },
+            onEnd = { vm.commit() }
+        ) else viewOrScrub
         ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else viewOrScrub
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
             // Move mode: a touch on a mark picks it, a drag carries it; a touch on nothing lets go.
@@ -362,6 +397,11 @@ fun EditorScreen(
                             ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.LIGHT }, onAutoAmount = vm::setAutoAmount, showClipping = ui.showClipping, onShowClipping = vm::setShowClipping)
                             ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it }, onAuto = { pickingNeutral = false; vm.autoColour() }, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.COLOUR }, onAutoAmount = vm::setAutoAmount)
                             ToolId.Panel.CUTOUT -> CutoutPanel(scope, keep = cutKeep, onKeep = { cutKeep = it }, width = cutWidth, onWidth = { cutWidth = it }, kept = ui.cutoutKept, onClearStrokes = vm::clearScribbles, swatches = ui.swatches)
+                            ToolId.Panel.PORTRAIT -> PortraitPanel(
+                                scope, portraitTool, onTool = { portraitTool = it; strokePoints = emptyList() }, add = skinAdd, onAdd = { skinAdd = it },
+                                width = skinWidth, onWidth = { skinWidth = it }, showSkin = ui.showSkin, onShowSkin = vm::setShowSkin, kept = ui.skinKept, onClearStrokes = vm::clearSkinStrokes
+                            )
+                            ToolId.Panel.DOUBLE -> DoublePanel(scope, onPick = { pickSecond.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
                             ToolId.Panel.SCAN -> ScanPanel(scope, onFindPage = { vm.findPage() }, onAdjustCorners = { vm.setPanel(ToolId.Panel.PERSPECTIVE) })
                             ToolId.Panel.CURVES -> CurvesPanel(scope, ui.histogram)
                             ToolId.Panel.LOOKS -> {
@@ -614,6 +654,7 @@ fun panelLabel(p: ToolId.Panel): String = stringResource(
         ToolId.Panel.MARKUP -> R.string.panel_markup; ToolId.Panel.RETOUCH -> R.string.panel_retouch; ToolId.Panel.LAYERS -> R.string.panel_layers; ToolId.Panel.FRAME -> R.string.panel_frame
         ToolId.Panel.DETAILS -> R.string.panel_details; ToolId.Panel.EXPORT -> R.string.panel_export
         ToolId.Panel.CUTOUT -> R.string.panel_cutout; ToolId.Panel.SCAN -> R.string.panel_scan
+        ToolId.Panel.PORTRAIT -> R.string.panel_portrait; ToolId.Panel.DOUBLE -> R.string.panel_double
     }
 )
 

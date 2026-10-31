@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -101,6 +102,11 @@ sealed interface TouchMode {
     data class DrawOrDrag(val draw: Draw, val hit: (Offset) -> Int?, val onDrag: (Int, Offset) -> Unit, val onDragEnd: () -> Unit) : TouchMode
     /** A sideways swipe anywhere on the picture moves the chosen slider; [onDelta] gets the move as a fraction of the width. */
     data class Scrub(val onDelta: (Float) -> Unit, val onEnd: () -> Unit) : TouchMode
+    /**
+     * One finger moves a placed layer, two pinch and turn it, instead of the canvas: [onChange]
+     * gets the move in picture fractions, the zoom factor and the turn in degrees since the last event.
+     */
+    data class Transform(val onChange: (Offset, Float, Float) -> Unit, val onEnd: () -> Unit) : TouchMode
 }
 
 /**
@@ -124,6 +130,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
             var handle: Int? = null
             var decided = false
             var scrubbing = false
+            var transforming = false
             var lastPos = start
             var handleLast = start
             try {
@@ -132,6 +139,16 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
                     val mode = modeState.value
                     val pressed = event.changes.filter { it.pressed }
                     if (pressed.size >= 2) {
+                        if (mode is TouchMode.Transform) {
+                            multi = true
+                            transforming = true
+                            val r = t.rect
+                            val pan = event.calculatePan()
+                            mode.onChange(Offset(if (r.width > 0) pan.x / r.width else 0f, if (r.height > 0) pan.y / r.height else 0f), event.calculateZoom(), event.calculateRotation())
+                            event.changes.forEach { it.consume() }
+                            if (event.changes.none { it.pressed }) break
+                            continue
+                        }
                         if (!multi) {
                             multi = true
                             if (drawing) { (mode as? TouchMode.Draw)?.onCancel?.invoke(); (mode as? TouchMode.DrawOrDrag)?.draw?.onCancel?.invoke(); drawing = false }
@@ -188,6 +205,15 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
                                 change.consume()
                             }
                             is TouchMode.Tap -> Unit
+                            is TouchMode.Transform -> {
+                                if (moved) {
+                                    transforming = true
+                                    val r = t.rect
+                                    val d = pos - lastPos
+                                    mode.onChange(Offset(if (r.width > 0) d.x / r.width else 0f, if (r.height > 0) d.y / r.height else 0f), 1f, 0f)
+                                    change.consume()
+                                }
+                            }
                             is TouchMode.Scrub -> {
                                 if (moved) {
                                     scrubbing = true
@@ -211,6 +237,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
             } finally {
                 val mode = modeState.value
                 if (scrubbing) (mode as TouchMode.Scrub).onEnd()
+                if (transforming) (mode as? TouchMode.Transform)?.onEnd?.invoke()
                 if (drawing) { (mode as? TouchMode.Draw)?.onEnd?.invoke(); (mode as? TouchMode.DrawOrDrag)?.draw?.onEnd?.invoke() }
                 if (comparing) onCompare(false)
                 t.loupe = null

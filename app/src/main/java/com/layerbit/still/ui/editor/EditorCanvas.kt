@@ -68,6 +68,8 @@ sealed interface Overlay {
     data class Stroke(val kind: MarkKind, val points: List<Pt>, val color: Int, val width: Float, val cloneSource: Pt?, val heals: List<Mark> = emptyList()) : Overlay
     /** Movable text layers, highlighted. */
     data class Texts(val marks: List<Mark>) : Overlay
+    /** Circles at tapped spots (an eye, teeth), [radii] as fractions of the shorter edge; and a brush stroke in progress. */
+    data class Spots(val spots: List<Pt>, val radii: List<Float>, val stroke: Stroke? = null) : Overlay
     /** Markup in move mode: every movable mark faintly outlined, the chosen one strongly. */
     data class Selection(val marks: List<Mark>, val selected: Mark?) : Overlay
 }
@@ -325,6 +327,15 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
                 scope.drawRoundRect(StillColors.Band.copy(alpha = 0.14f), b.topLeft, b.size, androidx.compose.ui.geometry.CornerRadius(10f))
                 scope.drawRoundRect(StillColors.Band, b.topLeft, b.size, androidx.compose.ui.geometry.CornerRadius(10f), style = Stroke(3f, pathEffect = dash))
                 for (c in listOf(b.topLeft, b.topRight, b.bottomLeft, b.bottomRight)) { scope.drawCircle(Color.White, 7f, c); scope.drawCircle(StillColors.Band, 5f, c) }
+            }
+        }
+        is Overlay.Spots -> {
+            overlay.stroke?.let { drawOverlay(it, t, scope) }
+            for ((i, p) in overlay.spots.withIndex()) {
+                val at = t.toOffset(p)
+                val radius = max(handleR, (overlay.radii.getOrNull(i) ?: 0.03f) * min(r.width, r.height))
+                drawCircle(Color.Black.copy(alpha = 0.35f), radius, at, style = Stroke(thin * 2.6f))
+                drawCircle(Color.White, radius, at, style = Stroke(thin * 1.4f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))))
             }
         }
         is Overlay.Texts -> {

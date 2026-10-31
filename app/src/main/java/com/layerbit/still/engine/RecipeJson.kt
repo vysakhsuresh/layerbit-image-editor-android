@@ -44,7 +44,9 @@ object RecipeJson {
             "grow" to r.cutout.grow.json(), "refine" to r.cutout.refine.json(), "outline" to r.cutout.outline.json(), "shadow" to r.cutout.shadow.json(),
             "outlineColor" to r.cutout.outlineColor.json(), "trim" to r.cutout.trim.json()
         ),
-        "locals" to if (r.locals.isEmpty()) null else r.locals.map { local(it) }.json()
+        "locals" to if (r.locals.isEmpty()) null else r.locals.map { local(it) }.json(),
+        "portrait" to if (r.portrait.isIdentity) null else portrait(r.portrait),
+        "double" to if (r.double.isIdentity) null else double(r.double)
     )
 
     private fun local(l: LocalAdjust) = jsonOf(
@@ -79,6 +81,46 @@ object RecipeJson {
             mask, exposure = v.f("exposure"), contrast = v.f("contrast"), highlights = v.f("highlights"), shadows = v.f("shadows"),
             temperature = v.f("temperature"), tint = v.f("tint"), saturation = v.f("saturation"), clarity = v.f("clarity"),
             sharpness = v.f("sharpness"), visible = v["visible"]?.bool() ?: true
+        )
+    }
+
+    private fun portrait(p: PortraitEdit) = jsonOf(
+        "smooth" to p.smooth.json(), "texture" to p.texture.json(), "even" to p.even.json(), "light" to p.light.json(),
+        "eyes" to p.eyes.json(), "teeth" to p.teeth.json(), "subjectOnly" to p.subjectOnly.json(),
+        "strokes" to p.strokes.map { jsonOf("points" to points(it.points), "width" to it.width.json(), "add" to it.add.json()) }.json(),
+        "taps" to p.taps.map { jsonOf("at" to listOf(it.at.x.json(), it.at.y.json()).json(), "kind" to it.kind.name.json(), "radius" to it.radius.json()) }.json()
+    )
+
+    private fun double(d: DoubleExposure) = jsonOf(
+        "file" to d.file.json(), "x" to d.x.json(), "y" to d.y.json(), "scale" to d.scale.json(), "angle" to d.angle.json(),
+        "mode" to d.mode.name.json(), "opacity" to d.opacity.json(), "insideSubject" to d.insideSubject.json()
+    )
+
+    /** Absent is off: a recipe from before portraits reads as no portrait. */
+    private fun readPortrait(v: JsonValue?): PortraitEdit {
+        if (v == null || v == JsonValue.Null) return PortraitEdit()
+        val d = PortraitEdit()
+        return PortraitEdit(
+            smooth = v.f("smooth"), texture = v["texture"]?.num()?.toFloat() ?: d.texture, even = v.f("even"), light = v.f("light"),
+            eyes = v["eyes"]?.num()?.toFloat() ?: d.eyes, teeth = v["teeth"]?.num()?.toFloat() ?: d.teeth,
+            subjectOnly = v["subjectOnly"]?.bool() ?: false,
+            strokes = v["strokes"]?.arr()?.map { s -> SkinStroke(s["points"]?.let { pts(it) } ?: emptyList(), s["width"]?.num()?.toFloat() ?: 0.05f, s["add"]?.bool() ?: true) } ?: emptyList(),
+            taps = v["taps"]?.arr()?.mapNotNull { t ->
+                val kind = t["kind"]?.str()?.let { name -> PortraitTapKind.entries.firstOrNull { it.name == name } } ?: return@mapNotNull null
+                PortraitTap(t["at"]?.let { pt(it) } ?: throw IllegalArgumentException("A tap has a place"), kind, t["radius"]?.num()?.toFloat() ?: PortraitTap.DEFAULT_RADIUS)
+            } ?: emptyList()
+        )
+    }
+
+    /** Absent is off. An unknown blend mode reads as screen, the classic double exposure. */
+    private fun readDouble(v: JsonValue?): DoubleExposure {
+        if (v == null || v == JsonValue.Null) return DoubleExposure()
+        val d = DoubleExposure()
+        return DoubleExposure(
+            file = v["file"]?.str() ?: "", x = v["x"]?.num()?.toFloat() ?: d.x, y = v["y"]?.num()?.toFloat() ?: d.y,
+            scale = v["scale"]?.num()?.toFloat() ?: d.scale, angle = v.f("angle"),
+            mode = v["mode"]?.str()?.let { name -> BlendMode.entries.firstOrNull { it.name == name } } ?: d.mode,
+            opacity = v["opacity"]?.num()?.toFloat() ?: d.opacity, insideSubject = v["insideSubject"]?.bool() ?: false
         )
     }
 
@@ -175,7 +217,9 @@ object RecipeJson {
                 grow = cu.f("grow"), refine = cu["refine"]?.bool() ?: true, outline = cu.f("outline"), shadow = cu.f("shadow").coerceIn(0f, 1f),
                 outlineColor = cu["outlineColor"]?.num()?.toLong()?.toInt() ?: d.cutout.outlineColor, trim = cu["trim"]?.bool() ?: false
             ),
-            locals = o["locals"]?.arr()?.mapNotNull { readLocal(it) } ?: emptyList()
+            locals = o["locals"]?.arr()?.mapNotNull { readLocal(it) } ?: emptyList(),
+            portrait = readPortrait(o["portrait"]),
+            double = readDouble(o["double"])
         )
     }
 

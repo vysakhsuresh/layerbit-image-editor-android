@@ -34,6 +34,10 @@ import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Cutout
 import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Parallel
+import com.layerbit.still.engine.Blend
+import com.layerbit.still.engine.DoubleExposure
+import com.layerbit.still.engine.Portrait
+import com.layerbit.still.engine.PortraitEdit
 import com.layerbit.still.engine.Retouch
 import com.layerbit.still.engine.ScanMath
 import com.layerbit.still.engine.Segment
@@ -230,7 +234,13 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * Tone, detail, layers and frame on a copy of [base]; [base] is left intact for the cache.
      * Suspends so the per-pixel stages can run across the cores.
      */
-    suspend fun finish(base: Bitmap, r: Recipe, check: () -> Unit = {}, maskKey: String? = null, cutoutPreview: Boolean = false): Bitmap = withContext(Dispatchers.Default) {
+    suspend fun finish(
+        base: Bitmap, r: Recipe, check: () -> Unit = {}, maskKey: String? = null, cutoutPreview: Boolean = false,
+        /** Where the recipe's own files (a double exposure's second picture) live: the project's folder. */
+        assets: File? = null,
+        /** Paint the skin mask over the result, for the Portrait panel's "Show skin". */
+        skinPreview: Boolean = false
+    ): Bitmap = withContext(Dispatchers.Default) {
         val w = base.width; val h = base.height
         val pixels = IntArray(w * h)
         base.getPixels(pixels, 0, w, 0, 0, w, h)
@@ -250,6 +260,13 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
             working = Spatial.detail(working, w, h, tone, check)
         }
+        // Skin, then the second picture: after detail so sharpening never undoes the smoothing, before vignette and grain so both cover them.
+        if (r.portrait.active || skinPreview) {
+            val skin = if (r.portrait.needsMask || skinPreview) skinFor(base, r.portrait, maskKey, check) else null
+            working = Portrait.apply(working, w, h, r.portrait, skin, check)
+            if (skinPreview && skin != null) Portrait.paintMask(working, w, h, skin)
+        }
+        if (r.double.active && assets != null) doubleStage(working, w, h, base, r.double, assets, maskKey, check)
         if (tone.vignette != 0f) Spatial.vignette(working, w, h, tone.vignette, check)
         if (tone.grain > 0f) Spatial.grain(working, w, h, tone.grain, check = check)
         check()
@@ -297,6 +314,71 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         // Only a keyed preview is worth remembering: an export is drawn once, and its grid is large.
         if (key != null && w.toLong() * h <= Budget.PREVIEW_PIXELS) synchronized(localCache) { localCache.addFirst(LocalEntry(key, mask, w, h, grid)); while (localCache.size > 6) localCache.removeLast() }
         return grid
+    }
+
+    // ------------------------------------------------------------------ portrait
+
+    private class SkinEntry(val key: String, val skin: Portrait.Skin)
+    private val skinCache = ArrayDeque<SkinEntry>()
+
+    /**
+     * The skin decided at the analysis size from the geometry stage, as the cut-out's mask is, and
+     * remembered so the export reuses the preview's decision. Restricted to the subject when asked.
+     */
+    private fun skinFor(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit): Portrait.Skin {
+        val size = Segment.analysisSize(base.width, base.height)
+        val cacheKey = "${key ?: ""}|${p.maskKey}|${size.width}x${size.height}"
+        synchronized(skinCache) { skinCache.firstOrNull { it.key == cacheKey }?.let { return it.skin } }
+        val small = scale(base, size.width, size.height)
+        val px = IntArray(size.width * size.height)
+        small.getPixels(px, 0, size.width, 0, 0, size.width, size.height)
+        if (small !== base) small.recycle()
+        check()
+        val subject = if (p.subjectOnly) maskFor(base, Cutout(), key, check).mask else null
+        val skin = Portrait.skin(px, size.width, size.height, p.strokes, subject, check)
+        if (key != null) synchronized(skinCache) { skinCache.removeAll { it.key == cacheKey }; skinCache.addFirst(SkinEntry(cacheKey, skin)); while (skinCache.size > 2) skinCache.removeLast() }
+        return skin
+    }
+
+    /** How much of the picture the skin mask covers, for the Portrait panel. */
+    fun skinCoverage(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit = {}): Float = skinFor(base, p, key, check).coverage
+
+    // ------------------------------------------------------------------ double exposure
+
+    private class LayerEntry(val key: String, val pixels: IntArray, val width: Int, val height: Int)
+    @Volatile private var layerCache: LayerEntry? = null
+
+    /**
+     * The second picture, decoded from the project's private copy at as many pixels as it covers on
+     * this canvas, laid over [px] by the engine. Missing or unreadable: nothing is drawn.
+     */
+    private fun doubleStage(px: IntArray, w: Int, h: Int, base: Bitmap, d: DoubleExposure, assets: File, key: String?, check: () -> Unit) {
+        if (!DoubleExposure.safeName(d.file)) return
+        val file = File(assets, d.file)
+        if (!file.isFile) return
+        val bounds = bounds(file) ?: return
+        val aspect = bounds.width.toFloat() / bounds.height
+        // Decoded in power-of-two steps of the need, so a pinch does not decode on every frame.
+        val need = Blend.layerPixels(w, h, d.placement, aspect, budget / 2)
+        var step = 10_000L
+        while (step < need) step *= 2
+        val target = min(step, max(10_000L, budget / 2)).coerceAtMost(bounds.pixels.coerceAtLeast(10_000L))
+        val cacheKey = "${file.path}|${file.lastModified()}|$target"
+        val layer = layerCache?.takeIf { it.key == cacheKey } ?: run {
+            check()
+            val b = decode(file, target, check)
+            val lp = IntArray(b.width * b.height)
+            b.getPixels(lp, 0, b.width, 0, 0, b.width, b.height)
+            LayerEntry(cacheKey, lp, b.width, b.height).also { b.recycle(); layerCache = it }
+        }
+        check()
+        if (d.insideSubject) {
+            val m = maskFor(base, Cutout(), key, check)
+            val soft = Segment.feather(m.mask, m.width, m.height, max(1, (0.004f * min(m.width, m.height)).roundToInt()))
+            Blend.composite(px, w, h, layer.pixels, layer.width, layer.height, d, soft, m.width, m.height, check)
+        } else {
+            Blend.composite(px, w, h, layer.pixels, layer.width, layer.height, d, check = check)
+        }
     }
 
     // ------------------------------------------------------------------ cut-out
@@ -671,7 +753,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     suspend fun render(file: File, r: Recipe, maxPixels: Long = budget, check: () -> Unit = {}): Bitmap {
         val base = geometry(file, r.geometry, maxPixels, check)
         try {
-            return finish(base.bitmap, r, check, maskKey = file.path + "|" + r.geometry.hashCode())
+            return finish(base.bitmap, r, check, maskKey = file.path + "|" + r.geometry.hashCode(), assets = file.parentFile)
         } finally {
             base.bitmap.recycle()
         }

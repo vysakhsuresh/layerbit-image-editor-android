@@ -59,6 +59,8 @@ fun iconFor(panel: ToolId.Panel): Int = when (panel) {
     ToolId.Panel.EXPORT -> R.drawable.ic_tool_export
     ToolId.Panel.CUTOUT -> R.drawable.ic_tool_cutout
     ToolId.Panel.SCAN -> R.drawable.ic_tool_scan
+    ToolId.Panel.PORTRAIT -> R.drawable.ic_tool_portrait
+    ToolId.Panel.DOUBLE -> R.drawable.ic_tool_double
 }
 
 /** Which drawn, moving icon replaces each static one. A drawable with no entry stays still. */

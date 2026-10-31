@@ -66,7 +66,7 @@ enum class ToolId(
     enum class Mode { EDITOR, BATCH }
 
     /** The editor's panels. Order here is the order of the strip under the canvas. */
-    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, LOCAL, CUTOUT, SCAN, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
+    enum class Panel { NONE, CROP, PERSPECTIVE, LIGHT, COLOUR, CURVES, LOOKS, DETAIL, LOCAL, PORTRAIT, CUTOUT, DOUBLE, SCAN, MARKUP, RETOUCH, LAYERS, FRAME, DETAILS, EXPORT }
 
     /** How the home board groups the tools. Order here is the order on screen. */
     enum class Group(@StringRes val titleRes: Int) {

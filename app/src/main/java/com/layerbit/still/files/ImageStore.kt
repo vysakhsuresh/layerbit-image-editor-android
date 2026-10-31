@@ -95,6 +95,21 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
         }
     }
 
+    /**
+     * Copies [uri] into the project's own folder as a second picture for a double exposure and
+     * returns the private file's name, which is what the recipe stores. The user's Uri is only read.
+     */
+    suspend fun importLayer(projectId: String, uri: Uri, check: () -> Unit = {}): String = withContext(Dispatchers.IO) {
+        val folder = File(projectsDir, projectId)
+        require(folder.isDirectory) { Strings.get(R.string.editor_project_gone) }
+        val name = "layer-" + UUID.randomUUID().toString().replace("-", "").take(16)
+        val display = displayName(uri)
+        val target = File(folder, name)
+        copy(uri, target, display, check)
+        describe(target, display, StillFile.Origin.Imported(uri))
+        name
+    }
+
     private fun copy(uri: Uri, target: File, name: String, check: () -> Unit) {
         val input = context.contentResolver.openInputStream(uri) ?: throw IOException(Strings.get(R.string.app_error_open_revoked, name))
         var total = 0L
