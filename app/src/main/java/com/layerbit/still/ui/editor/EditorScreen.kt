@@ -1,5 +1,10 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.ui.components.pressScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.layerbit.still.files.ImageStore
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -290,7 +295,8 @@ fun EditorScreen(
 
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth > 700.dp
-            val panelLimit = maxHeight * 0.5f
+            // The picture leads: the tools take at most two fifths of the height and scroll inside it.
+            val panelLimit = maxHeight * 0.42f
             @Composable fun canvasArea(modifier: Modifier) {
                 Box(modifier) {
                     Column(Modifier.fillMaxSize()) {
@@ -515,26 +521,78 @@ private fun ZoomBar(t: CanvasTransform) {
     }
 }
 
-/** The strip of panels under the picture: icon and name, the open one in the band. */
+/**
+ * The tools under the picture: a compact tab per tool, icon over name, the open one lit and
+ * pulled into view. "All" first opens every tool as a grid, so nothing is ever hidden off the edge.
+ */
 @Composable
 private fun PanelStrip(current: ToolId.Panel, onPick: (ToolId.Panel) -> Unit) {
     val panels = ToolId.Panel.entries.filter { it != ToolId.Panel.NONE }
-    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("panelStrip")) {
+    val state = rememberLazyListState()
+    var all by remember { mutableStateOf(false) }
+    LaunchedEffect(current) { val i = panels.indexOf(current); if (i >= 0) state.animateScrollToItem((i + 1 - 2).coerceAtLeast(0)) }
+    LazyRow(
+        state = state,
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.testTag("panelStrip").graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                val edge = 28.dp.toPx()
+                if (state.canScrollForward) drawRect(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color.Black, Color.Transparent), startX = size.width - edge, endX = size.width), topLeft = androidx.compose.ui.geometry.Offset(size.width - edge, 0f), size = androidx.compose.ui.geometry.Size(edge, size.height), blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
+            }
+    ) {
+        item(key = "all") { ToolTab(label = stringResource(R.string.editor_all_tools), active = false, onClick = { all = true }) { AllGlyph(StillColors.Muted) } }
         items(panels, key = { it.name }) { p ->
             val active = p == current
-            val label = panelLabel(p)
-            val tabColour by androidx.compose.animation.animateColorAsState(if (active) StillColors.Band else StillColors.SurfaceDim, label = "tab")
-            val ink by androidx.compose.animation.animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "tabInk")
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(tabColour)
-                    .then(if (active) Modifier else Modifier.border(1.dp, StillColors.Border, RoundedCornerShape(999.dp)))
-                    .clickable(role = androidx.compose.ui.semantics.Role.Tab) { onPick(p) }.padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp).semantics { contentDescription = label }
-            ) {
-                Box(Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(if (active) StillColors.OnBand.copy(alpha = 0.18f) else StillColors.Surface), contentAlignment = Alignment.Center) {
-                    IconTile(iconRes = iconFor(p), accent = ink, size = 28.dp, lively = active)
-                }
-                Text(label, style = MaterialTheme.typography.labelMedium, color = ink, modifier = Modifier.padding(start = 7.dp), maxLines = 1)
+            ToolTab(label = panelLabel(p), active = active, onClick = { onPick(p) }) { ink -> IconTile(iconRes = iconFor(p), accent = ink, size = 24.dp, lively = active) }
+        }
+    }
+    if (all) AllToolsSheet(panels, current, onPick = { all = false; onPick(it) }, onDismiss = { all = false })
+}
+
+/** One tab: a 44dp icon well, the name under it, a lit well and a dot when open. */
+@Composable
+private fun ToolTab(label: String, active: Boolean, onClick: () -> Unit, icon: @Composable (Color) -> Unit) {
+    val well by androidx.compose.animation.animateColorAsState(if (active) StillColors.Band else Color.Transparent, label = "well")
+    val ink by androidx.compose.animation.animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "tabInk")
+    val text by androidx.compose.animation.animateColorAsState(if (active) StillColors.Text else StillColors.Muted, label = "tabText")
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(64.dp).pressScale(interaction, 0.92f).clip(RoundedCornerShape(16.dp))
+            .clickable(interactionSource = interaction, indication = null, role = androidx.compose.ui.semantics.Role.Tab, onClick = onClick)
+            .padding(vertical = 4.dp).semantics { contentDescription = label }
+    ) {
+        Box(
+            Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(well)
+                .then(if (active) Modifier else Modifier.border(1.dp, StillColors.Border, RoundedCornerShape(14.dp))),
+            contentAlignment = Alignment.Center
+        ) { icon(ink) }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = text, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+/** Four squares: "every tool". */
+@Composable
+private fun AllGlyph(ink: Color) {
+    androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
+        val g = size.width * 0.12f; val c = (size.width - g) / 2
+        for (x in 0..1) for (y in 0..1) drawRoundRect(ink, androidx.compose.ui.geometry.Offset(x * (c + g), y * (c + g)), androidx.compose.ui.geometry.Size(c, c), androidx.compose.ui.geometry.CornerRadius(c * 0.3f))
+    }
+}
+
+/** Every tool at once, in a grid: nothing to scroll past, nothing to hunt for. */
+@Composable
+private fun AllToolsSheet(panels: List<ToolId.Panel>, current: ToolId.Panel, onPick: (ToolId.Panel) -> Unit, onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(StillColors.Surface)
+                .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(StillColors.Edge, StillColors.Border)), RoundedCornerShape(28.dp))
+                .padding(16.dp)
+        ) {
+            Text(stringResource(R.string.editor_all_tools_title), style = MaterialTheme.typography.titleLarge, color = StillColors.Text, modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
+            androidx.compose.foundation.layout.FlowRow(maxItemsInEachRow = 4, horizontalArrangement = Arrangement.SpaceEvenly, verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                for (p in panels) ToolTab(label = panelLabel(p), active = p == current, onClick = { onPick(p) }) { ink -> IconTile(iconRes = iconFor(p), accent = ink, size = 24.dp, lively = p == current) }
             }
         }
     }

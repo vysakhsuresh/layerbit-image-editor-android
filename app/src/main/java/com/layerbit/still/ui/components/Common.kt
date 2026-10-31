@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.components
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -150,8 +152,8 @@ fun PrimaryButton(
     val brush = if (enabled) Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright))
     else Brush.horizontalGradient(listOf(StillColors.SurfaceDim, StillColors.SurfaceDim))
     Row(
-        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 44.dp)
-            .then(if (enabled) Modifier.shadow(if (StillColors.isDark) 10.dp else 5.dp, ButtonShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.45f), spotColor = StillColors.Band.copy(alpha = 0.55f)) else Modifier)
+        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 40.dp)
+            .then(if (enabled) Modifier.shadow(if (!tall) 4.dp else if (StillColors.isDark) 10.dp else 5.dp, ButtonShape, clip = false, ambientColor = StillColors.Band.copy(alpha = 0.45f), spotColor = StillColors.Band.copy(alpha = 0.55f)) else Modifier)
             .clip(ButtonShape).background(brush)
             .drawWithContent { sheen(clock?.value, enabled) }
             .then(if (!enabled) Modifier.border(1.dp, StillColors.Border, ButtonShape) else Modifier)
@@ -165,7 +167,8 @@ fun PrimaryButton(
         } else if (iconRes != null) {
             LivelyIcon(painterResource(iconRes), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp), iconRes = iconRes); Box(Modifier.size(8.dp))
         }
-        Text(text, style = MaterialTheme.typography.titleMedium, color = tint, maxLines = 1)
+        // In-panel buttons are quieter than the screen's main action: smaller type, same weight.
+        Text(text, style = if (tall) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = tint, maxLines = 1)
     }
 }
 
@@ -178,7 +181,7 @@ fun SecondaryButton(
     val interaction = remember { MutableInteractionSource() }
     val tint = if (enabled) StillColors.Text else StillColors.Dim
     Row(
-        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 44.dp).clip(ButtonShape).background(StillColors.Glass)
+        modifier = modifier.pressScale(interaction).height(if (tall) 56.dp else 40.dp).clip(ButtonShape).background(StillColors.Glass)
             .border(1.dp, Brush.linearGradient(listOf(StillColors.Edge, StillColors.BorderStrong, StillColors.BorderStrong)), ButtonShape)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 18.dp),
@@ -189,7 +192,8 @@ fun SecondaryButton(
         } else if (iconRes != null) {
             LivelyIcon(painterResource(iconRes), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp), iconRes = iconRes); Box(Modifier.size(8.dp))
         }
-        Text(text, style = MaterialTheme.typography.titleMedium, color = tint, maxLines = 1)
+        // In-panel buttons are quieter than the screen's main action: smaller type, same weight.
+        Text(text, style = if (tall) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = tint, maxLines = 1)
     }
 }
 
@@ -236,27 +240,28 @@ fun formatBytes(bytes: Long): String = when {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
-    val longest = options.maxOfOrNull { it.second.length } ?: 0
-    val columns = minOf(options.size, when { longest <= 5 -> 4; longest <= 11 -> 3; else -> 2 }).coerceAtLeast(1)
-    val blanks = (columns - options.size % columns) % columns
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = columns, modifier = modifier.fillMaxWidth()) {
+    // One slim row of pills that scrolls when it must: every choice in reach, little height spent.
+    val scroll = androidx.compose.foundation.rememberScrollState()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.fillMaxWidth().horizontalScroll(scroll).padding(vertical = 2.dp)
+    ) {
         options.forEach { (value, label) ->
             val active = value == selected
-            val shape = RoundedCornerShape(14.dp)
-            val fill by animateColorAsState(if (active) StillColors.Band else StillColors.SurfaceDim, label = "chip")
-            val ink by animateColorAsState(if (active) StillColors.OnBand else StillColors.Muted, label = "chipInk")
+            val shape = RoundedCornerShape(999.dp)
+            val fill by animateColorAsState(if (active) StillColors.Band else Color.Transparent, label = "chip")
+            val ink by animateColorAsState(if (active) StillColors.OnBand else StillColors.Text.copy(alpha = 0.78f), label = "chipInk")
             val interaction = remember { MutableInteractionSource() }
             Box(
-                modifier = Modifier.weight(1f).height(44.dp).pressScale(interaction, 0.95f).background(fill, shape)
-                    .border(1.dp, if (active) StillColors.Band else StillColors.Border, shape)
+                modifier = Modifier.height(36.dp).pressScale(interaction, 0.95f).clip(shape).background(fill)
+                    .border(1.dp, if (active) StillColors.Band else StillColors.BorderStrong.copy(alpha = 0.6f), shape)
                     .clickable(interactionSource = interaction, indication = null, role = Role.RadioButton) { onSelect(value) }
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(label, style = MaterialTheme.typography.bodyMedium, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium), color = ink, maxLines = 1)
             }
         }
-        repeat(blanks) { Spacer(Modifier.weight(1f)) }
     }
 }
 

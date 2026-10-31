@@ -853,4 +853,6 @@
     <string name="batch_cancelled">Batch cancelled. What was finished is kept.</string>
     <string name="last_edits_apply">Same as last time</string>
     <string name="last_edits_done">The look of your last picture is on this one. Undo takes it off.</string>
+    <string name="editor_all_tools">All</string>
+    <string name="editor_all_tools_title">Every tool</string>
 </resources>
