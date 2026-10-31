@@ -228,4 +228,24 @@ class LocalAdjustTest {
         assertTrue(Recipe(locals = listOf(ok)).asPreset().locals.isEmpty())
         for (kind in MaskKind.entries) assertTrue(LocalMask.create(kind).valid)
     }
+
+    @Test
+    fun aSunsetSkyInASharpenedPictureIsStillSky() {
+        // Warm glow and grey mist on top, a busy textured foreground below, everything sharpened.
+        val w = 240; val h = 360
+        val rng = Random(9)
+        val px = IntArray(w * h) { i ->
+            val x = i % w; val y = i / w
+            val jitter = rng.nextInt(28) - 14
+            when {
+                y < h / 8 && x < w / 6 -> Argb.pack(255, 40 + jitter, 60 + jitter, 20)                        // a branch in the corner
+                y < h / 8 -> if (x > w * 2 / 3) Argb.pack(255, 250 + jitter / 4, 214 + jitter, 150 + jitter) // sun glow
+                             else Argb.pack(255, 150 + jitter, 152 + jitter, 166 + jitter)                    // mist
+                else -> { val n = rng.nextInt(140); Argb.pack(255, 120 + n / 2, 70 + n / 3, 10 + n / 6) }      // busy gold
+            }
+        }
+        val m = LocalMasks.render(LocalMask(MaskKind.SKY), w, h, analysisOf(px, w, h))
+        assertTrue("sky ${mean(m, 0.2f, 0f, 1f, 0.1f)}", mean(m, 0.2f, 0f, 1f, 0.1f) > 0.5f)
+        assertTrue("foreground ${mean(m, 0f, 0.3f, 1f, 1f)}", mean(m, 0f, 0.3f, 1f, 1f) < 0.05f)
+    }
 }

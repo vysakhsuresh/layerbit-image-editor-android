@@ -381,6 +381,9 @@ object LocalMasks {
     fun sky(px: IntArray, w: Int, h: Int, check: () -> Unit = {}): FloatArray {
         val n = w * h
         val lum = FloatArray(n); val colour = FloatArray(n)
+        // A sky is brighter than most of what is under it: the picture's own middle and upper brightness.
+        val sorted = FloatArray(n) { val c = px[it]; 0.2126f * Argb.red(c) / 255f + 0.7152f * Argb.green(c) / 255f + 0.0722f * Argb.blue(c) / 255f }.also { it.sort() }
+        val mid = sorted[n / 2]; val upper = sorted[(n * 3) / 4]
         for (i in 0 until n) {
             val c = px[i]
             val r = Argb.red(c) / 255f; val g = Argb.green(c) / 255f; val b = Argb.blue(c) / 255f
@@ -390,7 +393,11 @@ object LocalMasks {
             lum[i] = l
             val blue = step(0.02f, 0.14f, b - r) * step(0.18f, 0.42f, l) * (if (b >= g * 0.9f) 1f else 0.5f)
             val white = step(0.6f, 0.82f, l) * (1f - step(0.08f, 0.22f, sat))
-            colour[i] = max(blue, white)
+            // Sunset and golden-hour glow: bright, of any warm hue. Overcast and mist: a mid grey.
+            // Both only ever count through the flood from the top, so a bright wall below is safe.
+            val glow = step(0.55f, 0.75f, l) * step(upper - 0.02f, upper + 0.06f, l) * 0.85f
+            val grey = step(0.3f, 0.45f, l) * step(mid + 0.04f, mid + 0.12f, l) * (1f - step(0.12f, 0.26f, sat)) * 0.85f
+            colour[i] = max(max(blue, white), max(glow, grey))
         }
         check()
         // Texture: the brightness gradient, averaged over a few pixels.
@@ -401,11 +408,23 @@ object LocalMasks {
             grad[y * w + x] = abs(l) + abs(u)
         }
         val tex = blur(grad, w, h, max(1, min(w, h) / 200))
-        val score = FloatArray(n) { colour[it] * (1f - step(0.025f, 0.09f, tex[it])) }
+        // Smooth for this picture: a sharpened or detailed picture has more texture everywhere,
+        // its sky included, so the gate follows the picture's own smoothest quarter.
+        val calm = tex.copyOf().also { it.sort() }[n / 4]
+        val texLo = max(0.025f, calm * 1.3f); val texHi = max(0.09f, calm * 3.2f)
+        val score = FloatArray(n) { colour[it] * (1f - step(texLo, texHi, tex[it])) }
         // Reaching the top: a flood from the top row through sky-like pixels.
         val region = FloatArray(n)
         val queue = IntArray(n); var head = 0; var tail = 0
-        for (x in 0 until w) if (score[x] > 0.45f) { region[x] = 1f; queue[tail++] = x }
+        // Seeds in the top few rows, not only the first: a branch or a spire often owns the very top.
+        val seedRows = max(1, (h * 0.06f).roundToInt())
+        // A row seeds only where sky spans a fair part of it: a sky is wide, a shirt or a sign is not.
+        for (y in 0 until min(h, seedRows)) {
+            var count = 0
+            for (x in 0 until w) if (score[y * w + x] > 0.45f) count++
+            if (y > 0 && count < w * 0.25f) continue
+            for (x in 0 until w) { val i = y * w + x; if (score[i] > 0.45f && region[i] == 0f) { region[i] = 1f; queue[tail++] = i } }
+        }
         while (head < tail) {
             val i = queue[head++]
             val x = i % w; val y = i / w
