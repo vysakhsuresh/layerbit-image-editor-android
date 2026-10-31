@@ -61,6 +61,8 @@ sealed interface Overlay {
     data object None : Overlay
     data class CropOverlay(val crop: Crop, val dragging: Boolean, val passport: Boolean = false) : Overlay
     data class QuadOverlay(val quad: Quad) : Overlay
+    /** The picture inside its grown canvas: the picture outlined, the canvas edges as handles. */
+    data class ExpandOverlay(val inner: Crop) : Overlay
     /**
      * The stroke in progress and the source marker for clone. [heals] are the heal marks whose
      * patches are shown as dashed circles to drag; the last one is drawn strongest.
@@ -272,6 +274,7 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
                 drawLine(Color.White, Offset(px - if (horizontal) k / 2 else 0f, py - if (horizontal) 0f else k / 2), Offset(px + if (horizontal) k / 2 else 0f, py + if (horizontal) 0f else k / 2), w, StrokeCap.Round)
             }
         }
+        is Overlay.ExpandOverlay -> drawExpandOverlay(overlay.inner, r)
         is Overlay.QuadOverlay -> {
             val q = overlay.quad
             val pts = q.points.map { t.toOffset(it) }

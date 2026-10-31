@@ -287,19 +287,21 @@ data class Recipe(
     /** A second picture blended over the first; after the portrait, before vignette and grain. */
     val double: DoubleExposure = DoubleExposure(),
     /** Filter effects in the order they were stacked; see [Effects.Stage] for where each runs. */
-    val effects: List<Effect> = emptyList()
+    val effects: List<Effect> = emptyList(),
+    /** The canvas grown around the picture at the end of geometry, before tone; see [Expand]. */
+    val expand: Expand = Expand()
 ) {
     val isIdentity: Boolean get() = this == Recipe()
     val valid: Boolean
         get() = geometry.valid && tone.valid && curves.valid && lookStrength in 0f..1f && marks.size <= MAX_MARKS &&
-            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid && mix.valid &&
+            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid && mix.valid && expand.valid &&
             locals.size <= LocalAdjust.MAX && locals.all { it.valid } &&
             portrait.valid && double.valid &&
             effects.size <= Effect.MAX && effects.all { it.valid }
 
     /** The recipe without what belongs to one particular picture: what a preset keeps. */
     fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout(),
-        locals = emptyList(), portrait = portrait.asPreset(), double = DoubleExposure())
+        locals = emptyList(), portrait = portrait.asPreset(), double = DoubleExposure(), expand = Expand())
 
     companion object {
         const val MAX_MARKS = 400

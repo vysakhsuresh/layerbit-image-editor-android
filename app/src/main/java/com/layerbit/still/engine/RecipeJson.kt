@@ -35,6 +35,10 @@ object RecipeJson {
             "hue" to JsonValue.Arr(r.mix.hue.map { it.json() }), "saturation" to JsonValue.Arr(r.mix.saturation.map { it.json() }),
             "lightness" to JsonValue.Arr(r.mix.lightness.map { it.json() })
         ),
+        "expand" to if (r.expand.isIdentity) null else jsonOf(
+            "left" to r.expand.left.json(), "top" to r.expand.top.json(), "right" to r.expand.right.json(), "bottom" to r.expand.bottom.json(),
+            "fill" to r.expand.fill.name.json(), "seed" to r.expand.seed.json()
+        ),
         "scan" to if (r.scan.isIdentity) null else jsonOf("mode" to r.scan.mode.name.json(), "strength" to r.scan.strength.json(), "whiten" to r.scan.whiten.json()),
         "cutout" to if (r.cutout.isIdentity) null else jsonOf(
             "enabled" to r.cutout.enabled.json(), "mode" to r.cutout.mode.name.json(),
@@ -222,6 +226,14 @@ object RecipeJson {
                 fun band(key: String) = m[key]?.arr()?.map { (it.num()?.toFloat() ?: 0f).coerceIn(-1f, 1f) }?.takeIf { it.size == ColourMix.BANDS } ?: ColourMix.ZERO
                 ColourMix(band("hue"), band("saturation"), band("lightness"))
             } ?: ColourMix(),
+            expand = o["expand"]?.let { e ->
+                Expand(
+                    left = e.f("left"), top = e.f("top"), right = e.f("right"), bottom = e.f("bottom"),
+                    // A fill this app does not know yet falls back to the smart one, which suits any picture.
+                    fill = e["fill"]?.str()?.let { name -> ExpandFill.entries.firstOrNull { it.name == name } } ?: ExpandFill.SMART,
+                    seed = e["seed"]?.num()?.toInt() ?: 0
+                )
+            } ?: Expand(),
             scan = if (sc == null) Scan() else Scan(
                 mode = sc["mode"]?.str()?.let { name -> ScanMode.entries.firstOrNull { it.name == name } } ?: ScanMode.OFF,
                 strength = sc["strength"]?.num()?.toFloat() ?: 1f, whiten = sc["whiten"]?.num()?.toFloat() ?: 0.5f

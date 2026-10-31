@@ -20,6 +20,7 @@ import android.text.TextPaint
 import androidx.exifinterface.media.ExifInterface
 import com.layerbit.still.engine.Argb
 import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.Expand
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.WatermarkLayout
@@ -63,7 +64,9 @@ import kotlin.math.sin
  * Two stages, so the editor can cache the first while a slider moves the second:
  *
  *  - [geometry]: decode within the budget, turn upright, perspective, quarter turns, flips,
- *    straighten, crop, resize. Everything that changes which pixels there are.
+ *    straighten, crop, resize, then the expanded canvas and its fill ([ExpandStage]).
+ *    Everything that changes which pixels there are. Expand comes last here, before any tone,
+ *    so every tone, look and detail setting treats the fill exactly as it treats the picture.
  *  - [finish]: tone through the pure [TonePipeline], detail, vignette, grain, the layers, the
  *    frame. Everything that changes what the pixels are, in the same order at every size.
  *
@@ -73,6 +76,8 @@ import kotlin.math.sin
 class Renderer(private val budget: Long = Budget.exportPixels) {
 
     class Cancelled : CancellationException("Cancelled")
+
+    private val expandStage = ExpandStage()
 
     data class Base(val bitmap: Bitmap, val source: Geometry2D.Size, val scaled: Boolean)
 
@@ -134,15 +139,17 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * The canvas after geometry, at most [maxPixels]. [scaled] says the source was sampled to
      * fit, which the export sheet reports rather than hides.
      */
-    fun geometry(file: File, g: Geometry, maxPixels: Long = budget, check: () -> Unit = {}): Base {
+    fun geometry(file: File, g: Geometry, maxPixels: Long = budget, check: () -> Unit = {}, expand: Expand = Expand(), planKey: String? = null): Base {
         require(g.valid) { "geometry" }
+        require(expand.valid) { "expand" }
         val source = bounds(file) ?: error("unsupported")
         // Straightening grows the bounding box; reserve for it before decoding.
         val straightenFactor = if (abs(g.straighten) > 0.01f) {
             val r = Geometry2D.rotatedBounds(1000, (1000 / source.aspect).roundToInt().coerceAtLeast(1), g.straighten)
             (r.pixels.toDouble() / (1000.0 * (1000 / source.aspect))).coerceAtLeast(1.0)
         } else 1.0
-        val decodeBudget = (maxPixels / straightenFactor).toLong().coerceAtLeast(10_000)
+        // An expanded canvas grows the pixel count too; the picture is decoded smaller to leave it room.
+        val decodeBudget = (maxPixels / straightenFactor / (if (expand.isIdentity) 1.0 else expand.areaFactor)).toLong().coerceAtLeast(10_000)
         var b = decode(file, decodeBudget, check)
         val scaled = b.width.toLong() * b.height < source.pixels
         fun replace(next: Bitmap) { if (next !== b) { b.recycle(); b = next } }
@@ -180,6 +187,17 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
                 }
                 check()
                 replace(scale(b, target.width, target.height))
+            }
+            if (!expand.isIdentity) {
+                // Last in geometry, so tone, looks and detail treat the fill exactly as they treat the picture.
+                val lay = expand.layout(b.width, b.height)
+                if (lay.width.toLong() * lay.height > maxPixels || max(lay.width, lay.height) > Budget.MAX_EDGE) {
+                    val fit = Geometry2D.fit(lay.width, lay.height, maxPixels, Budget.MAX_EDGE)
+                    val factor = min(fit.width.toDouble() / lay.width, fit.height.toDouble() / lay.height)
+                    replace(scale(b, max(1, (b.width * factor).toInt()), max(1, (b.height * factor).toInt())))
+                }
+                check()
+                replace(expandStage.apply(b, expand, planKey, check))
             }
             if (!b.isMutable || b.config != Bitmap.Config.ARGB_8888) replace(b.copy(Bitmap.Config.ARGB_8888, true))
             b.setHasAlpha(true)
@@ -756,7 +774,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
 
     /** Geometry then finish, for a one-off render: batch ops, thumbnails of edited projects. */
     suspend fun render(file: File, r: Recipe, maxPixels: Long = budget, check: () -> Unit = {}): Bitmap {
-        val base = geometry(file, r.geometry, maxPixels, check)
+        val base = geometry(file, r.geometry, maxPixels, check, r.expand, file.path + "|" + r.geometry.hashCode())
         try {
             return finish(base.bitmap, r, check, maskKey = file.path + "|" + r.geometry.hashCode(), assets = file.parentFile)
         } finally {

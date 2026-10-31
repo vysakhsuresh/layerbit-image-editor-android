@@ -144,6 +144,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val showSkin: Boolean = false,
         /** On the Portrait panel: how much of the picture the skin mask covers, measured on the preview's mask. */
         val skinKept: Float? = null,
+        /** On the History panel: the steps shown as if taken out. Preview only; never saved or exported. */
+        val hiddenSteps: Set<com.layerbit.still.engine.StepKey> = emptySet(),
         val loading: Boolean = true
     )
 
@@ -159,6 +161,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     /** The cached geometry stage and the geometry it was rendered for. */
     private var base: Bitmap? = null
     private var baseGeometry: Geometry? = null
+    private var baseExpand: com.layerbit.still.engine.Expand = com.layerbit.still.engine.Expand()
     private var baseScaled = false
     /** The geometry stage at half size, for the preview that follows a finger. */
     private var baseFast: Bitmap? = null
@@ -297,8 +300,48 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setPanel(panel: ToolId.Panel) {
         commit()
-        _ui.update { it.copy(panel = panel, autoStep = null, autoPanel = null) }
+        _ui.update { it.copy(panel = panel, autoStep = null, autoPanel = null, hiddenSteps = emptySet()) }
         requestRender()
+    }
+
+    // ------------------------------------------------------------------ history, copy and paste
+
+    /** Shows the picture with or without one step, on the History panel only. */
+    fun toggleStep(step: com.layerbit.still.engine.StepKey) {
+        _ui.update { it.copy(hiddenSteps = if (step in it.hiddenSteps) it.hiddenSteps - step else it.hiddenSteps + step) }
+        requestRender()
+    }
+
+    /** Takes a step out of the recipe for good, as one undo step. */
+    fun deleteStep(step: com.layerbit.still.engine.StepKey) {
+        _ui.update { it.copy(hiddenSteps = com.layerbit.still.engine.Steps.afterDelete(it.hiddenSteps, step)) }
+        change { com.layerbit.still.engine.Steps.without(it, step) }
+    }
+
+    fun copyEdits() {
+        val r = _ui.value.recipe
+        if (r.asPreset().isIdentity) { message(Strings.get(R.string.history_nothing_to_copy)); return }
+        EditClipboard.copy(r.asPreset(), _ui.value.project?.name)
+        message(Strings.get(R.string.history_copied))
+    }
+
+    fun pasteEdits() {
+        val copied = EditClipboard.recipe ?: return
+        change { com.layerbit.still.engine.Steps.paste(it, copied) }
+        message(Strings.get(R.string.history_pasted))
+    }
+
+    /** A look read from a QR code: kept as a preset under its own name and applied. */
+    fun importLook(name: String, recipe: Recipe) {
+        viewModelScope.launch {
+            val taken = _ui.value.presets.map { it.name.lowercase() }.toSet()
+            val base = name.ifBlank { Strings.get(R.string.looks_scan_default_name) }
+            val unique = generateSequence(1) { it + 1 }.map { if (it == 1) base else "$base $it" }.first { it.lowercase() !in taken }
+            val presets = withContext(Dispatchers.IO) { store.savePreset(unique, recipe); store.presets() }
+            _ui.update { it.copy(presets = presets) }
+            applyPreset(ImageStore.Preset(unique, recipe))
+            message(Strings.get(R.string.looks_scan_added, unique))
+        }
     }
 
     /** A live change during a gesture: rendered, not yet undoable. */
@@ -543,7 +586,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     fun applyPreset(p: ImageStore.Preset) = change { current ->
         p.recipe.copy(
-            marks = current.marks, locals = current.locals, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height),
+            marks = current.marks, locals = current.locals, expand = current.expand, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height),
             // What belongs to this picture stays: its second picture, and where its skin, eyes and teeth are.
             double = current.double, portrait = p.recipe.portrait.copy(strokes = current.portrait.strokes, taps = current.portrait.taps)
         )
@@ -552,7 +595,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     /** The last picture's look on this one, as one undoable step; this picture's own crop, marks, masks and second picture stay. */
     fun applyLastEdits() {
         val last = _ui.value.lastEdits ?: return
-        change { current -> last.copy(marks = current.marks, geometry = current.geometry, cutout = current.cutout, locals = current.locals, double = current.double,
+        change { current -> last.copy(marks = current.marks, geometry = current.geometry, cutout = current.cutout, expand = current.expand, locals = current.locals, double = current.double,
             portrait = last.portrait.copy(strokes = current.portrait.strokes, taps = current.portrait.taps)) }
         message(Strings.get(R.string.last_edits_done))
     }
@@ -596,8 +639,11 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun previewRecipe(recipe: Recipe, panel: ToolId.Panel): Recipe = when (panel) {
         // Local masks, like layers, are placed on the cropped canvas, so they wait while the canvas is being reshaped.
-        ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame(), locals = emptyList())
-        ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame(), locals = emptyList())
+        ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame(), locals = emptyList(), expand = com.layerbit.still.engine.Expand())
+        ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame(), locals = emptyList(), expand = com.layerbit.still.engine.Expand())
+        // The canvas handles sit on the picture's own edges, so the frame stays out of the way.
+        ToolId.Panel.EXPAND -> recipe.copy(frame = Frame())
+        ToolId.Panel.HISTORY -> com.layerbit.still.engine.Steps.without(recipe, _ui.value.hiddenSteps)
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS, ToolId.Panel.LOCAL, ToolId.Panel.PORTRAIT, ToolId.Panel.DOUBLE -> recipe.copy(frame = Frame())
         // The cut-out panel shows the whole picture with what would go under a wash, whatever the switch says.
         // Until the user says "remove it", the panel shows the whole picture with what would go under a wash; after, the real result.
@@ -665,7 +711,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun maskKey(geometry: Geometry): String = (_ui.value.project?.id ?: "") + "|" + geometry.hashCode()
+    private fun maskKey(geometry: Geometry, expand: com.layerbit.still.engine.Expand = com.layerbit.still.engine.Expand()): String =
+        (_ui.value.project?.id ?: "") + "|" + geometry.hashCode() + (if (expand.isIdentity) "" else "|" + expand.hashCode())
 
     private fun requestRender() { renderRequests.value = System.nanoTime() }
 
@@ -674,17 +721,20 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         renderRequests.debounce(30).collectLatest {
             val state = _ui.value
             val project = state.project ?: return@collectLatest
-            val shown = previewRecipe(state.recipe, state.panel)
+            // While a finger drags the canvas edges, the quick blur fill stands in for the smart one, which follows on release.
+            val shown = previewRecipe(state.recipe, state.panel).let { r ->
+                if (dragging && r.expand.fill == com.layerbit.still.engine.ExpandFill.SMART && !r.expand.isIdentity) r.copy(expand = r.expand.copy(fill = com.layerbit.still.engine.ExpandFill.BLUR)) else r
+            }
             _ui.update { it.copy(previewBusy = true) }
             try {
                 val ctx = currentCoroutineContext()
                 val check = { ctx.ensureActive() }
                 val geometry = shown.geometry
                 val current = base
-                val b = if (current != null && baseGeometry == geometry && !current.isRecycled) current else {
-                    val fresh = withContext(Dispatchers.Default) { renderer.geometry(project.file.file, geometry, Budget.PREVIEW_PIXELS, check) }
+                val b = if (current != null && baseGeometry == geometry && baseExpand == shown.expand && !current.isRecycled) current else {
+                    val fresh = withContext(Dispatchers.Default) { renderer.geometry(project.file.file, geometry, Budget.PREVIEW_PIXELS, check, shown.expand, maskKey(geometry)) }
                     dropBase()
-                    base = fresh.bitmap; baseGeometry = geometry; baseScaled = fresh.scaled
+                    base = fresh.bitmap; baseGeometry = geometry; baseExpand = shown.expand; baseScaled = fresh.scaled
                     if (redEyesPending) findRedEyes()
                     val swatches = withContext(Dispatchers.Default) {
                         val bmp = fresh.bitmap
@@ -707,10 +757,10 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 } else b
                 val started = System.nanoTime()
                 val onPortrait = state.panel == ToolId.Panel.PORTRAIT
-                val finished = renderer.finish(source, shown, check, maskKey = maskKey(geometry), cutoutPreview = cutoutPanel, assets = project.file.file.parentFile, skinPreview = onPortrait && state.showSkin)
+                val finished = renderer.finish(source, shown, check, maskKey = maskKey(geometry, shown.expand), cutoutPreview = cutoutPanel, assets = project.file.file.parentFile, skinPreview = onPortrait && state.showSkin)
                 if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
-                val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
-                val skinKept = if (onPortrait && !fast) withContext(Dispatchers.Default) { renderer.skinCoverage(b, shown.portrait, maskKey(geometry), check) } else state.skinKept
+                val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry, shown.expand), check) } else state.cutoutKept
+                val skinKept = if (onPortrait && !fast) withContext(Dispatchers.Default) { renderer.skinCoverage(b, shown.portrait, maskKey(geometry, shown.expand), check) } else state.skinKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
                 // The selected local mask, for its coverage and, when asked, the red wash; drawn from the stage the preview was made from.
                 val localMask = if (state.panel == ToolId.Panel.LOCAL && finished.width == source.width && finished.height == source.height) state.recipe.locals.getOrNull(state.localSelected)?.mask else null
@@ -732,7 +782,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                     } else finished
                     Triple(h, pal, display)
                 }
-                val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
+                val canvas = Geometry2D.framedSize(state.recipe.expand.grow(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry)), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
                 _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, skinKept = skinKept, previewFast = fast, palette = palette, localCoverage = coverage) }
@@ -768,8 +818,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val ctx = currentCoroutineContext()
                 val check = { ctx.ensureActive() }
                 val result = withContext(Dispatchers.Default) {
-                    val stage = renderer.geometry(project.file.file, recipe.geometry, Budget.exportPixels, check)
-                    val picture = try { renderer.finish(stage.bitmap, recipe, check, maskKey = maskKey(recipe.geometry), assets = project.file.file.parentFile) } finally { stage.bitmap.recycle() }
+                    val stage = renderer.geometry(project.file.file, recipe.geometry, Budget.exportPixels, check, recipe.expand, maskKey(recipe.geometry))
+                    val picture = try { renderer.finish(stage.bitmap, recipe, check, maskKey = maskKey(recipe.geometry, recipe.expand), assets = project.file.file.parentFile) } finally { stage.bitmap.recycle() }
                     try {
                         val out = still.workspace.newOutput(project.name, "export", settings.format.extension)
                         val exported = codecs.export(picture, settings, out, project.file.file, stage.scaled, check)

@@ -443,4 +443,21 @@ class RendererTest {
         assertTrue("effects change the picture", renderer.difference(small, plain) > 3.0)
         small.recycle(); large.recycle(); shrunk.recycle(); plain.recycle()
     }
+
+    @Test
+    fun anExpandedCanvasPreviewPredictsItsExport() = runBlocking {
+        // Smart fill decides once (the preview) and the export reuses the plan; tone lands on the fill too.
+        val src = scene(1200, 800)
+        for (fill in com.layerbit.still.engine.ExpandFill.entries) {
+            val r = Recipe(tone = Tone(exposure = 0.3f, vignette = 0.4f), expand = com.layerbit.still.engine.Expand(left = 0.25f, top = 0.1f, right = 0.25f, fill = fill))
+            val small = renderer.render(src, r, maxPixels = 300 * 200)
+            val large = renderer.render(src, r, maxPixels = 1200 * 800)
+            assertEquals(small.width.toDouble() / small.height, large.width.toDouble() / large.height, 0.02)
+            assertTrue(large.width.toLong() * large.height <= 1200L * 800)
+            val shrunk = renderer.scale(large, small.width, small.height)
+            val diff = renderer.difference(small, shrunk)
+            assertTrue("$fill: mean difference $diff", diff < 7.0)
+            small.recycle(); large.recycle(); shrunk.recycle()
+        }
+    }
 }

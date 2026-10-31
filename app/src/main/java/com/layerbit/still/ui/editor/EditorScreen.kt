@@ -189,6 +189,7 @@ fun EditorScreen(
         comparing -> Overlay.None
         panel == ToolId.Panel.CROP -> Overlay.CropOverlay(recipe.geometry.crop, cropDragging, passport = lockAspect == PASSPORT_ASPECT)
         panel == ToolId.Panel.PERSPECTIVE -> Overlay.QuadOverlay(recipe.geometry.quad)
+        panel == ToolId.Panel.EXPAND -> Overlay.ExpandOverlay(recipe.expand.inner)
         panel == ToolId.Panel.MARKUP && moving -> Overlay.Selection(recipe.marks.filter { it.kind in Movable && it.visible }, recipe.marks.getOrNull(selectedMark)?.takeIf { it.kind in Movable })
         panel == ToolId.Panel.MARKUP && brush.kind == MarkKind.TEXT -> if (strokePoints.isEmpty()) Overlay.Texts(recipe.marks.filter { it.kind == MarkKind.TEXT && it.visible }) else Overlay.None
         panel == ToolId.Panel.MARKUP || panel == ToolId.Panel.RETOUCH -> Overlay.Stroke(
@@ -236,6 +237,12 @@ fun EditorScreen(
                 vm.draft(recipe.copy(geometry = recipe.geometry.copy(crop = next)))
             },
             onEnd = { cropDragging = false; vm.commit() }
+        )
+        // Pull an edge of the canvas outwards to grow it there; drag inside to slide the picture across it.
+        ToolId.Panel.EXPAND -> TouchMode.Handles(
+            hit = { at -> cropHandleAt(at, com.layerbit.still.engine.Crop.FULL, transform, reach) },
+            onDrag = { handle, _, delta -> vm.draft(recipe.copy(expand = recipe.expand.dragged(handle, delta.x, delta.y))) },
+            onEnd = { vm.commit() }
         )
         ToolId.Panel.PERSPECTIVE -> TouchMode.Handles(
             hit = { at -> quadCornerAt(at, recipe.geometry.quad, transform, reach) },
@@ -420,6 +427,7 @@ fun EditorScreen(
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, ui.suggestedLooks, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
+                                LookShare(recipe, ui.presets, onImported = vm::importLook, onMessage = vm::message)
                             }
                             ToolId.Panel.EFFECTS -> {
                                 val openKind = recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.kind
@@ -430,6 +438,11 @@ fun EditorScreen(
                             ToolId.Panel.LOCAL -> LocalPanel(
                                 scope, ui.localSelected, onSelect = vm::selectLocal, showMask = ui.showLocalMask, onShowMask = vm::setShowLocalMask,
                                 coverage = ui.localCoverage, tools = localTools, onAdd = { vm.addLocal(it) }, onDelete = vm::removeLocal, onDuplicate = vm::duplicateLocal
+                            )
+                            ToolId.Panel.EXPAND -> ExpandPanel(scope)
+                            ToolId.Panel.HISTORY -> HistoryPanel(
+                                recipe, source, ui.hiddenSteps, onToggle = vm::toggleStep, onDelete = vm::deleteStep,
+                                onEdit = { step -> vm.setPanel(panelFor(step)) }, onCopy = vm::copyEdits, onPaste = vm::pasteEdits
                             )
                             ToolId.Panel.MARKUP -> MarkupPanel(
                                 brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it },
@@ -673,6 +686,7 @@ fun panelLabel(p: ToolId.Panel): String = stringResource(
         ToolId.Panel.DETAILS -> R.string.panel_details; ToolId.Panel.EXPORT -> R.string.panel_export
         ToolId.Panel.CUTOUT -> R.string.panel_cutout; ToolId.Panel.SCAN -> R.string.panel_scan
         ToolId.Panel.PORTRAIT -> R.string.panel_portrait; ToolId.Panel.DOUBLE -> R.string.panel_double
+        ToolId.Panel.EXPAND -> R.string.panel_expand; ToolId.Panel.HISTORY -> R.string.panel_history
     }
 )
 
