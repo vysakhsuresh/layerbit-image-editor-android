@@ -58,7 +58,7 @@ import kotlin.math.min
 /** What the canvas draws over the picture for the open panel. */
 sealed interface Overlay {
     data object None : Overlay
-    data class CropOverlay(val crop: Crop, val dragging: Boolean) : Overlay
+    data class CropOverlay(val crop: Crop, val dragging: Boolean, val passport: Boolean = false) : Overlay
     data class QuadOverlay(val quad: Quad) : Overlay
     /** The stroke in progress and the source marker for clone. */
     data class Stroke(val kind: MarkKind, val points: List<Pt>, val color: Int, val width: Float, val cloneSource: Pt?) : Overlay
@@ -216,6 +216,17 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
                     drawLine(Color.White.copy(alpha = 0.45f), Offset(cr.left, cr.top + cr.height * i / 3), Offset(cr.right, cr.top + cr.height * i / 3), thin * 0.7f)
                 }
             }
+            // Passport guides: the crown and chin lines and the oval the head should fill, so a face is placed, not guessed.
+            if (overlay.passport) {
+                val dash = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
+                val crown = cr.top + cr.height * PASSPORT_CROWN; val chin = cr.top + cr.height * PASSPORT_CHIN
+                val guide = StillColors.BandBright
+                drawLine(guide, Offset(cr.left, crown), Offset(cr.right, crown), thin * 1.4f, pathEffect = dash)
+                drawLine(guide, Offset(cr.left, chin), Offset(cr.right, chin), thin * 1.4f, pathEffect = dash)
+                drawLine(Color.White.copy(alpha = 0.4f), Offset(cr.center.x, cr.top), Offset(cr.center.x, cr.bottom), thin * 0.7f, pathEffect = dash)
+                val ow = cr.width * 0.6f
+                drawOval(guide.copy(alpha = 0.9f), Offset(cr.center.x - ow / 2, crown), Size(ow, chin - crown), style = Stroke(thin * 1.6f))
+            }
             drawRect(Color.White, Offset(cr.left, cr.top), cr.size, style = Stroke(thin))
             // Corner brackets and edge pips.
             val k = min(22.dp.toPx(), min(cr.width, cr.height) / 3)
@@ -332,3 +343,8 @@ fun quadCornerAt(at: Offset, quad: Quad, t: CanvasTransform, reachPx: Float): In
 fun moveCorner(q: Quad, i: Int, to: Pt): Quad = when (i) {
     0 -> q.copy(tl = to.clamped()); 1 -> q.copy(tr = to.clamped()); 2 -> q.copy(br = to.clamped()); else -> q.copy(bl = to.clamped())
 }
+
+/** The passport frame's head guides, as fractions of its height: crown 4 mm and chin 38 mm down a 45 mm photo. */
+const val PASSPORT_ASPECT = 35f / 45f
+private const val PASSPORT_CROWN = 4f / 45f
+private const val PASSPORT_CHIN = 38f / 45f

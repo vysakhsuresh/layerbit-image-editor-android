@@ -222,6 +222,8 @@
     <!-- Crop -->
     <string name="crop_free">Free</string>
     <string name="crop_original">Original</string>
+    <string name="crop_passport">Passport</string>
+    <string name="crop_passport_hint">Top of the head on the upper line, chin on the lower, face inside the oval. Then export with a size limit for the form.</string>
     <string name="crop_hint">Drag a corner or an edge of the frame; drag inside it to move it. Two fingers zoom.</string>
     <string name="crop_straighten">Straighten</string>
     <string name="level_auto">Auto-straighten</string>

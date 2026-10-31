@@ -171,7 +171,7 @@ fun EditorScreen(
     // The overlay and the touch mode the open panel asks for.
     val overlay: Overlay = when {
         comparing -> Overlay.None
-        panel == ToolId.Panel.CROP -> Overlay.CropOverlay(recipe.geometry.crop, cropDragging)
+        panel == ToolId.Panel.CROP -> Overlay.CropOverlay(recipe.geometry.crop, cropDragging, passport = lockAspect == PASSPORT_ASPECT)
         panel == ToolId.Panel.PERSPECTIVE -> Overlay.QuadOverlay(recipe.geometry.quad)
         panel == ToolId.Panel.MARKUP && moving -> Overlay.Selection(recipe.marks.filter { it.kind in Movable && it.visible }, recipe.marks.getOrNull(selectedMark)?.takeIf { it.kind in Movable })
         panel == ToolId.Panel.MARKUP && brush.kind == MarkKind.TEXT -> if (strokePoints.isEmpty()) Overlay.Texts(recipe.marks.filter { it.kind == MarkKind.TEXT && it.visible }) else Overlay.None

@@ -1,5 +1,6 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -117,13 +118,13 @@ fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit, o
     val g = s.recipe.geometry
     val turned = Geometry2D.turned(s.source, g.quarterTurns)
     val canvas = if (kotlin.math.abs(g.straighten) < 0.01f) turned else Geometry2D.rotatedBounds(turned.width, turned.height, g.straighten)
-    val aspects = listOf(0f to stringResource(R.string.crop_free), -1f to stringResource(R.string.crop_original), 1f to "1:1", 4f / 5f to "4:5", 4f / 3f to "4:3", 3f / 2f to "3:2", 16f / 9f to "16:9", 9f / 16f to "9:16")
+    val aspects = listOf(0f to stringResource(R.string.crop_free), -1f to stringResource(R.string.crop_original), 1f to "1:1", 4f / 5f to "4:5", 4f / 3f to "4:3", 3f / 2f to "3:2", 16f / 9f to "16:9", 9f / 16f to "9:16", PASSPORT_ASPECT to stringResource(R.string.crop_passport))
     ChipRow(aspects, lockAspect, onSelect = { a ->
         onLockAspect(a)
         val ratio = if (a == -1f) s.source.aspect else a
         if (ratio > 0f) s.change { it.copy(geometry = it.geometry.copy(crop = Geometry2D.aspectCrop(canvas, ratio))) }
     })
-    Hint(stringResource(R.string.crop_hint))
+    Hint(stringResource(if (lockAspect == PASSPORT_ASPECT) R.string.crop_passport_hint else R.string.crop_hint))
     Knob(stringResource(R.string.crop_straighten), g.straighten, -45f..45f, onChange = { v -> s.draft(s.recipe.copy(geometry = g.copy(straighten = v))) }, onDone = s.commit,
         onReset = { s.change { it.copy(geometry = it.geometry.copy(straighten = 0f)) } }, haptics = s.haptics, format = { "${(it * 10).roundToInt() / 10f}°" })
     PrimaryButton(stringResource(R.string.level_auto), onClick = onAutoStraighten, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), tall = false)
@@ -390,10 +391,15 @@ fun MarkupPanel(
 ) {
     ToggleRow(stringResource(R.string.mark_move), moving, onMoving, detail = stringResource(R.string.mark_move_detail))
     if (moving) {
-        if (selected == null) { Hint(stringResource(R.string.mark_move_hint)); return }
-        ColourRow(InkColours, selected.color, onSelectedColour, Modifier.padding(top = 8.dp))
-        Knob(stringResource(if (selected.kind == MarkKind.TEXT) R.string.mark_text_size else R.string.mark_size), selected.width, 0.004f..0.12f, onChange = { onSelectedWidth(it, false) }, onDone = { onSelectedWidth(selected.width, true) }, onReset = { onSelectedWidth(0.02f, true) }, haptics = haptics, format = { "${(it * 1000).roundToInt()}" })
-        SecondaryButton(stringResource(R.string.mark_delete), onClick = onDeleteSelected, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), tall = false)
+        // The same controls whether or not a mark is held, dimmed until one is: the panel keeps
+        // its height, so the picture never jumps under a finger mid-drag.
+        val held = selected != null
+        Column(Modifier.alpha(if (held) 1f else 0.38f)) {
+            ColourRow(InkColours, selected?.color ?: 0, { if (held) onSelectedColour(it) }, Modifier.padding(top = 8.dp))
+            Knob(stringResource(if (selected?.kind == MarkKind.TEXT) R.string.mark_text_size else R.string.mark_size), selected?.width ?: 0.02f, 0.004f..0.12f, onChange = { if (held) onSelectedWidth(it, false) }, onDone = { if (held) onSelectedWidth(selected!!.width, true) }, onReset = { if (held) onSelectedWidth(0.02f, true) }, haptics = haptics, format = { "${(it * 1000).roundToInt()}" })
+            SecondaryButton(stringResource(R.string.mark_delete), onClick = onDeleteSelected, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), tall = false, enabled = held)
+        }
+        Hint(stringResource(R.string.mark_move_hint))
         return
     }
     val kinds = listOf(MarkKind.DRAW to stringResource(R.string.mark_draw), MarkKind.TEXT to stringResource(R.string.mark_text), MarkKind.ARROW to stringResource(R.string.mark_arrow), MarkKind.BOX to stringResource(R.string.mark_box), MarkKind.ELLIPSE to stringResource(R.string.mark_ellipse))

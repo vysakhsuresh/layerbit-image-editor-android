@@ -222,6 +222,8 @@
     <!-- Crop -->
     <string name="crop_free">मुक्त</string>
     <string name="crop_original">मूल</string>
+    <string name="crop_passport">पासपोर्ट</string>
+    <string name="crop_passport_hint">सिर का ऊपरी हिस्सा ऊपर की रेखा पर, ठुड्डी नीचे वाली पर, चेहरा अंडाकार के अंदर. फिर फ़ॉर्म की साइज़ सीमा के साथ एक्सपोर्ट करें.</string>
     <string name="crop_hint">फ़्रेम का कोना या किनारा खींचें; हिलाने के लिए उसके अंदर खींचें. दो उंगलियों से ज़ूम.</string>
     <string name="crop_straighten">सीधा करें</string>
     <string name="level_auto">अपने-आप सीधा करें</string>
