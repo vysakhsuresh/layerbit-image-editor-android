@@ -92,7 +92,7 @@
     <string name="tool_retouch_summary">कोई हिस्सा धुंधला, पिक्सेलेट या ढकें, पारदर्शी मिटाएं, दाग पर हील या क्लोन करें</string>
     <string name="tool_retouch_action">सुधारें</string>
     <string name="tool_frame_title">फ़्रेम और पैड</string>
-    <string name="tool_frame_summary">चौकोर या स्टोरी के लिए पैड करें, किनारा जोड़ें, कोने गोल करें, भराव धुंधला करें</string>
+    <string name="tool_frame_summary">पोलरॉइड, फ़िल्म स्ट्रिप, गैलरी मैट, फटा कागज़, नियॉन, लकड़ी और भी, या स्क्वेयर या स्टोरी तक पैड</string>
     <string name="tool_frame_action">फ़्रेम करें</string>
     <string name="tool_watermark_title">वॉटरमार्क</string>
     <string name="tool_watermark_summary">हर तस्वीर पर आपका नाम या ©, तिरछा, हल्का या गहरा</string>

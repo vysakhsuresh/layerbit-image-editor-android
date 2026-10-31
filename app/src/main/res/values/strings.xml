@@ -92,7 +92,7 @@
     <string name="tool_retouch_summary">Blur, pixelate or cover a detail, erase to transparent, heal or clone over a blemish</string>
     <string name="tool_retouch_action">Retouch</string>
     <string name="tool_frame_title">Frame and pad</string>
-    <string name="tool_frame_summary">Pad to a square or a story, add a border, round the corners, blur the fill</string>
+    <string name="tool_frame_summary">Polaroid, film strip, gallery mat, torn paper, neon, wood and more, or pad to a square or a story</string>
     <string name="tool_frame_action">Frame it</string>
     <string name="tool_watermark_title">Watermark</string>
     <string name="tool_watermark_summary">Your name or © across every picture, at an angle, faint or bold</string>
