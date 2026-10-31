@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.layerbit.still.ui.components.pressScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawWithContent
@@ -554,13 +556,29 @@ fun EditorScreen(
             }
         }
     }
-    ui.message?.let { message ->
-        AlertDialog(
-            onDismissRequest = { vm.message(null) }, containerColor = StillColors.Surface,
-            title = { Text(stringResource(R.string.app_name), color = StillColors.Text) },
-            text = { Text(message, color = StillColors.Muted) },
-            confirmButton = { TextButton(onClick = { vm.message(null) }) { Text(stringResource(R.string.app_ok), color = StillColors.BandBright) } }
-        )
+    // A word from the app floats over the picture and goes by itself: nothing to dismiss mid-edit.
+    // Longer messages stay a little longer; a tap sends it away at once.
+    val shownMessage = ui.message
+    LaunchedEffect(shownMessage) {
+        if (shownMessage != null) { kotlinx.coroutines.delay(2600L + 40L * shownMessage.length.coerceAtMost(120)); vm.message(null) }
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = shownMessage != null,
+        enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically { -it / 2 },
+        exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.slideOutVertically { -it / 2 },
+        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 76.dp, start = 20.dp, end = 20.dp)
+    ) {
+        var last by remember { mutableStateOf("") }
+        if (shownMessage != null) last = shownMessage
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            Text(
+                last, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text,
+                modifier = Modifier.shadow(12.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp))
+                    .background(StillColors.Surface.copy(alpha = 0.96f))
+                    .border(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(StillColors.Band.copy(alpha = 0.7f), StillColors.Border)), RoundedCornerShape(18.dp))
+                    .clickable { vm.message(null) }.padding(horizontal = 16.dp, vertical = 12.dp).testTag("editorMessage")
+            )
+        }
     }
     ui.busy?.let { label ->
         AlertDialog(
