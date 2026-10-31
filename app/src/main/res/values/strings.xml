@@ -630,6 +630,7 @@
     <string name="pipeline_steps">Steps</string>
     <string name="pipeline_steps_hint">Switch on what you need. Steps combine in one pass, so fifty pictures resized, put under 100 KB, watermarked and cleaned is one tap.</string>
     <string name="pipeline_total">%1$d pictures, %2$s</string>
+    <string name="pipeline_run_pdf">Make a %1$d-page PDF</string>
     <string name="pipeline_run">Run on %1$d pictures</string>
     <string name="pipeline_run_clean">Remove hidden data from %1$d pictures</string>
     <string name="step_resize_detail">Longest edge, percent or exact pixels</string>

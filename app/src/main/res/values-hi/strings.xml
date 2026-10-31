@@ -630,6 +630,7 @@
     <string name="pipeline_steps">चरण</string>
     <string name="pipeline_steps_hint">जो चाहिए वह चालू करें. चरण एक ही बार में मिलकर चलते हैं, इसलिए पचास तस्वीरों का आकार बदलना, 100 KB के नीचे लाना, वॉटरमार्क लगाना और साफ़ करना एक टैप है.</string>
     <string name="pipeline_total">%1$d तस्वीरें, %2$s</string>
+    <string name="pipeline_run_pdf">%1$d पेज की PDF बनाएँ</string>
     <string name="pipeline_run">%1$d तस्वीरों पर चलाएं</string>
     <string name="pipeline_run_clean">%1$d तस्वीरों से छिपा डेटा हटाएं</string>
     <string name="step_resize_detail">सबसे लंबा किनारा, प्रतिशत या सटीक पिक्सेल</string>

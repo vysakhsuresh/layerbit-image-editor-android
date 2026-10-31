@@ -162,4 +162,16 @@ class CollageTest {
         assertEquals(Collage.Style(0.08f, 0f, 0.1f), clamped)
         assertNotEquals(0, Collage.plan(Collage.Layout.STRIP, aspects(12)).cells.size)
     }
+
+    @Test
+    fun aShortLastRowFillsTheWidthWithNoBlankCell() {
+        for (n in listOf(3, 5, 7)) {
+            val plan = Collage.plan(Collage.Layout.GRID, aspects(n), Collage.Style(gutter = 0.02f, margin = 0.02f))
+            val lastTop = plan.cells.maxOf { it.top }
+            val last = plan.cells.filter { kotlin.math.abs(it.top - lastTop) < 1e-4f }
+            val right = last.maxOf { it.left + it.width }
+            val fullRight = plan.cells.maxOf { it.left + it.width }
+            org.junit.Assert.assertEquals("n=$n last row reaches the edge", fullRight, right, 1e-4f)
+        }
+    }
 }

@@ -203,7 +203,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                         Text(if (shown.unitsTotal > 0) "${shown.unitsDone} / ${shown.unitsTotal}" else shown.label, style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.padding(start = 12.dp))
                     }
                 } else {
-                    val label = if (vm.steps.anyOn) stringResource(R.string.pipeline_run, ui.files.size) else stringResource(R.string.pipeline_run_clean, ui.files.size)
+                    val label = when { vm.steps.pdfOn -> stringResource(R.string.pipeline_run_pdf, ui.files.size); vm.steps.anyOn -> stringResource(R.string.pipeline_run, ui.files.size); else -> stringResource(R.string.pipeline_run_clean, ui.files.size) }
                     PrimaryButton(label, onClick = batchRun, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                 }
             }

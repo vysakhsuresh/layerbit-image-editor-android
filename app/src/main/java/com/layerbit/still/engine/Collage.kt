@@ -114,9 +114,13 @@ object Collage {
         val g = gutter * short; val m = margin * short
         val cw = (w - 2 * m - g * (cols - 1)) / cols
         val ch = (h - 2 * m - g * (rows - 1)) / rows
+        // A short last row widens to fill it: three pictures make two over one wide, never a blank cell.
+        val lastCount = n - (rows - 1) * cols
+        val lastW = (w - 2 * m - g * (lastCount - 1)) / lastCount
         val cells = (0 until n).map { i ->
             val c = i % cols; val r = i / cols
-            Cell(m + c * (cw + g), m + r * (ch + g), cw, ch)
+            if (r == rows - 1 && lastCount < cols) Cell(m + c * (lastW + g), m + r * (ch + g), lastW, ch)
+            else Cell(m + c * (cw + g), m + r * (ch + g), cw, ch)
         }
         return Built(w, h, cells)
     }
