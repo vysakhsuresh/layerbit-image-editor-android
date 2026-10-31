@@ -73,4 +73,15 @@ class HistogramTest {
         assertEquals(Argb.pack(255, 255, 0, 0), px[2])
         assertEquals(Argb.pack(255, 128, 128, 128), px[3])
     }
+
+    @Test
+    fun autoNeverGreysTheWhiteOfAPageOrAFlyer() {
+        // Mostly white with dark text and a coloured band: Auto must not darken the white.
+        val px = IntArray(20_000) { i -> when { i % 9 == 0 -> Argb.pack(255, 30, 30, 40); i % 7 == 0 -> Argb.pack(255, 20, 80, 120); else -> Argb.pack(255, 247, 246, 244) } }
+        val t = AutoEnhance.tone(Histogram.of(px, 1))
+        assertTrue("exposure ${t.exposure}", t.exposure >= 0f)
+        // A bright photo without a white ground can still be brought down.
+        val bright = IntArray(20_000) { i -> val v = 170 + i % 60; Argb.pack(255, v, v - 10, v - 20) }
+        assertTrue(AutoEnhance.tone(Histogram.of(bright, 1)).exposure < 0f)
+    }
 }

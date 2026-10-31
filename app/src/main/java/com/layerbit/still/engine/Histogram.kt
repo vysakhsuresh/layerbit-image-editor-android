@@ -88,6 +88,9 @@ object AutoEnhance {
         val medianAfter = ((median - black) / max(1e-3f, white - black)).coerceIn(0.02f, 0.98f)
         var exposure = (ln(0.5f / medianAfter) / ln(2f) * 0.5f).coerceIn(-1f, 1f)
         if (abs(exposure) < 0.06f) exposure = 0f
+        // A page, a poster or a flyer: a large share of the picture is deliberate white. Its median
+        // is high on purpose, so it is never pulled down towards grey.
+        if (exposure < 0f && whiteGround(h)) exposure = 0f
         // A little vibrance on a picture that is not already saturated.
         val vibrance = 0.12f
         return base.copy(
@@ -98,6 +101,14 @@ object AutoEnhance {
             // A touch of contrast when the picture is flat: a narrow histogram.
             contrast = if (high - low < 160 / 255f) (base.contrast + 0.12f).coerceIn(-1f, 1f) else base.contrast
         )
+    }
+
+    /** A flat white ground: one narrow band near white holding a large share of the picture, as paper and flyers have and photos do not. */
+    fun whiteGround(h: Histogram): Boolean {
+        if (h.total == 0L) return false
+        var best = 0L
+        for (v in 232..253) best = max(best, h.luma[v].toLong() + h.luma[v + 1] + h.luma[v + 2])
+        return best > h.total * 0.15
     }
 
     /** Whether Auto would change anything noticeable: the button's enabled state. */
