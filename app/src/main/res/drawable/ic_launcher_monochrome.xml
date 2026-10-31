@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Themed-icon silhouette: the two back pictures as outlines, the front one solid with its
-  hills and sun cut out. One colour; the launcher tints it.
+  Themed-icon silhouette: the crop corners, the picture outlined, its edited half solid with
+  the hill and sun cut out, and the compare handle. One colour; the launcher tints it.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:rotation="-14" android:pivotX="51" android:pivotY="58">
-        <path android:pathData="M35,42 H67 A5,5 0 0 1 72,47 V69 A5,5 0 0 1 67,74 H35 A5,5 0 0 1 30,69 V47 A5,5 0 0 1 35,42 Z" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" />
-    </group>
-    <group android:rotation="-6" android:pivotX="54" android:pivotY="55">
-        <path android:pathData="M38,39 H70 A5,5 0 0 1 75,44 V66 A5,5 0 0 1 70,71 H38 A5,5 0 0 1 33,66 V44 A5,5 0 0 1 38,39 Z" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" />
-    </group>
-    <group android:rotation="5" android:pivotX="57" android:pivotY="51">
-        <path android:pathData="M41,35 H73 A5,5 0 0 1 78,40 V62 A5,5 0 0 1 73,67 H41 A5,5 0 0 1 36,62 V40 A5,5 0 0 1 41,35 Z M39,64 L49.5,50 L56.5,57.5 L63.5,47 L75,64 Z M64.4,43.5 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
-    </group>
+    <path android:pathData="M42,38 H66 A4,4 0 0 1 70,42 V66 A4,4 0 0 1 66,70 H42 A4,4 0 0 1 38,66 V42 A4,4 0 0 1 42,38 Z" android:strokeColor="#FFFFFFFF" android:strokeWidth="2" />
+    <path android:pathData="M39,68.5 L46,58 L52,64 L54,61.25" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+    <path android:pathData="M54,38 H66 A4,4 0 0 1 70,42 V66 A4,4 0 0 1 66,70 H54 Z M54,70 V61.25 L60,53 L70,66 A4,4 0 0 1 66,70 Z M60.2,45 a3.3,3.3 0 1 0 6.6,0 a3.3,3.3 0 1 0 -6.6,0 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+    <path android:pathData="M54,35.5 V72.5" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.8" android:strokeLineCap="round" />
+    <path android:pathData="M49.2,54 a4.8,4.8 0 1 0 9.6,0 a4.8,4.8 0 1 0 -9.6,0 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M32,44 V32 H44 M64,32 H76 V44 M32,64 V76 H44 M76,64 V76 H64" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.6" android:strokeLineCap="round" android:strokeLineJoin="round" />
 </vector>

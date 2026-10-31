@@ -2,7 +2,7 @@
 
 ## Icon
 
-Three pictures fanned up and to the right: the back one in navy, the middle in paper, the front in the band with its hills and sun. Layers, which the app is named for, and the original kept underneath. The adaptive icon is three vector drawables (`ic_launcher_background`, `ic_launcher_foreground`, `ic_launcher_monochrome`) with every shape inside the 33dp safe radius; `icon-512.png` here is the Play listing icon rendered from the same geometry, and `icon-preview.png` shows it under the squircle and circle masks, as the themed icon and at 48 px.
+A picture inside crop corners, split down the middle by the compare handle: the left half is the original, muted navy; the right half is the edit, in the band with its hill and sun. The frame says crop, the handle says before and after, so it reads as an editor rather than a gallery. The adaptive icon is three vector drawables (`ic_launcher_background`, `ic_launcher_foreground`, `ic_launcher_monochrome`) with every shape inside the 33dp safe radius; `icon-512.png` here is the Play listing icon rendered from the same geometry, and `icon-preview.png` shows it under the squircle and circle masks, as the themed icon and at 48 px.
 
 ## Store listing draft
 

@@ -1,31 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The Still mark: three pictures fanned up and to the right, the back one in navy, the
-  middle in paper, the front in the band with its hills and sun. Layers, the thing the app
-  is named for, and the promise that the original stays underneath. Every corner is within
-  the 33dp safe radius, so no mask clips it. The About screen draws this layer on its own.
+  The Still mark: a picture inside crop corners, split down the middle by the compare
+  handle. The left half is the original, muted; the right half is the edit, in the band
+  with its hill and sun. An editor, not a gallery: the frame says crop, the handle says
+  before and after. Every corner is within the 33dp safe radius, so no mask clips it.
+  The About screen draws this layer on its own.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:rotation="-14" android:pivotX="51" android:pivotY="58">
-        <path android:pathData="M35,42 H67 A5,5 0 0 1 72,47 V69 A5,5 0 0 1 67,74 H35 A5,5 0 0 1 30,69 V47 A5,5 0 0 1 35,42 Z" android:fillColor="#FF2A3552" android:strokeColor="#FF4B5A80" android:strokeWidth="1.4" />
+    <group>
+        <clip-path android:pathData="M42,38 H66 A4,4 0 0 1 70,42 V66 A4,4 0 0 1 66,70 H42 A4,4 0 0 1 38,66 V42 A4,4 0 0 1 42,38 Z" />
+        <group>
+            <clip-path android:pathData="M0,0 H54 V108 H0 Z" />
+            <path android:pathData="M0,0 H108 V108 H0 Z" android:fillColor="#FF2E3956" />
+            <path android:pathData="M38,70 L46,58 L52,64 L60,53 L70,66 V70 Z" android:fillColor="#FF56627F" />
+        </group>
+        <group>
+            <clip-path android:pathData="M54,0 H108 V108 H54 Z" />
+            <path android:pathData="M0,0 H108 V108 H0 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:type="linear" android:startX="54" android:startY="38" android:endX="70" android:endY="70">
+                        <item android:offset="0" android:color="#FFFFBE5C" />
+                        <item android:offset="0.55" android:color="#FFF2A531" />
+                        <item android:offset="1" android:color="#FFD9730C" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path android:pathData="M38,70 L46,58 L52,64 L60,53 L70,66 V70 Z" android:fillColor="#FFFFF6E8" />
+            <path android:pathData="M60.2,45 a3.3,3.3 0 1 0 6.6,0 a3.3,3.3 0 1 0 -6.6,0 Z" android:fillColor="#FFFFF6E8" />
+        </group>
     </group>
-    <group android:rotation="-6" android:pivotX="54" android:pivotY="55">
-        <path android:pathData="M38,39 H70 A5,5 0 0 1 75,44 V66 A5,5 0 0 1 70,71 H38 A5,5 0 0 1 33,66 V44 A5,5 0 0 1 38,39 Z" android:fillColor="#FFD7DEEC" android:strokeColor="#FFAEB9D1" android:strokeWidth="1" />
-    </group>
-    <group android:rotation="5" android:pivotX="57" android:pivotY="51">
-        <path android:pathData="M41,35 H73 A5,5 0 0 1 78,40 V62 A5,5 0 0 1 73,67 H41 A5,5 0 0 1 36,62 V40 A5,5 0 0 1 41,35 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient android:type="linear" android:startX="36" android:startY="35" android:endX="78" android:endY="67">
-                    <item android:offset="0" android:color="#FFFFBE5C" />
-                    <item android:offset="0.55" android:color="#FFF2A531" />
-                    <item android:offset="1" android:color="#FFD9730C" />
-                </gradient>
-            </aapt:attr>
-        </path>
-        <path android:pathData="M39,64 L49.5,50 L56.5,57.5 L63.5,47 L75,64 Z" android:fillColor="#FFFFF6E8" />
-        <path android:pathData="M64.4,43.5 a3.6,3.6 0 1 0 7.2,0 a3.6,3.6 0 1 0 -7.2,0 Z" android:fillColor="#FFFFF6E8" />
-        <path android:pathData="M41,38.5 H73" android:fillColor="#00000000" android:strokeColor="#47FFFFFF" android:strokeWidth="1.4" android:strokeLineCap="round" />
-    </group>
+    <path android:pathData="M54,35.5 V72.5" android:strokeColor="#FFFFF6E8" android:strokeWidth="1.8" android:strokeLineCap="round" />
+    <path android:pathData="M49.2,54 a4.8,4.8 0 1 0 9.6,0 a4.8,4.8 0 1 0 -9.6,0 Z" android:fillColor="#FFFFF6E8" />
+    <path android:pathData="M52.6,52 L50.8,54 L52.6,56 M55.4,52 L57.2,54 L55.4,56" android:strokeColor="#FF1B2438" android:strokeWidth="1.1" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M32,44 V32 H44 M64,32 H76 V44 M32,64 V76 H44 M76,64 V76 H64" android:strokeColor="#FFFFF6E8" android:strokeWidth="3.6" android:strokeLineCap="round" android:strokeLineJoin="round" />
 </vector>
