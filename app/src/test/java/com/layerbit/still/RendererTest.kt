@@ -518,4 +518,20 @@ class RendererTest {
             small.recycle(); large.recycle(); shrunk.recycle()
         }
     }
+
+    @Test
+    fun reusingTheEarlyStepsGivesExactlyWhatAFreshRenderGives() = runBlocking {
+        // A picture with tone and noise reduction, rendered with one effect, then another: the
+        // second render reuses the early steps. A renderer that has never seen the picture must agree.
+        val base = renderer.decode(scene(600, 400), 600L * 400)
+        val early = Recipe(tone = Tone(exposure = 0.3f, noise = 0.5f, contrast = 0.2f), look = Look.FILM)
+        val first = renderer.finish(base, early.copy(effects = listOf(com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.DRAMA))))
+        val second = renderer.finish(base, early.copy(effects = listOf(com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.HDR_SCAPE, strength = 0.7f)), tone = early.tone.copy(vignette = 0.3f)))
+        val fresh = Renderer(budget = 2_000_000).finish(base, early.copy(effects = listOf(com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.HDR_SCAPE, strength = 0.7f)), tone = early.tone.copy(vignette = 0.3f)))
+        assertEquals(0.0, renderer.difference(second, fresh), 0.0)
+        // A change to an early step is not served from the stored result.
+        val brighter = renderer.finish(base, early.copy(tone = early.tone.copy(exposure = 0.8f), effects = listOf(com.layerbit.still.engine.Effect(com.layerbit.still.engine.EffectKind.HDR_SCAPE, strength = 0.7f))))
+        assertTrue(renderer.difference(brighter, second) > 1.0)
+        first.recycle(); second.recycle(); fresh.recycle(); brighter.recycle(); base.recycle()
+    }
 }

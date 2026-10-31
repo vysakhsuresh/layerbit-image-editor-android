@@ -254,6 +254,20 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * Tone, detail, layers and frame on a copy of [base]; [base] is left intact for the cache.
      * Suspends so the per-pixel stages can run across the cores.
      */
+    /** What decides the steps up to noise reduction; [base] is compared by identity. */
+    private class EarlyKey(
+        val base: Bitmap, val generation: Int, val tone: com.layerbit.still.engine.Tone, val curves: com.layerbit.still.engine.Curves,
+        val look: com.layerbit.still.engine.Look, val lookStrength: Float, val mix: com.layerbit.still.engine.ColourMix,
+        val locals: List<com.layerbit.still.engine.LocalAdjust>, val scan: com.layerbit.still.engine.Scan, val maskKey: String?
+    ) {
+        override fun equals(other: Any?): Boolean = other is EarlyKey && other.base === base && other.generation == generation &&
+            other.tone == tone && other.curves == curves && other.look == look && other.lookStrength == lookStrength &&
+            other.mix == mix && other.locals == locals && other.scan == scan && other.maskKey == maskKey
+        override fun hashCode(): Int = System.identityHashCode(base)
+    }
+    private class Early(val key: EarlyKey, val pixels: IntArray)
+    @Volatile private var earlyCache: Early? = null
+
     suspend fun finish(
         base: Bitmap, r: Recipe, check: () -> Unit = {}, maskKey: String? = null, cutoutPreview: Boolean = false,
         /** Where the recipe's own files (a double exposure's second picture) live: the project's folder. */
@@ -262,21 +276,32 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         skinPreview: Boolean = false
     ): Bitmap = withContext(Dispatchers.Default) {
         val w = base.width; val h = base.height
-        val pixels = IntArray(w * h)
-        base.getPixels(pixels, 0, w, 0, 0, w, h)
-        check()
         val tone = com.layerbit.still.engine.Looks.combine(r.tone, r.curves, r.look, r.lookStrength).tone
-        val pipeline = TonePipeline.build(r.tone, r.curves, r.look, r.lookStrength)
-        if (!pipeline.isIdentity) parallelRows(h) { from, to -> pipeline.apply(pixels, w, from, to) }
-        r.mix.compile()?.let { mix -> parallelRows(h) { from, to -> mix.apply(pixels, w, from, to) } }
-        check()
-        // Local adjustments: after the global tone, curves and mix, before detail, vignette and the layers.
-        if (r.locals.isNotEmpty()) LocalAdjustments.apply(pixels, w, h, r.locals, { m -> localMask(base, m, w, h, maskKey, check) }, check)
-        var working = pixels
-        // Paper cleanup before detail, so sharpening works on clean ink.
-        if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
-        // Noise out before any sharpening, so sharpening has clean edges to work on.
-        if (r.tone.noise > 0f) working = Spatial.denoise(working, w, h, r.tone.noise, check)
+        // The steps up to noise reduction depend only on their own settings. While a later slider
+        // moves (an effect, detail, a frame), their result is reused rather than redone.
+        val earlyKey = EarlyKey(base, base.generationId, r.tone.copy(clarity = 0f, dehaze = 0f, sharpness = 0f, vignette = 0f, grain = 0f), r.curves, r.look, r.lookStrength, r.mix, r.locals, r.scan, maskKey)
+        val cachedEarly = earlyCache?.takeIf { it.key == earlyKey }
+        var working: IntArray
+        if (cachedEarly != null) {
+            working = cachedEarly.pixels.copyOf()
+        } else {
+            val pixels = IntArray(w * h)
+            base.getPixels(pixels, 0, w, 0, 0, w, h)
+            check()
+            val pipeline = TonePipeline.build(r.tone, r.curves, r.look, r.lookStrength)
+            if (!pipeline.isIdentity) parallelRows(h) { from, to -> pipeline.apply(pixels, w, from, to) }
+            r.mix.compile()?.let { mix -> parallelRows(h) { from, to -> mix.apply(pixels, w, from, to) } }
+            check()
+            // Local adjustments: after the global tone, curves and mix, before detail, vignette and the layers.
+            if (r.locals.isNotEmpty()) LocalAdjustments.apply(pixels, w, h, r.locals, { m -> localMask(base, m, w, h, maskKey, check) }, check)
+            working = pixels
+            // Paper cleanup before detail, so sharpening works on clean ink.
+            if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
+            // Noise out before any sharpening, so sharpening has clean edges to work on.
+            if (r.tone.noise > 0f) working = Spatial.denoise(working, w, h, r.tone.noise, check)
+            // Only preview-sized pictures are kept: an export is drawn once.
+            if (w.toLong() * h <= Budget.PREVIEW_PIXELS) earlyCache = Early(earlyKey, working.copyOf())
+        }
         // Filter effects: tone ones before sharpening, the lens after it, film surfaces last.
         if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
