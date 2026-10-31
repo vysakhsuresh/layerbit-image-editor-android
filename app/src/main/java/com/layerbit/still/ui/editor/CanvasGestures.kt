@@ -1,5 +1,6 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.runtime.State
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -32,6 +33,8 @@ class CanvasTransform {
     var pan by mutableStateOf(Offset.Zero); private set
     var box by mutableStateOf(IntSize.Zero)
     var image by mutableStateOf(IntSize.Zero)
+    /** Where a finger is dragging a handle, for the magnifier; null when no handle is held. */
+    var loupe by mutableStateOf<Offset?>(null)
 
     val zoomed: Boolean get() = zoom > 1.001f
 
@@ -99,8 +102,11 @@ sealed interface TouchMode {
  * never also a pan: two fingers always zoom and move; one finger does what the panel says;
  * a finger that stays still for a moment in [TouchMode.View] holds the original in view.
  */
-fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boolean) -> Unit, slopPx: Float, holdMs: Long = 220): Modifier =
-    pointerInput(t, mode) {
+fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onCompare: (Boolean) -> Unit, slopPx: Float, holdMs: Long = 220): Modifier =
+    // Keyed on the kind of touch only. A drag redraws the screen and hands over a fresh mode each
+    // frame; restarting on that would cancel the drag after its first step and end it there.
+    // The handler reads the latest mode at every event instead.
+    pointerInput(t, modeState.value::class) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val start = down.position
@@ -116,6 +122,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
             try {
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val mode = modeState.value
                     val pressed = event.changes.filter { it.pressed }
                     if (pressed.size >= 2) {
                         if (!multi) {
@@ -144,6 +151,7 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
                                     val r = t.rect
                                     mode.onDrag(h, t.toPt(pos), Offset(if (r.width > 0) delta.x / r.width else 0f, if (r.height > 0) delta.y / r.height else 0f))
                                     handleLast = pos
+                                    t.loupe = pos
                                     change.consume()
                                 } else if (h == null && moved && t.zoomed) {
                                     t.set(t.zoom, pos, pos - lastPos); change.consume()
@@ -171,9 +179,11 @@ fun Modifier.canvasGestures(t: CanvasTransform, mode: TouchMode, onCompare: (Boo
                     if (pressed.isEmpty()) break
                 }
             } finally {
+                val mode = modeState.value
                 if (scrubbing) (mode as TouchMode.Scrub).onEnd()
                 if (drawing) (mode as TouchMode.Draw).onEnd()
                 if (comparing) onCompare(false)
+                t.loupe = null
                 if (handle != null) (mode as TouchMode.Handles).onEnd()
                 if (mode is TouchMode.Tap && !moved && !multi && t.inside(start)) mode.onTap(t.toPt(start))
                 if (mode is TouchMode.Handles && handle == null && !moved && !multi && t.inside(start)) mode.onTap?.invoke(t.toPt(start))

@@ -1,5 +1,9 @@
 package com.layerbit.still.ui.editor
 
+import com.layerbit.still.files.ImageStore
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.produceState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.layerbit.still.ui.components.Celebrate
@@ -300,14 +304,20 @@ fun EditorScreen(
                             ToolId.Panel.CURVES -> CurvesPanel(scope, ui.histogram)
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
-                                LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset)
+                                LooksPanel(scope, ui.presets, ui.lookThumbs, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.MARKUP -> MarkupPanel(brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it }, onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics)
                             ToolId.Panel.RETOUCH -> RetouchPanel(if (brush.kind in listOf(MarkKind.BLUR, MarkKind.PIXELATE, MarkKind.COVER, MarkKind.ERASE, MarkKind.CLONE, MarkKind.REDEYE)) brush else brush.copy(kind = MarkKind.BLUR), onBrush = { brush = it }, haptics = settings.haptics, onFindRedEyes = vm::findRedEyes)
                             ToolId.Panel.LAYERS -> LayersPanel(scope, onEditText = { editingText = it })
                             ToolId.Panel.FRAME -> FramePanel(scope, ui.swatches)
-                            ToolId.Panel.DETAILS -> DetailsPanel(remember(project) { project?.let { still.store.details(it.file) } ?: emptyList() }, onStrip = { project?.let { onStripMetadata(it.file) } })
+                            ToolId.Panel.DETAILS -> {
+                                // Reading a file's tags and segments is disk work; never on the main thread.
+                                val inspected by produceState<Pair<List<Pair<String, String>>, List<ImageStore.Risk>>?>(null, project) {
+                                    value = project?.let { pr -> withContext(Dispatchers.IO) { still.store.details(pr.file) to still.store.risks(pr.file) } }
+                                }
+                                DetailsPanel(inspected?.first ?: emptyList(), onStrip = { project?.let { onStripMetadata(it.file) } }, risks = inspected?.second)
+                            }
                             ToolId.Panel.EXPORT -> ExportPanel(vm.options, onOptions = { vm.options = it }, canvas = ui.canvasSize, onPrepare = vm::prepareExport, haptics = settings.haptics)
                         }
                     }

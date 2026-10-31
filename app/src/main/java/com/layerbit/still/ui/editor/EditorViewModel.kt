@@ -412,6 +412,14 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         p.recipe.copy(marks = current.marks, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height))
     }
 
+    fun renamePreset(p: ImageStore.Preset, name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ok = store.renamePreset(p.name, name.trim())
+            val presets = store.presets()
+            _ui.update { it.copy(presets = presets, message = if (ok) null else Strings.get(R.string.looks_rename_taken)) }
+        }
+    }
+
     fun removePreset(p: ImageStore.Preset) {
         viewModelScope.launch(Dispatchers.IO) {
             store.removePreset(p.name)

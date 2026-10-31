@@ -189,6 +189,14 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
         File(presetsDir, Names.safe(name, 60) + ".json").delete()
     }
 
+    /** Renames a preset; false when the new name is taken or empty, so nothing is overwritten. */
+    fun renamePreset(from: String, to: String): Boolean {
+        val target = File(presetsDir, Names.safe(to, 60) + ".json")
+        val source = File(presetsDir, Names.safe(from, 60) + ".json")
+        if (to.isBlank() || !source.exists() || (target.exists() && target != source)) return false
+        return source.renameTo(target)
+    }
+
     // ------------------------------------------------------------------ thumbnails
 
     /** A small upright thumbnail, from a disk cache, decoded once per project. */
@@ -232,6 +240,35 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
             out += Strings.get(R.string.details_hidden) to Strings.get(if (hidden) R.string.details_hidden_present else R.string.details_hidden_none)
         }
         return out
+    }
+
+    /** One thing in a file that could say who, where or when; [serious] ones identify a person or place. */
+    data class Risk(val label: String, val serious: Boolean)
+
+    /**
+     * What in [f] could identify the person who shared it, most serious first: where it was taken,
+     * whose camera, whose name, when, and data a viewer never shows. Values are not repeated here.
+     */
+    fun risks(f: StillFile): List<Risk> {
+        val out = ArrayList<Risk>()
+        val exif = runCatching { ExifInterface(f.file) }.getOrNull()
+        if (exif != null) {
+            if (exif.latLong != null) out += Risk(Strings.get(R.string.risk_location), true)
+            if (listOf(ExifInterface.TAG_CAMERA_OWNER_NAME, ExifInterface.TAG_ARTIST).any { !exif.getAttribute(it).isNullOrBlank() }) out += Risk(Strings.get(R.string.risk_owner), true)
+            if (listOf(ExifInterface.TAG_BODY_SERIAL_NUMBER, ExifInterface.TAG_LENS_SERIAL_NUMBER).any { !exif.getAttribute(it).isNullOrBlank() }) out += Risk(Strings.get(R.string.risk_serial), true)
+            if (!exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).isNullOrBlank()) out += Risk(Strings.get(R.string.risk_time), false)
+            if (!exif.getAttribute(ExifInterface.TAG_MODEL).isNullOrBlank()) out += Risk(Strings.get(R.string.risk_device), false)
+        }
+        val head = runCatching { readHead(f.file, 64) }.getOrNull()
+        if (head != null) {
+            val hidden = when (JpegSegments.kindOf(head)) {
+                JpegSegments.Kind.JPEG -> runCatching { JpegSegments.hasHiddenData(f.file.readBytes()) }.getOrDefault(false)
+                JpegSegments.Kind.PNG -> runCatching { JpegSegments.pngHasHiddenChunks(f.file.readBytes()) }.getOrDefault(false)
+                else -> false
+            }
+            if (hidden) out += Risk(Strings.get(R.string.risk_hidden), false)
+        }
+        return out.sortedByDescending { it.serious }
     }
 
     /** The first [n] bytes, or fewer for a shorter file. readNBytes is API 33, so by hand. */

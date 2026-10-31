@@ -1,5 +1,10 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
 import com.layerbit.still.ui.components.Pill
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -265,7 +270,7 @@ fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? =
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look, Bitmap>, onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit) {
+fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look, Bitmap>, onSavePreset: () -> Unit, onApplyPreset: (ImageStore.Preset) -> Unit, onRemovePreset: (ImageStore.Preset) -> Unit, onRenamePreset: (ImageStore.Preset, String) -> Unit = { _, _ -> }) {
     LookStrip(s.recipe.look, thumbs, onSelect = { look -> s.change { it.copy(look = look, lookStrength = if (it.lookStrength == 0f) 1f else it.lookStrength) } })
     if (s.recipe.look != Look.NONE) {
         Knob(stringResource(R.string.looks_strength), s.recipe.lookStrength, 0f..1f, onChange = { v -> s.draft(s.recipe.copy(lookStrength = v)) }, onDone = s.commit, onReset = { s.change { it.copy(lookStrength = 1f) } }, haptics = s.haptics)
@@ -274,18 +279,36 @@ fun LooksPanel(s: PanelScope, presets: List<ImageStore.Preset>, thumbs: Map<Look
     }
     SectionHeading(stringResource(R.string.looks_presets), modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
     if (presets.isEmpty()) Hint(stringResource(R.string.looks_no_presets))
+    var editing by remember { mutableStateOf<ImageStore.Preset?>(null) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (p in presets) {
-            SecondaryButton(p.name, onClick = { onApplyPreset(p) }, tall = false)
-        }
+        for (p in presets) PresetChip(p.name, onApply = { onApplyPreset(p) }, onEdit = { editing = p })
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        PrimaryButton(stringResource(R.string.looks_save_preset), onClick = onSavePreset, modifier = Modifier.weight(1f), tall = false, enabled = !s.recipe.isIdentity)
-        if (presets.isNotEmpty()) {
-            var confirm by remember { mutableStateOf(false) }
-            SecondaryButton(stringResource(if (confirm) R.string.looks_remove_last_confirm else R.string.looks_remove_last), onClick = { if (confirm) { onRemovePreset(presets.last()); confirm = false } else confirm = true }, modifier = Modifier.weight(1f), tall = false)
-        }
+    if (presets.isNotEmpty()) Hint(stringResource(R.string.looks_preset_hold_hint))
+    PrimaryButton(stringResource(R.string.looks_save_preset), onClick = onSavePreset, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), tall = false, enabled = !s.recipe.isIdentity)
+    editing?.let { p ->
+        var name by remember(p) { mutableStateOf(p.name) }
+        AlertDialog(
+            onDismissRequest = { editing = null },
+            title = { Text(stringResource(R.string.looks_preset_edit_title)) },
+            text = { OutlinedTextField(name, { name = it.take(60) }, singleLine = true, label = { Text(stringResource(R.string.looks_preset_name)) }, colors = fieldColours()) },
+            confirmButton = { TextButton(onClick = { onRenamePreset(p, name); editing = null }, enabled = name.isNotBlank() && name.trim() != p.name) { Text(stringResource(R.string.looks_preset_rename), color = StillColors.BandBright) } },
+            dismissButton = { TextButton(onClick = { onRemovePreset(p); editing = null }) { Text(stringResource(R.string.looks_preset_delete), color = StillColors.Failed) } },
+            containerColor = StillColors.Surface
+        )
     }
+}
+
+/** A saved preset: a tap applies it, a long press opens rename and delete. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PresetChip(name: String, onApply: () -> Unit, onEdit: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    Text(
+        name, style = MaterialTheme.typography.labelMedium, color = StillColors.Text, maxLines = 1,
+        modifier = Modifier.clip(shape).background(StillColors.SurfaceDim).border(1.dp, StillColors.BorderStrong, shape)
+            .combinedClickable(role = Role.Button, onClick = onApply, onLongClick = onEdit, onLongClickLabel = stringResource(R.string.looks_preset_edit_title))
+            .padding(horizontal = 14.dp, vertical = 9.dp)
+    )
 }
 
 /** Every look shown on the picture itself, in a strip; the chosen one framed in the band colour. */
@@ -465,10 +488,39 @@ fun FramePanel(s: PanelScope, swatches: List<Int> = emptyList()) {
 // ------------------------------------------------------------------ details
 
 @Composable
-fun DetailsPanel(lines: List<Pair<String, String>>, onStrip: () -> Unit) {
+fun DetailsPanel(lines: List<Pair<String, String>>, onStrip: () -> Unit, risks: List<ImageStore.Risk>? = null) {
+    if (risks != null) PrivacyCheck(risks)
     for ((k, v) in lines) LabelledValue(k, v, Modifier.padding(vertical = 4.dp))
     Hint(stringResource(R.string.details_note))
-    SecondaryButton(stringResource(R.string.details_strip_now), onClick = onStrip, modifier = Modifier.padding(top = 8.dp), tall = false)
+    if (!risks.isNullOrEmpty()) PrimaryButton(stringResource(R.string.details_strip_now), onClick = onStrip, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), tall = false, iconRes = R.drawable.ic_tool_strip)
+    else SecondaryButton(stringResource(R.string.details_strip_now), onClick = onStrip, modifier = Modifier.padding(top = 8.dp), tall = false)
+}
+
+/**
+ * The verdict first: safe to share, or how many things in the file could say who, where or
+ * when. Serious ones (a place, a name, a serial number) in red, the rest in amber.
+ */
+@Composable
+private fun PrivacyCheck(risks: List<ImageStore.Risk>) {
+    val serious = risks.count { it.serious }
+    val tone = when { risks.isEmpty() -> StillColors.Done; serious > 0 -> StillColors.Failed; else -> StillColors.Skipped }
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 10.dp).clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(tone.copy(alpha = 0.22f), tone.copy(alpha = 0.06f))))
+            .border(1.dp, tone.copy(alpha = 0.5f), shape).padding(14.dp)
+    ) {
+        Text(stringResource(R.string.privacy_check), style = MaterialTheme.typography.labelMedium, color = tone)
+        Text(
+            if (risks.isEmpty()) stringResource(R.string.privacy_safe) else pluralStringResource(R.plurals.privacy_found, risks.size, risks.size),
+            style = MaterialTheme.typography.titleLarge, color = StillColors.Text, modifier = Modifier.padding(top = 2.dp)
+        )
+        for (r in risks) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(if (r.serious) StillColors.Failed else StillColors.Skipped))
+            Text(r.label, style = MaterialTheme.typography.bodyMedium, color = StillColors.Text, modifier = Modifier.padding(start = 10.dp))
+        }
+        if (risks.isNotEmpty()) Text(stringResource(R.string.privacy_exports_clean), style = MaterialTheme.typography.bodySmall, color = StillColors.Muted, modifier = Modifier.padding(top = 8.dp))
+    }
 }
 
 // ------------------------------------------------------------------ export

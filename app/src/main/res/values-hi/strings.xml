@@ -300,10 +300,14 @@
     <string name="looks_presets">आपकी रेसिपी</string>
     <string name="looks_no_presets">मौजूदा संपादन को रेसिपी के रूप में सहेजें और वह यहां दिखेगी, और पूरे बैच के लिए “रेसिपी लागू करें” में भी.</string>
     <string name="looks_save_preset">रेसिपी के रूप में सहेजें</string>
+    <string name="looks_preset_hold_hint">लगाने के लिए प्रीसेट पर टैप करें. नाम बदलने या हटाने के लिए दबाकर रखें.</string>
+    <string name="looks_preset_edit_title">प्रीसेट</string>
+    <string name="looks_preset_name">नाम</string>
+    <string name="looks_preset_rename">नाम बदलें</string>
+    <string name="looks_preset_delete">हटाएँ</string>
+    <string name="looks_rename_taken">इस नाम का प्रीसेट पहले से है.</string>
     <string name="looks_preset_default_name">मेरा लुक</string>
     <string name="looks_preset_keeps">रेसिपी में रोशनी, रंग, कर्व, लुक, बारीकी और फ़्रेम रहते हैं. क्रॉप और इस तस्वीर पर बनाई परतें छोड़ दी जाती हैं.</string>
-    <string name="looks_remove_last">आख़िरी रेसिपी हटाएं</string>
-    <string name="looks_remove_last_confirm">हटाने के लिए फिर टैप करें</string>
 
     <!-- Detail -->
     <string name="detail_sharpness">तीखापन</string>
@@ -380,6 +384,19 @@
     <string name="details_hidden_none">कुछ नहीं मिला.</string>
     <string name="details_note">निर्यात यह सब हटा देता है, जब तक आप JPEG के लिए कैमरा फ़ील्ड रखना न चुनें. नीचे के टूल से मूल फ़ाइल की एक प्रति से भी हटाएं.</string>
     <string name="details_strip_now">एक प्रति से छिपा डेटा हटाएं</string>
+    <string name="risk_location">कहाँ ली गई</string>
+    <string name="risk_owner">मालिक का नाम</string>
+    <string name="risk_serial">कैमरे का सीरियल नंबर</string>
+    <string name="risk_time">कब ली गई</string>
+    <string name="risk_device">कौन सा फ़ोन या कैमरा</string>
+    <string name="risk_hidden">ऐसा डेटा जो दिखता नहीं</string>
+    <string name="privacy_check">निजता जाँच</string>
+    <string name="privacy_safe">शेयर करने के लिए सुरक्षित</string>
+    <plurals name="privacy_found">
+        <item quantity="one">%d चीज़ आपकी पहचान बता सकती है</item>
+        <item quantity="other">%d चीज़ें आपकी पहचान बता सकती हैं</item>
+    </plurals>
+    <string name="privacy_exports_clean">Still से जो भी एक्सपोर्ट करें उसमें ये नहीं होतीं. नीचे से मूल की कॉपी से इन्हें हटाएँ.</string>
 
     <!-- Export -->
     <string name="format_jpeg">JPEG</string>

@@ -300,10 +300,14 @@
     <string name="looks_presets">Your recipes</string>
     <string name="looks_no_presets">Save the edit you have as a recipe and it appears here, and in Apply a recipe for a whole batch.</string>
     <string name="looks_save_preset">Save as recipe</string>
+    <string name="looks_preset_hold_hint">Tap a preset to apply it. Hold one to rename or delete it.</string>
+    <string name="looks_preset_edit_title">Preset</string>
+    <string name="looks_preset_name">Name</string>
+    <string name="looks_preset_rename">Rename</string>
+    <string name="looks_preset_delete">Delete</string>
+    <string name="looks_rename_taken">A preset already has that name.</string>
     <string name="looks_preset_default_name">My look</string>
     <string name="looks_preset_keeps">A recipe keeps light, colour, curves, look, detail and frame. The crop and the layers drawn on this picture are left out.</string>
-    <string name="looks_remove_last">Remove last recipe</string>
-    <string name="looks_remove_last_confirm">Tap again to remove</string>
 
     <!-- Detail -->
     <string name="detail_sharpness">Sharpness</string>
@@ -380,6 +384,19 @@
     <string name="details_hidden_none">None found.</string>
     <string name="details_note">Exports remove all of this unless you choose to keep the camera fields for a JPEG. Remove it from the original file itself with the tool below.</string>
     <string name="details_strip_now">Remove hidden data from a copy</string>
+    <string name="risk_location">Where it was taken</string>
+    <string name="risk_owner">Owner name</string>
+    <string name="risk_serial">Camera serial number</string>
+    <string name="risk_time">When it was taken</string>
+    <string name="risk_device">Which phone or camera</string>
+    <string name="risk_hidden">Data a viewer does not show</string>
+    <string name="privacy_check">PRIVACY CHECK</string>
+    <string name="privacy_safe">Safe to share</string>
+    <plurals name="privacy_found">
+        <item quantity="one">%d thing could identify you</item>
+        <item quantity="other">%d things could identify you</item>
+    </plurals>
+    <string name="privacy_exports_clean">Anything you export from Still leaves these out. Strip them from a copy of the original below.</string>
 
     <!-- Export -->
     <string name="format_jpeg">JPEG</string>

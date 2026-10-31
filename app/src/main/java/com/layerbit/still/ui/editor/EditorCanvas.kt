@@ -1,5 +1,7 @@
 package com.layerbit.still.ui.editor
 
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.graphics.drawscope.clipPath
 import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.foundation.layout.width
@@ -89,12 +91,13 @@ fun EditorCanvas(
     val before = remember(original) { original?.asImageBitmap() }
     val label = stringResource(R.string.editor_canvas_description)
     val splitLabel = stringResource(R.string.editor_split_description)
+    val modeState = rememberUpdatedState(mode)
     Box(
         modifier
             .clip(RoundedCornerShape(22.dp))
             .background(Brush.radialGradient(listOf(StillColors.SurfaceDim, StillColors.Canvas)))
             .onSizeChanged { transform.box = it }
-            .canvasGestures(transform, mode, onCompare, slop)
+            .canvasGestures(transform, modeState, onCompare, slop)
             .semantics { contentDescription = label }
     ) {
         if (shown != null) transform.image = IntSize(shown.width, shown.height)
@@ -128,6 +131,27 @@ fun EditorCanvas(
                 drawLine(Color.White, Offset(x + k * 1.6f, size.height / 2), Offset(x + k * 0.4f, size.height / 2 + k), 2.dp.toPx(), StrokeCap.Round)
             }
             if (!comparing) drawOverlay(overlay, transform, this)
+            // The magnifier: while a handle is held, the pixels under the finger at three times,
+            // in the top corner away from it, so a corner lands on the page's corner, not near it.
+            val at = transform.loupe
+            if (at != null && r.width > 0f) {
+                val radius = 54.dp.toPx(); val margin = 14.dp.toPx(); val zoom = 3f
+                val centre = Offset(if (at.x < size.width / 2) size.width - radius - margin else radius + margin, radius + margin)
+                val circle = androidx.compose.ui.graphics.Path().apply { addOval(Rect(centre, radius)) }
+                drawCircle(Color.Black.copy(alpha = 0.35f), radius + 4.dp.toPx(), centre + Offset(0f, 2.dp.toPx()))
+                clipPath(circle) {
+                    drawRect(Color(0xFF0B1220), centre - Offset(radius, radius), Size(radius * 2, radius * 2))
+                    val w = r.width * zoom; val h = r.height * zoom
+                    val left = centre.x - (at.x - r.left) * zoom; val top = centre.y - (at.y - r.top) * zoom
+                    drawImage(image, dstOffset = IntOffset(left.toInt(), top.toInt()), dstSize = IntSize(max(1, w.toInt()), max(1, h.toInt())), filterQuality = FilterQuality.High)
+                    val k = 9.dp.toPx(); val line = 1.5.dp.toPx()
+                    drawLine(Color.White, centre - Offset(k, 0f), centre + Offset(k, 0f), line)
+                    drawLine(Color.White, centre - Offset(0f, k), centre + Offset(0f, k), line)
+                    drawCircle(StillColors.Band, 2.5.dp.toPx(), centre)
+                }
+                drawCircle(Color.White, radius, centre, style = Stroke(2.5.dp.toPx()))
+                drawCircle(StillColors.Band, radius + 2.dp.toPx(), centre, style = Stroke(1.5.dp.toPx()))
+            }
         }
         if (split != null) {
             // The line's handle: a strip the width of a thumb, dragged sideways.
