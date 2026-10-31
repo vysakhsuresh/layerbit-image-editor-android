@@ -775,9 +775,12 @@ internal object Noise {
 internal object Planes {
     fun luma(px: IntArray): FloatArray {
         val out = FloatArray(px.size)
-        for (i in px.indices) {
-            val c = px[i]
-            out[i] = (((c shr 16) and 0xFF) * 0.299f + ((c shr 8) and 0xFF) * 0.587f + (c and 0xFF) * 0.114f) / 255f
+        val n = px.size; val step = 4096
+        Parallel.bands((n + step - 1) / step, minimum = 8) { from, to ->
+            for (i in from * step until min(n, to * step)) {
+                val c = px[i]
+                out[i] = (((c shr 16) and 0xFF) * 0.299f + ((c shr 8) and 0xFF) * 0.587f + (c and 0xFF) * 0.114f) / 255f
+            }
         }
         return out
     }
@@ -794,9 +797,12 @@ internal object Planes {
 
     fun channels(px: IntArray): Triple<FloatArray, FloatArray, FloatArray> {
         val r = FloatArray(px.size); val g = FloatArray(px.size); val b = FloatArray(px.size)
-        for (i in px.indices) {
-            val c = px[i]
-            r[i] = ((c shr 16) and 0xFF) / 255f; g[i] = ((c shr 8) and 0xFF) / 255f; b[i] = (c and 0xFF) / 255f
+        val n = px.size; val step = 4096
+        Parallel.bands((n + step - 1) / step, minimum = 8) { from, to ->
+            for (i in from * step until min(n, to * step)) {
+                val c = px[i]
+                r[i] = ((c shr 16) and 0xFF) / 255f; g[i] = ((c shr 8) and 0xFF) / 255f; b[i] = (c and 0xFF) / 255f
+            }
         }
         return Triple(r, g, b)
     }
@@ -903,21 +909,35 @@ internal object Planes {
      * well above [eps] the output follows the input. The base layer for local tone mapping
      * without halos round every edge.
      */
+    /**
+     * The guided filter: smooth where the picture is flat, untouched across edges. From a radius
+     * of eight its coefficients are worked at half size and read back up (the "fast guided
+     * filter"): they vary slowly by construction, so the result differs below what 8 bits hold
+     * and it costs about a quarter. Every full-size loop runs across the cores.
+     */
     fun guided(src: FloatArray, w: Int, h: Int, radius: Int, eps: Float, check: () -> Unit = {}): FloatArray {
-        val n = src.size
-        val mean = blur(src, w, h, radius, 1, check)
+        val half = radius >= HALF_FROM && w >= 32 && h >= 32
+        val gw = if (half) (w + 1) / 2 else w; val gh = if (half) (h + 1) / 2 else h
+        val g = if (half) halve(src, w, h) else src
+        val r = if (half) (radius + 1) / 2 else radius
+        val n = gw * gh
+        val mean = full(g, gw, gh, r, 1, check)
         val sq = FloatArray(n)
-        for (i in 0 until n) sq[i] = src[i] * src[i]
-        val meanSq = blur(sq, w, h, radius, 1, check)
+        Parallel.bands(gh) { from, to -> for (i in from * gw until to * gw) sq[i] = g[i] * g[i] }
+        val meanSq = full(sq, gw, gh, r, 1, check)
         val a = FloatArray(n); val b = sq // reuse
-        for (i in 0 until n) {
-            val v = (meanSq[i] - mean[i] * mean[i]).coerceAtLeast(0f)
-            val k = v / (v + eps)
-            a[i] = k; b[i] = mean[i] - k * mean[i]
+        Parallel.bands(gh) { from, to ->
+            for (i in from * gw until to * gw) {
+                val v = (meanSq[i] - mean[i] * mean[i]).coerceAtLeast(0f)
+                val k = v / (v + eps)
+                a[i] = k; b[i] = mean[i] - k * mean[i]
+            }
         }
-        val am = blur(a, w, h, radius, 1, check); val bm = blur(b, w, h, radius, 1, check)
-        val out = FloatArray(n)
-        for (i in 0 until n) out[i] = am[i] * src[i] + bm[i]
+        var am = full(a, gw, gh, r, 1, check); var bm = full(b, gw, gh, r, 1, check)
+        if (half) { am = upsample(am, gw, gh, w, h); bm = upsample(bm, gw, gh, w, h) }
+        val out = FloatArray(w * h)
+        Parallel.bands(h) { from, to -> for (i in from * w until to * w) out[i] = am[i] * src[i] + bm[i] }
         return out
     }
+
 }
