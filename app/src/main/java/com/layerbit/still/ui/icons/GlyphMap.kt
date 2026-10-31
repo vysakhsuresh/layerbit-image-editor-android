@@ -50,6 +50,7 @@ fun iconFor(panel: ToolId.Panel): Int = when (panel) {
     ToolId.Panel.CURVES -> R.drawable.ic_tool_curves
     ToolId.Panel.LOOKS -> R.drawable.ic_tool_looks
     ToolId.Panel.DETAIL -> R.drawable.ic_tool_detail
+    ToolId.Panel.LOCAL -> R.drawable.ic_tool_local
     ToolId.Panel.MARKUP -> R.drawable.ic_tool_markup
     ToolId.Panel.RETOUCH -> R.drawable.ic_tool_retouch
     ToolId.Panel.LAYERS -> R.drawable.ic_tool_layers

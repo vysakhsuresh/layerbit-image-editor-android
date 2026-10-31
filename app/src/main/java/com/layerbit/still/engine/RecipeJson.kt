@@ -43,8 +43,44 @@ object RecipeJson {
             "backdrop" to r.cutout.backdrop.name.json(), "color" to r.cutout.color.json(), "blur" to r.cutout.blur.json(),
             "grow" to r.cutout.grow.json(), "refine" to r.cutout.refine.json(), "outline" to r.cutout.outline.json(), "shadow" to r.cutout.shadow.json(),
             "outlineColor" to r.cutout.outlineColor.json(), "trim" to r.cutout.trim.json()
-        )
+        ),
+        "locals" to if (r.locals.isEmpty()) null else r.locals.map { local(it) }.json()
     )
+
+    private fun local(l: LocalAdjust) = jsonOf(
+        "mask" to l.mask.let { m ->
+            jsonOf(
+                "kind" to m.kind.name.json(),
+                "strokes" to if (m.strokes.isEmpty()) null else m.strokes.map { s -> jsonOf("points" to points(s.points), "width" to s.width.json(), "softness" to s.softness.json(), "erase" to s.erase.json()) }.json(),
+                "a" to listOf(m.a.x.json(), m.a.y.json()).json(), "b" to listOf(m.b.x.json(), m.b.y.json()).json(),
+                "radiusX" to m.radiusX.json(), "radiusY" to m.radiusY.json(), "angle" to m.angle.json(),
+                "feather" to m.feather.json(), "range" to m.range.json(), "invert" to m.invert.json()
+            )
+        },
+        "exposure" to l.exposure.json(), "contrast" to l.contrast.json(), "highlights" to l.highlights.json(), "shadows" to l.shadows.json(),
+        "temperature" to l.temperature.json(), "tint" to l.tint.json(), "saturation" to l.saturation.json(),
+        "clarity" to l.clarity.json(), "sharpness" to l.sharpness.json(), "visible" to l.visible.json()
+    )
+
+    /** A local adjustment, or null when its mask is a kind this app does not know: a newer app's, skipped rather than refused. */
+    private fun readLocal(v: JsonValue): LocalAdjust? {
+        val m = v["mask"] ?: throw IllegalArgumentException("A local adjustment has no mask")
+        val kind = m["kind"]?.str()?.let { name -> MaskKind.entries.firstOrNull { it.name == name } } ?: return null
+        val d = LocalMask.create(kind)
+        val mask = LocalMask(
+            kind = kind,
+            strokes = m["strokes"]?.arr()?.map { s -> BrushStroke(s["points"]?.let { pts(it) } ?: emptyList(), s["width"]?.num()?.toFloat() ?: 0.08f, s["softness"]?.num()?.toFloat() ?: 0.6f, s["erase"]?.bool() ?: false) } ?: emptyList(),
+            a = m["a"]?.let { pt(it) } ?: d.a, b = m["b"]?.let { pt(it) } ?: d.b,
+            radiusX = m["radiusX"]?.num()?.toFloat() ?: d.radiusX, radiusY = m["radiusY"]?.num()?.toFloat() ?: d.radiusY,
+            angle = m.f("angle"), feather = m["feather"]?.num()?.toFloat() ?: d.feather, range = m["range"]?.num()?.toFloat() ?: d.range,
+            invert = m["invert"]?.bool() ?: false
+        )
+        return LocalAdjust(
+            mask, exposure = v.f("exposure"), contrast = v.f("contrast"), highlights = v.f("highlights"), shadows = v.f("shadows"),
+            temperature = v.f("temperature"), tint = v.f("tint"), saturation = v.f("saturation"), clarity = v.f("clarity"),
+            sharpness = v.f("sharpness"), visible = v["visible"]?.bool() ?: true
+        )
+    }
 
     private fun geometry(g: Geometry) = jsonOf(
         "quad" to if (g.quad.isIdentity) null else points(g.quad.points),
@@ -138,7 +174,8 @@ object RecipeJson {
                 color = cu["color"]?.num()?.toLong()?.toInt() ?: d.cutout.color, blur = cu["blur"]?.num()?.toFloat() ?: 0.03f,
                 grow = cu.f("grow"), refine = cu["refine"]?.bool() ?: true, outline = cu.f("outline"), shadow = cu.f("shadow").coerceIn(0f, 1f),
                 outlineColor = cu["outlineColor"]?.num()?.toLong()?.toInt() ?: d.cutout.outlineColor, trim = cu["trim"]?.bool() ?: false
-            )
+            ),
+            locals = o["locals"]?.arr()?.mapNotNull { readLocal(it) } ?: emptyList()
         )
     }
 

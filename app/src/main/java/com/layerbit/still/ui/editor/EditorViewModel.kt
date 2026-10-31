@@ -17,6 +17,11 @@ import com.layerbit.still.engine.Clipping
 import com.layerbit.still.engine.RedEyes
 import com.layerbit.still.engine.PageQuad
 import com.layerbit.still.engine.Level
+import com.layerbit.still.engine.LocalAdjust
+import com.layerbit.still.engine.LocalMask
+import com.layerbit.still.engine.LocalMasks
+import com.layerbit.still.engine.LocalPreset
+import com.layerbit.still.engine.MaskKind
 import kotlin.math.min
 import kotlin.math.max
 import com.layerbit.still.engine.Mark
@@ -118,6 +123,12 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val showClipping: Boolean = false,
         /** The look of the last picture edited, offered as one tap on an untouched picture. */
         val lastEdits: Recipe? = null,
+        /** On the Local panel: the adjustment being edited, by index into the recipe's locals; -1 for none. */
+        val localSelected: Int = -1,
+        /** On the Local panel: the selected adjustment's mask washed red over the preview. */
+        val showLocalMask: Boolean = false,
+        /** On the Local panel: how much of the picture the selected mask covers, measured on the preview. */
+        val localCoverage: Float? = null,
         val loading: Boolean = true
     )
 
@@ -411,6 +422,41 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         return dx * dx + dy * dy <= (radius * short) * (radius * short)
     }
 
+    // ------------------------------------------------------------------ local adjustments
+
+    fun selectLocal(index: Int) {
+        if (index == _ui.value.localSelected) return
+        _ui.update { it.copy(localSelected = index, localCoverage = null) }
+        requestRender()
+    }
+
+    fun setShowLocalMask(on: Boolean) {
+        _ui.update { it.copy(showLocalMask = on) }
+        requestRender()
+    }
+
+    /** A new local adjustment with a first mask of [kind], selected; [preset] sets its sliders. */
+    fun addLocal(kind: MaskKind, preset: LocalPreset? = null) {
+        val locals = _ui.value.recipe.locals
+        if (locals.size >= LocalAdjust.MAX) { message(Strings.get(R.string.local_full)); return }
+        val fresh = LocalAdjust(LocalMask.create(kind)).let { if (preset != null) it.preset(preset) else it }
+        change { it.copy(locals = it.locals + fresh) }
+        selectLocal(_ui.value.recipe.locals.lastIndex)
+    }
+
+    fun removeLocal(index: Int) {
+        if (index !in _ui.value.recipe.locals.indices) return
+        change { it.copy(locals = it.locals.filterIndexed { i, _ -> i != index }) }
+        selectLocal(-1)
+    }
+
+    fun duplicateLocal(index: Int) {
+        val l = _ui.value.recipe.locals.getOrNull(index) ?: return
+        if (_ui.value.recipe.locals.size >= LocalAdjust.MAX) { message(Strings.get(R.string.local_full)); return }
+        change { it.copy(locals = it.locals + l) }
+        selectLocal(_ui.value.recipe.locals.lastIndex)
+    }
+
     fun setShowClipping(on: Boolean) {
         _ui.update { it.copy(showClipping = on) }
         requestRender()
@@ -435,7 +481,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun applyPreset(p: ImageStore.Preset) = change { current ->
-        p.recipe.copy(marks = current.marks, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height))
+        p.recipe.copy(marks = current.marks, locals = current.locals, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height))
     }
 
     /** The last picture's look on this one, as one undoable step; this picture's own crop and marks stay. */
@@ -483,9 +529,10 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
      * the recipe as it will export.
      */
     fun previewRecipe(recipe: Recipe, panel: ToolId.Panel): Recipe = when (panel) {
-        ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame())
-        ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame())
-        ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS -> recipe.copy(frame = Frame())
+        // Local masks, like layers, are placed on the cropped canvas, so they wait while the canvas is being reshaped.
+        ToolId.Panel.CROP -> recipe.copy(geometry = recipe.geometry.copy(crop = Crop.FULL, width = 0, height = 0), marks = emptyList(), frame = Frame(), locals = emptyList())
+        ToolId.Panel.PERSPECTIVE -> recipe.copy(geometry = Geometry(), marks = emptyList(), frame = Frame(), locals = emptyList())
+        ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH, ToolId.Panel.LAYERS, ToolId.Panel.LOCAL -> recipe.copy(frame = Frame())
         // The cut-out panel shows the whole picture with what would go under a wash, whatever the switch says.
         // Until the user says "remove it", the panel shows the whole picture with what would go under a wash; after, the real result.
         ToolId.Panel.CUTOUT -> if (recipe.cutout.enabled) recipe.copy(frame = Frame()) else recipe.copy(frame = Frame(), cutout = recipe.cutout.copy(enabled = true, backdrop = Backdrop.TRANSPARENT))
@@ -558,14 +605,22 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
                 val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry), check) } else state.cutoutKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
+                // The selected local mask, for its coverage and, when asked, the red wash; drawn from the stage the preview was made from.
+                val localMask = if (state.panel == ToolId.Panel.LOCAL && finished.width == source.width && finished.height == source.height) state.recipe.locals.getOrNull(state.localSelected)?.mask else null
+                var coverage: Float? = null
                 val (histogram, palette, shown2) = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)
                     finished.getPixels(px, 0, finished.width, 0, 0, finished.width, finished.height)
                     val h = Histogram.of(px)
                     val pal = if (fast) state.palette else Palette.of(px)
-                    // The clipping warning is drawn on a copy, after the histogram has been read from the real pixels.
+                    val grid = localMask?.let { renderer.localMask(source, it, finished.width, finished.height, maskKey(geometry), check) }
+                    coverage = grid?.coverage
+                    // The clipping warning and the mask are drawn on a copy, after the histogram has been read from the real pixels.
                     val display = if (state.showClipping && state.panel == ToolId.Panel.LIGHT) {
                         Clipping.paint(px)
+                        finished.copy(finished.config ?: android.graphics.Bitmap.Config.ARGB_8888, true).also { it.setPixels(px, 0, it.width, 0, 0, it.width, it.height) }
+                    } else if (grid != null && state.showLocalMask) {
+                        LocalMasks.paint(px, finished.width, finished.height, grid)
                         finished.copy(finished.config ?: android.graphics.Bitmap.Config.ARGB_8888, true).also { it.setPixels(px, 0, it.width, 0, 0, it.width, it.height) }
                     } else finished
                     Triple(h, pal, display)
@@ -573,7 +628,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val canvas = Geometry2D.framedSize(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
-                _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, previewFast = fast, palette = palette) }
+                _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, previewFast = fast, palette = palette, localCoverage = coverage) }
                 if (pagePending) findPage(quiet = true)
             } catch (c: CancellationException) {
                 throw c

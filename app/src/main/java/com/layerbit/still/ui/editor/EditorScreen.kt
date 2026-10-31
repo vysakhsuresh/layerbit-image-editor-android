@@ -133,6 +133,7 @@ fun EditorScreen(
     var pickingNeutral by rememberSaveable { mutableStateOf(startTool == ToolId.WHITE_BALANCE) }
     var split by rememberSaveable { mutableStateOf(false) }
     var splitAt by rememberSaveable { mutableFloatStateOf(0.5f) }
+    val localTools = remember { LocalTools() }
     LaunchedEffect(startTool) { if (startTool == ToolId.RED_EYE) brush = brush.copy(kind = MarkKind.REDEYE, width = 0.03f) }
 
     val density = LocalDensity.current
@@ -190,6 +191,7 @@ fun EditorScreen(
                 (all - listOfNotNull(focus).toSet() + listOfNotNull(focus)).map { it.value }
             } else emptyList()
         )
+        panel == ToolId.Panel.LOCAL -> localOverlay(recipe, ui.localSelected, localTools)
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
         else -> Overlay.None
     }
@@ -231,6 +233,7 @@ fun EditorScreen(
             onEnd = { val pts = strokePoints; strokePoints = emptyList(); if (pts.isNotEmpty()) vm.addScribble(pts, cutWidth, cutKeep) },
             onCancel = { strokePoints = emptyList() }
         ) else TouchMode.View
+        ToolId.Panel.LOCAL -> localTouchMode(recipe, ui.localSelected, localTools, transform, reach, vm)
         ToolId.Panel.COLOUR -> if (pickingNeutral) TouchMode.Tap { p -> pickingNeutral = false; vm.neutralAt(p) } else viewOrScrub
         ToolId.Panel.MARKUP, ToolId.Panel.RETOUCH -> when {
             // Move mode: a touch on a mark picks it, a drag carries it; a touch on nothing lets go.
@@ -366,6 +369,10 @@ fun EditorScreen(
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, ui.suggestedLooks, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
+                            ToolId.Panel.LOCAL -> LocalPanel(
+                                scope, ui.localSelected, onSelect = vm::selectLocal, showMask = ui.showLocalMask, onShowMask = vm::setShowLocalMask,
+                                coverage = ui.localCoverage, tools = localTools, onAdd = { vm.addLocal(it) }, onDelete = vm::removeLocal, onDuplicate = vm::duplicateLocal
+                            )
                             ToolId.Panel.MARKUP -> MarkupPanel(
                                 brush, onBrush = { brush = if (it.kind !in listOf(MarkKind.DRAW, MarkKind.TEXT, MarkKind.ARROW, MarkKind.BOX, MarkKind.ELLIPSE)) it.copy(kind = MarkKind.DRAW) else it },
                                 onPlaceCentre = { addMark(listOf(Pt(0.5f, 0.5f)), MarkKind.TEXT) }, haptics = settings.haptics,
@@ -603,6 +610,7 @@ fun panelLabel(p: ToolId.Panel): String = stringResource(
     when (p) {
         ToolId.Panel.NONE, ToolId.Panel.CROP -> R.string.panel_crop; ToolId.Panel.PERSPECTIVE -> R.string.panel_perspective; ToolId.Panel.LIGHT -> R.string.panel_light
         ToolId.Panel.COLOUR -> R.string.panel_colour; ToolId.Panel.CURVES -> R.string.panel_curves; ToolId.Panel.LOOKS -> R.string.panel_looks; ToolId.Panel.DETAIL -> R.string.panel_detail
+        ToolId.Panel.LOCAL -> R.string.panel_local
         ToolId.Panel.MARKUP -> R.string.panel_markup; ToolId.Panel.RETOUCH -> R.string.panel_retouch; ToolId.Panel.LAYERS -> R.string.panel_layers; ToolId.Panel.FRAME -> R.string.panel_frame
         ToolId.Panel.DETAILS -> R.string.panel_details; ToolId.Panel.EXPORT -> R.string.panel_export
         ToolId.Panel.CUTOUT -> R.string.panel_cutout; ToolId.Panel.SCAN -> R.string.panel_scan

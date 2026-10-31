@@ -25,6 +25,9 @@ import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.WatermarkLayout
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.Heal
+import com.layerbit.still.engine.LocalAdjustments
+import com.layerbit.still.engine.LocalMask
+import com.layerbit.still.engine.LocalMasks
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Recipe
 import com.layerbit.still.engine.Backdrop
@@ -237,6 +240,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (!pipeline.isIdentity) parallelRows(h) { from, to -> pipeline.apply(pixels, w, from, to) }
         r.mix.compile()?.let { mix -> parallelRows(h) { from, to -> mix.apply(pixels, w, from, to) } }
         check()
+        // Local adjustments: after the global tone, curves and mix, before detail, vignette and the layers.
+        if (r.locals.isNotEmpty()) LocalAdjustments.apply(pixels, w, h, r.locals, { m -> localMask(base, m, w, h, maskKey, check) }, check)
         var working = pixels
         // Paper cleanup before detail, so sharpening works on clean ink.
         if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
@@ -264,6 +269,34 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         } catch (t: Throwable) {
             out.recycle(); throw t
         }
+    }
+
+    // ------------------------------------------------------------------ local adjustments
+
+    private class LocalEntry(val key: String?, val mask: LocalMask, val width: Int, val height: Int, val grid: LocalMasks.Grid)
+    private val localCache = ArrayDeque<LocalEntry>()
+
+    /**
+     * [mask] drawn for a [w] x [h] picture made from the geometry stage [base]. The kinds that
+     * read the picture read [base] at the analysis size, before any tone, so moving a slider
+     * never moves the mask; the subject comes from the cut-out's own decision. Remembered, so a
+     * slider drag redraws no mask.
+     */
+    fun localMask(base: Bitmap, mask: LocalMask, w: Int, h: Int, key: String?, check: () -> Unit = {}): LocalMasks.Grid {
+        synchronized(localCache) { localCache.firstOrNull { it.key == key && it.width == w && it.height == h && it.mask == mask }?.let { return it.grid } }
+        val analysis = if (mask.readsPicture) {
+            val size = Segment.analysisSize(base.width, base.height)
+            val small = scale(base, size.width, size.height)
+            val px = IntArray(size.width * size.height)
+            small.getPixels(px, 0, size.width, 0, 0, size.width, size.height)
+            if (small !== base) small.recycle()
+            LocalMasks.Analysis(px, size.width, size.height) { maskFor(base, SUBJECT_MASK, key, check).mask }
+        } else null
+        check()
+        val grid = LocalMasks.render(mask, w, h, analysis, check)
+        // Only a keyed preview is worth remembering: an export is drawn once, and its grid is large.
+        if (key != null && w.toLong() * h <= Budget.PREVIEW_PIXELS) synchronized(localCache) { localCache.addFirst(LocalEntry(key, mask, w, h, grid)); while (localCache.size > 6) localCache.removeLast() }
+        return grid
     }
 
     // ------------------------------------------------------------------ cut-out
@@ -665,6 +698,8 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
 
     companion object {
         const val STICKER_EDGE = 512
+        /** The cut-out settings whose mask is the Local panel's subject and background. */
+        private val SUBJECT_MASK = Cutout(enabled = true, mode = CutoutMode.SUBJECT)
         const val STICKER_MARGIN = 8
         /** The most a preview decode may oversample to: 24 MB of pixels, passing, on any phone. */
         const val OVERSAMPLE_CAP = 6_000_000L

@@ -279,15 +279,18 @@ data class Recipe(
     /** The subject or the ink lifted off its surroundings, applied after the layers and before the frame. */
     val cutout: Cutout = Cutout(),
     /** Hue, saturation and lightness per family of colour, after the tone. */
-    val mix: ColourMix = ColourMix()
+    val mix: ColourMix = ColourMix(),
+    /** Light and colour changed in one part of the picture, after the global tone and before detail. */
+    val locals: List<LocalAdjust> = emptyList()
 ) {
     val isIdentity: Boolean get() = this == Recipe()
     val valid: Boolean
         get() = geometry.valid && tone.valid && curves.valid && lookStrength in 0f..1f && marks.size <= MAX_MARKS &&
-            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid && mix.valid
+            marks.all { it.valid } && frame.valid && scan.valid && cutout.valid && mix.valid &&
+            locals.size <= LocalAdjust.MAX && locals.all { it.valid }
 
     /** The recipe without what belongs to one particular picture: what a preset keeps. */
-    fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout())
+    fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout(), locals = emptyList())
 
     companion object {
         const val MAX_MARKS = 400

@@ -221,6 +221,7 @@ private fun DrawScope.drawOverlay(overlay: Overlay, t: CanvasTransform, scope: D
     val thin = 1.5.dp.toPx()
     when (overlay) {
         Overlay.None -> Unit
+        is LocalOverlay -> drawLocalOverlay(overlay, t)
         is Overlay.CropOverlay -> {
             val c = overlay.crop
             val cr = Rect(r.left + c.left * r.width, r.top + c.top * r.height, r.left + c.right * r.width, r.top + c.bottom * r.height)

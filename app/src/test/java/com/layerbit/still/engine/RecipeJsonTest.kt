@@ -94,4 +94,27 @@ class RecipeJsonTest {
         assertEquals("42", Json.write(42.json()))
         assertEquals(1e20, Json.parse("1e20").num()!!, 0.0)
     }
+
+    @Test
+    fun localAdjustmentsRoundTripAndOlderRecipesHaveNone() {
+        val r = full.copy(locals = listOf(
+            LocalAdjust(LocalMask(MaskKind.BRUSH, strokes = listOf(BrushStroke(listOf(Pt(0.1f, 0.2f), Pt(0.3f, 0.4f)), 0.07f, 0.3f), BrushStroke(listOf(Pt(0.2f, 0.3f)), 0.02f, 0f, erase = true))), exposure = 0.5f, sharpness = -0.4f),
+            LocalAdjust(LocalMask(MaskKind.LINEAR, a = Pt(0.5f, -0.2f), b = Pt(0.5f, 0.5f)), temperature = -0.3f, tint = 0.1f, visible = false),
+            LocalAdjust(LocalMask(MaskKind.RADIAL, a = Pt(0.4f, 0.6f), radiusX = 0.3f, radiusY = 0.1f, angle = 33f, feather = 0.2f, invert = true), contrast = 0.2f, highlights = -0.3f, shadows = 0.4f),
+            LocalAdjust(LocalMask(MaskKind.POINT, a = Pt(0.7f, 0.3f), radiusX = 0.12f, range = 0.8f), saturation = 0.6f, clarity = -0.2f),
+            LocalAdjust(LocalMask(MaskKind.SUBJECT), exposure = 0.2f),
+            LocalAdjust(LocalMask(MaskKind.BACKGROUND), saturation = -1f),
+            LocalAdjust(LocalMask(MaskKind.SKY), exposure = -0.4f)
+        ))
+        assertTrue(r.valid)
+        assertEquals(r, RecipeJson.read(RecipeJson.write(r)))
+        // Absent means none, and no locals means the key is not written at all.
+        assertTrue(RecipeJson.read("""{"schema":2}""").locals.isEmpty())
+        assertFalse(RecipeJson.write(Recipe()).contains("locals"))
+        // A mask kind from a newer app is skipped; the rest of the recipe still opens.
+        val newer = RecipeJson.read("""{"schema":2,"locals":[{"mask":{"kind":"FACE"},"exposure":1},{"mask":{"kind":"SKY"},"exposure":-0.5}]}""")
+        assertEquals(listOf(LocalAdjust(LocalMask.create(MaskKind.SKY), exposure = -0.5f)), newer.locals)
+        // A slider outside its range is a corrupt file.
+        try { RecipeJson.read("""{"schema":2,"locals":[{"mask":{"kind":"SKY"},"exposure":9}]}"""); fail() } catch (e: IllegalArgumentException) { }
+    }
 }

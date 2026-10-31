@@ -16,6 +16,10 @@ import com.layerbit.still.engine.Scribble
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.JpegSegments
 import com.layerbit.still.engine.Look
+import com.layerbit.still.engine.BrushStroke
+import com.layerbit.still.engine.LocalAdjust
+import com.layerbit.still.engine.LocalMask
+import com.layerbit.still.engine.MaskKind
 import com.layerbit.still.engine.Mark
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
@@ -130,6 +134,36 @@ class RendererTest {
         val diff = renderer.difference(small, shrunk)
         assertTrue("mean difference $diff", diff < 6.0)
         small.recycle(); large.recycle(); shrunk.recycle()
+    }
+
+    @Test
+    fun localAdjustmentsOnThePreviewLookTheSameOnTheExport() = runBlocking {
+        // Every mask kind, drawn from fractions or read from the picture at the analysis size,
+        // lands in the same place at both sizes, and its sliders do the same there.
+        val src = scene(1200, 800)
+        val r = Recipe(
+            tone = Tone(exposure = 0.1f),
+            locals = listOf(
+                LocalAdjust(LocalMask(MaskKind.BRUSH, strokes = listOf(BrushStroke(listOf(Pt(0.2f, 0.2f), Pt(0.5f, 0.4f)), 0.1f, 0.5f))), exposure = 0.8f),
+                LocalAdjust(LocalMask(MaskKind.LINEAR, a = Pt(0.5f, 1f), b = Pt(0.5f, 0.6f)), temperature = 0.5f, sharpness = -0.5f),
+                LocalAdjust(LocalMask(MaskKind.RADIAL, a = Pt(0.7f, 0.5f), radiusX = 0.25f, radiusY = 0.15f, angle = 20f), clarity = 0.6f, contrast = 0.3f),
+                LocalAdjust(LocalMask(MaskKind.POINT, a = Pt(0.3f, 0.7f), radiusX = 0.3f, range = 0.5f), saturation = 0.8f, exposure = -0.5f),
+                LocalAdjust(LocalMask(MaskKind.SKY), exposure = -0.3f),
+                LocalAdjust(LocalMask(MaskKind.SUBJECT), shadows = 0.5f)
+            )
+        )
+        assertTrue(r.valid)
+        val plain = renderer.render(src, Recipe(tone = Tone(exposure = 0.1f)), maxPixels = 300 * 200)
+        val small = renderer.render(src, r, maxPixels = 300 * 200)
+        val large = renderer.render(src, r, maxPixels = 1200 * 800)
+        val shrunk = renderer.scale(large, small.width, small.height)
+        val diff = renderer.difference(small, shrunk)
+        assertTrue("mean difference $diff", diff < 6.0)
+        assertTrue("the local adjustments changed something", renderer.difference(plain, small) > 1.0)
+        // Inside the brushed stroke the picture is brighter.
+        fun light(b: Bitmap, x: Int, y: Int) = b.getPixel(x, y).let { Color.red(it) + Color.green(it) + Color.blue(it) }
+        assertTrue("${light(small, 105, 60)} vs ${light(plain, 105, 60)}", light(small, 105, 60) > light(plain, 105, 60) + 30)
+        plain.recycle(); small.recycle(); large.recycle(); shrunk.recycle()
     }
 
     @Test
