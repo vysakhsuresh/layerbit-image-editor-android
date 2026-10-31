@@ -148,4 +148,13 @@ class TextStyleTest {
         assertTrue(read.valid)
         assertEquals(style, RecipeJson.readTextStyle(Json.parse(Json.write(RecipeJson.textStyle(style)))))
     }
+
+    @Test
+    fun joinedScriptsStayStraightOnACurve() {
+        val arched = TextStyle(arc = 0.3f)
+        org.junit.Assert.assertTrue(TextLayout.curves("Still", arched))
+        org.junit.Assert.assertFalse(TextLayout.curves("नमस्ते", arched))
+        org.junit.Assert.assertFalse(TextLayout.curves("مرحبا", arched))
+        org.junit.Assert.assertFalse(TextLayout.curves("Still", TextStyle()))
+    }
 }

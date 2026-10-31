@@ -115,8 +115,32 @@ object TextLayout {
     /** What is drawn: capitals if the style asks, one line if it curves. */
     fun shown(text: String, style: TextStyle): String {
         val t = if (style.caps) text.uppercase() else text
-        return if (style.curved) t.replace('\n', ' ') else t
+        return if (curves(t, style)) t.replace('\n', ' ') else t
     }
+
+    /**
+     * Whether [text] is drawn on its arc. Scripts whose letters join and reorder (Devanagari,
+     * Bengali, Tamil, Arabic and the like) need the whole word shaped at once; placed letter by
+     * letter on a curve they come apart, so they stay straight rather than be drawn wrong.
+     */
+    fun curves(text: String, style: TextStyle): Boolean = style.curved && !joined(text)
+
+    fun joined(text: String): Boolean {
+        var i = 0
+        while (i < text.length) {
+            val cp = text.codePointAt(i)
+            if (Character.UnicodeScript.of(cp) in JOINED) return true
+            i += Character.charCount(cp)
+        }
+        return false
+    }
+
+    private val JOINED = setOf(
+        Character.UnicodeScript.DEVANAGARI, Character.UnicodeScript.BENGALI, Character.UnicodeScript.GURMUKHI, Character.UnicodeScript.GUJARATI,
+        Character.UnicodeScript.ORIYA, Character.UnicodeScript.TAMIL, Character.UnicodeScript.TELUGU, Character.UnicodeScript.KANNADA,
+        Character.UnicodeScript.MALAYALAM, Character.UnicodeScript.SINHALA, Character.UnicodeScript.ARABIC, Character.UnicodeScript.SYRIAC,
+        Character.UnicodeScript.THAI, Character.UnicodeScript.LAO, Character.UnicodeScript.KHMER, Character.UnicodeScript.MYANMAR, Character.UnicodeScript.TIBETAN
+    )
 
     /**
      * Greedy word wrap at [maxEms]. Typed line breaks are kept, spaces at a break vanish, and a
@@ -208,7 +232,7 @@ object TextLayout {
      */
     fun layout(text: String, style: TextStyle, maxEms: Float, ascent: Float, descent: Float, measure: (String) -> Float): Block {
         val shown = shown(text, style).ifEmpty { " " }
-        return if (style.curved) curve(shown, style, ascent, descent, measure) else straight(shown, style, maxEms, ascent, descent, measure)
+        return if (curves(text, style)) curve(shown, style, ascent, descent, measure) else straight(shown, style, maxEms, ascent, descent, measure)
     }
 
     private fun straight(text: String, style: TextStyle, maxEms: Float, ascent: Float, descent: Float, measure: (String) -> Float): Block {
