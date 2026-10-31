@@ -1087,4 +1087,7 @@
     <string name="home_quick_effects">इफ़ेक्ट</string>
     <string name="home_quick_portrait">पोर्ट्रेट</string>
     <string name="home_quick_expand">फैलाएँ</string>
+    <string name="auto_fix">अपने-आप सुधारें</string>
+    <string name="auto_fix_done">रोशनी और रंग आपके लिए सेट. ऑटो की मात्रा से कम-ज़्यादा करें.</string>
+    <string name="auto_fix_nothing">यह तस्वीर पहले से संतुलित है.</string>
 </resources>

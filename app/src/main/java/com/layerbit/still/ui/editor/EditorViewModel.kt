@@ -422,6 +422,27 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * One tap for an untouched picture: light from the histogram and the colour cast from what
+     * ought to be grey, as one undo step, then the Light panel opens with Auto strength under the
+     * finger so the user can take it further or back.
+     */
+    fun autoFix() {
+        val h = _ui.value.histogram ?: return
+        val b = base?.takeIf { !it.isRecycled } ?: return
+        val px = IntArray(b.width * b.height)
+        b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
+        viewModelScope.launch {
+            val before = _ui.value.recipe.tone
+            val after = withContext(Dispatchers.Default) { AutoWhite.tone(px, AutoEnhance.tone(h, before)) }
+            if (after == before) { message(Strings.get(R.string.auto_fix_nothing)); return@launch }
+            setPanel(ToolId.Panel.LIGHT)
+            change { it.copy(tone = after) }
+            _ui.update { it.copy(autoStep = ToneStep.between(before, after), autoPanel = ToolId.Panel.LIGHT) }
+            message(Strings.get(R.string.auto_fix_done))
+        }
+    }
+
+    /**
      * Reads the strongest horizon or upright in the picture as the Crop panel shows it, before
      * any straightening, and sets Straighten to level it. The slider stays the user's to nudge.
      */

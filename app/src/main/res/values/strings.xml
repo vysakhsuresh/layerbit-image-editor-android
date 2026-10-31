@@ -1087,4 +1087,7 @@
     <string name="home_quick_effects">Effects</string>
     <string name="home_quick_portrait">Portrait</string>
     <string name="home_quick_expand">Expand</string>
+    <string name="auto_fix">Auto fix</string>
+    <string name="auto_fix_done">Light and colour set for you. Auto strength turns it up or down.</string>
+    <string name="auto_fix_nothing">This picture is already well balanced.</string>
 </resources>

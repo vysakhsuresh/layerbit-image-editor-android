@@ -367,17 +367,25 @@ fun EditorScreen(
                         )
                         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (ui.previewBusy) LinearProgressIndicator(Modifier.width(60.dp).height(2.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim)
-                            // An untouched picture is offered the last picture's look in one tap.
-                            else if (ui.recipe.isIdentity && ui.lastEdits != null) Text(
-                                stringResource(R.string.last_edits_apply), style = MaterialTheme.typography.labelMedium, color = StillColors.OnBand,
-                                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(StillColors.Band).clickable { vm.applyLastEdits() }.padding(horizontal = 12.dp, vertical = 6.dp).testTag("lastEdits")
-                            )
+                            // An untouched picture is offered a one-tap fix, and the last picture's look.
+                            else if (ui.recipe.isIdentity) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    stringResource(R.string.auto_fix), style = MaterialTheme.typography.labelMedium, color = StillColors.OnBand,
+                                    modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(StillColors.Band, StillColors.BandBright)))
+                                        .clickable { vm.autoFix() }.padding(horizontal = 12.dp, vertical = 6.dp).testTag("autoFix")
+                                )
+                                if (ui.lastEdits != null) Text(
+                                    stringResource(R.string.last_edits_apply), style = MaterialTheme.typography.labelMedium, color = StillColors.Text,
+                                    modifier = Modifier.clip(RoundedCornerShape(999.dp)).border(1.dp, StillColors.BorderStrong, RoundedCornerShape(999.dp))
+                                        .clickable { vm.applyLastEdits() }.padding(horizontal = 12.dp, vertical = 6.dp).testTag("lastEdits")
+                                )
+                            }
                             Spacer(Modifier.weight(1f))
                             ZoomBar(transform)
                             Spacer(Modifier.width(8.dp))
                             SplitToggle(split, onToggle = { split = !split })
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.editor_hold_to_compare), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim)
+                            if (!ui.recipe.isIdentity) Text(stringResource(R.string.editor_hold_to_compare), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim)
                         }
                     }
                     scrubHost.target?.let { t ->
