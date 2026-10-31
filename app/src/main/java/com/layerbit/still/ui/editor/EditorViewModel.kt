@@ -116,6 +116,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val suggestedLooks: List<Look> = emptyList(),
         /** On the Light panel: blown pixels painted red and crushed ones blue on the preview. */
         val showClipping: Boolean = false,
+        /** The look of the last picture edited, offered as one tap on an untouched picture. */
+        val lastEdits: Recipe? = null,
         val loading: Boolean = true
     )
 
@@ -176,7 +178,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         dropBase()
         undo.clear(); redo.clear()
         baseline = p.recipe
-        _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), loading = false) }
+        _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), lastEdits = store.lastEdits(), loading = false) }
         // A quick tool opens the editor already set for its job.
         when (tool) {
             ToolId.SIGNATURE -> if (p.recipe.cutout.isIdentity) change { it.copy(cutout = it.cutout.copy(enabled = true, mode = CutoutMode.INK)) }
@@ -436,6 +438,13 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         p.recipe.copy(marks = current.marks, geometry = current.geometry.copy(width = p.recipe.geometry.width, height = p.recipe.geometry.height))
     }
 
+    /** The last picture's look on this one, as one undoable step; this picture's own crop and marks stay. */
+    fun applyLastEdits() {
+        val last = _ui.value.lastEdits ?: return
+        change { current -> last.copy(marks = current.marks, geometry = current.geometry, cutout = current.cutout) }
+        message(Strings.get(R.string.last_edits_done))
+    }
+
     fun renamePreset(p: ImageStore.Preset, name: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val ok = store.renamePreset(p.name, name.trim())
@@ -651,6 +660,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     val exportSourceFile: File? get() = _ui.value.project?.file?.file
 
     override fun onCleared() {
+        // What this picture looked like becomes the "same as last time" for the next one.
+        val r = _ui.value.recipe
+        if (!r.isIdentity) store.saveLastEdits(r)
         dropBase()
     }
 

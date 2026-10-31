@@ -184,6 +184,17 @@ class ImageStore(private val context: Context, private val renderer: Renderer) {
         File(presetsDir, Names.safe(name, 60) + ".json").writeText(RecipeJson.write(recipe.asPreset()))
     }
 
+    /** The look of the last picture edited, kept so the next one can start the same. */
+    private val lastFile: File get() = File(context.filesDir, "last-edits.json")
+
+    fun saveLastEdits(recipe: Recipe) {
+        val look = recipe.asPreset()
+        if (look.isIdentity) return
+        runCatching { lastFile.writeText(RecipeJson.write(look)) }
+    }
+
+    fun lastEdits(): Recipe? = runCatching { if (lastFile.exists()) RecipeJson.read(lastFile.readText()) else null }.getOrNull()?.takeIf { !it.isIdentity }
+
     fun presets(): List<Preset> = presetsDir.listFiles().orEmpty().sortedBy { it.name }
         .mapNotNull { f -> runCatching { Preset(f.nameWithoutExtension, RecipeJson.read(f.readText())) }.getOrNull() }
 

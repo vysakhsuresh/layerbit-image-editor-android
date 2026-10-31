@@ -303,6 +303,11 @@ fun EditorScreen(
                         )
                         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (ui.previewBusy) LinearProgressIndicator(Modifier.width(60.dp).height(2.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim)
+                            // An untouched picture is offered the last picture's look in one tap.
+                            else if (ui.recipe.isIdentity && ui.lastEdits != null) Text(
+                                stringResource(R.string.last_edits_apply), style = MaterialTheme.typography.labelMedium, color = StillColors.OnBand,
+                                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(StillColors.Band).clickable { vm.applyLastEdits() }.padding(horizontal = 12.dp, vertical = 6.dp).testTag("lastEdits")
+                            )
                             Spacer(Modifier.weight(1f))
                             ZoomBar(transform)
                             Spacer(Modifier.width(8.dp))

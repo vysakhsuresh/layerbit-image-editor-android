@@ -851,4 +851,6 @@
     </plurals>
     <string name="batch_done_some">%1$d तैयार, %2$d को देखना होगा</string>
     <string name="batch_cancelled">बैच रद्द. जो पूरा हुआ वह रखा गया.</string>
+    <string name="last_edits_apply">पिछली बार जैसा</string>
+    <string name="last_edits_done">पिछली तस्वीर का लुक इस पर लगा. पूर्ववत करने से हट जाएगा.</string>
 </resources>
