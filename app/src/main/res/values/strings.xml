@@ -735,7 +735,7 @@
     <string name="step_scan">Scan</string>
     <string name="step_cutout_detail">Automatic: the subject against its surroundings, or ink off paper</string>
     <string name="step_cutout_hint">A batch uses the automatic decision only. Open a result in the editor to correct it with a stroke.</string>
-    <string name="step_scan_detail">Even white paper and clean ink on every page</string>
+    <string name="step_scan_detail">Each page found and flattened, then even white paper and clean ink</string>
 
     <string name="home_quick_cutout">Remove background</string>
     <string name="home_quick_scan">Scan a page</string>

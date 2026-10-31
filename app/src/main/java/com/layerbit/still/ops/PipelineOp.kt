@@ -12,6 +12,7 @@ import com.layerbit.still.engine.Geometry2D
 import com.layerbit.still.engine.Histogram
 import com.layerbit.still.engine.Look
 import com.layerbit.still.engine.Mark
+import com.layerbit.still.engine.PageQuad
 import com.layerbit.still.engine.MarkKind
 import com.layerbit.still.engine.Pt
 import com.layerbit.still.engine.Recipe
@@ -156,7 +157,19 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
         }
         p.frame?.let { r = r.copy(frame = it) }
         p.cutout?.let { r = r.copy(cutout = it.copy(enabled = true, scribbles = emptyList())) }
-        p.scan?.let { r = r.copy(scan = it) }
+        p.scan?.let { scan ->
+            r = r.copy(scan = scan)
+            // A scanner finds the page first: each picture's corners are found and flattened, as the editor's Scan does.
+            if (r.geometry.quad.isIdentity) {
+                val preview = context.renderer.decode(input.file, Budget.PREVIEW_PIXELS, context.check)
+                val found = try {
+                    val px = IntArray(preview.width * preview.height)
+                    preview.getPixels(px, 0, preview.width, 0, 0, preview.width, preview.height)
+                    PageQuad.find(px, preview.width, preview.height)
+                } finally { preview.recycle() }
+                if (found != null) r = r.copy(geometry = r.geometry.copy(quad = found.quad))
+            }
+        }
         return r
     }
 }

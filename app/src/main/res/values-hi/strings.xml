@@ -735,7 +735,7 @@
     <string name="step_scan">स्कैन</string>
     <string name="step_cutout_detail">स्वचालित: आसपास से विषय, या कागज़ से स्याही</string>
     <string name="step_cutout_hint">बैच सिर्फ़ स्वचालित फ़ैसला लेता है. किसी नतीजे को एडिटर में खोलकर स्ट्रोक से सुधारें.</string>
-    <string name="step_scan_detail">हर पन्ने पर बराबर सफ़ेद कागज़ और साफ़ स्याही</string>
+    <string name="step_scan_detail">हर पेज ढूँढकर सीधा किया, फिर सफ़ेद कागज़ और साफ़ स्याही</string>
 
     <string name="home_quick_cutout">बैकग्राउंड हटाएं</string>
     <string name="home_quick_scan">पन्ना स्कैन</string>
