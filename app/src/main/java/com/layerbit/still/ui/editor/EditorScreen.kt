@@ -611,9 +611,9 @@ private fun SplitToggle(on: Boolean, onToggle: () -> Unit) {
 @Composable
 private fun ZoomBar(t: CanvasTransform) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        RoundIconButton(iconRes = R.drawable.ic_minus, contentDescription = stringResource(R.string.editor_zoom_out), onClick = { t.step(false) }, enabled = t.zoomed, size = 30.dp)
+        RoundIconButton(iconRes = R.drawable.ic_minus, contentDescription = stringResource(R.string.editor_zoom_out), onClick = { t.step(false) }, enabled = t.zoomed, size = 30.dp, lively = false)
         Text("${(t.zoom * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, color = StillColors.Muted, modifier = Modifier.clickable { t.fit() }.padding(horizontal = 4.dp))
-        RoundIconButton(iconRes = R.drawable.ic_plus, contentDescription = stringResource(R.string.editor_zoom_in), onClick = { t.step(true) }, enabled = t.zoom < CanvasTransform.MAX, size = 30.dp)
+        RoundIconButton(iconRes = R.drawable.ic_plus, contentDescription = stringResource(R.string.editor_zoom_in), onClick = { t.step(true) }, enabled = t.zoom < CanvasTransform.MAX, size = 30.dp, lively = false)
     }
 }
 

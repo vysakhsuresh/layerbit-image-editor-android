@@ -70,7 +70,9 @@ fun RoundIconButton(
     tint: Color = StillColors.Muted,
     filled: Boolean = false,
     enabled: Boolean = true,
-    size: Dp = 40.dp
+    size: Dp = 40.dp,
+    /** False for controls whose shape is their meaning (zoom in/out): an animation must not turn a plus into a cross. */
+    lively: Boolean = true
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
@@ -83,6 +85,7 @@ fun RoundIconButton(
     ) {
         val colour = if (!enabled) StillColors.Dim else if (filled) StillColors.OnBand else tint
         if (icon != null) LivelyIcon(icon, contentDescription = null, tint = colour, modifier = Modifier.size(size * 0.55f))
+        else if (iconRes != null && !lively) androidx.compose.material3.Icon(painterResource(iconRes), contentDescription = null, tint = colour, modifier = Modifier.size(size * 0.55f))
         else if (iconRes != null) LivelyIcon(painterResource(iconRes), contentDescription = null, tint = colour, modifier = Modifier.size(size * 0.55f), iconRes = iconRes)
     }
 }
