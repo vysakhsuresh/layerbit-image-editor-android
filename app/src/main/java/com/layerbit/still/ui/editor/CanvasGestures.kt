@@ -141,6 +141,8 @@ fun Modifier.canvasGestures(t: CanvasTransform, modeState: State<TouchMode>, onC
                             is TouchMode.Draw -> {
                                 if (!drawing && t.inside(start)) { drawing = true; mode.onStart(t.toPt(start)) }
                                 if (drawing && pos != lastPos) mode.onMove(t.toPt(pos))
+                                // A brush hides what it touches; the magnifier shows it.
+                                if (drawing && moved) t.loupe = pos
                                 change.consume()
                             }
                             is TouchMode.Handles -> {
