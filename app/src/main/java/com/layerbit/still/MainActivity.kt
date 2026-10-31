@@ -75,7 +75,12 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SHORTCUT_SCHEME) {
             when (val which = intent.data?.lastPathSegment) {
                 "EDIT" -> pickPictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                else -> { arrival = Arrival.Shortcut(if (which == "RESIZE_KB") "under" else if (which == "STRIP_METADATA") "clean" else null); ticket += 1 }
+                // Any tool can be a shortcut: one-picture tools ask for the picture, batch tools open their steps.
+                else -> {
+                    val tool = ToolId.byName(which)
+                    if (tool != null && tool.mode == ToolId.Mode.EDITOR) { pendingTool = tool; pickOne.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    else { arrival = Arrival.Shortcut(tool?.let { com.layerbit.still.ui.presetFor(it) }); ticket += 1 }
+                }
             }
             return
         }

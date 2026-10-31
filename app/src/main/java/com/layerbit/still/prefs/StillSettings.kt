@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class StillSettings(context: Context) {
 
+    private val appContext = context.applicationContext
+
     private val prefs = context.applicationContext.getSharedPreferences("still.settings", Context.MODE_PRIVATE)
 
     private val _state = MutableStateFlow(read())
@@ -40,8 +42,9 @@ class StillSettings(context: Context) {
         _state.value = updated
     }
 
-    fun rememberTool(tool: String) = update { s ->
-        s.copy(recentTools = (listOf(tool) + s.recentTools.filter { it != tool }).take(MAX_RECENT_TOOLS))
+    fun rememberTool(tool: String) {
+        update { s -> s.copy(recentTools = (listOf(tool) + s.recentTools.filter { it != tool }).take(MAX_RECENT_TOOLS)) }
+        ToolShortcuts.publish(appContext, current.recentTools)
     }
 
     fun toggleFavourite(tool: String) = update { s ->
