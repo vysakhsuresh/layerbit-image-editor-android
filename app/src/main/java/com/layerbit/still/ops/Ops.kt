@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import com.layerbit.still.R
 import com.layerbit.still.engine.AutoEnhance
@@ -307,41 +309,58 @@ class WatermarkOp(private val text: String, private val opacity: Float, private 
 
 // ------------------------------------------------------------------------------------- collage
 
-/** Several pictures on one canvas, laid out by the engine's plan, each fitted to its cell. */
-class CollageOp(private val layout: Collage.Layout, private val background: Int, private val options: ExportOptions, private val gutter: Float = 0.02f) : Op {
+/**
+ * Several pictures on one canvas, laid out by the engine's plan. Each picture shows the part
+ * [Collage.window] picks for its cell from the person's [framings] (keyed by the input's file
+ * path; a picture with none is centred), so the export is the preview at a larger size.
+ */
+class CollageOp(
+    private val layout: Collage.Layout,
+    private val background: Int,
+    private val options: ExportOptions,
+    private val style: Collage.Style = Collage.Style(),
+    private val framings: Map<String, Collage.Framing> = emptyMap()
+) : Op {
     override val tool = ToolId.COLLAGE
     override val title: String = Strings.get(R.string.engine_title_collage, Strings.get(layoutLabel(layout)))
     override val arity: Op.Arity = Op.Arity.Together(2)
 
     override suspend fun run(inputs: List<StillFile>, context: OpContext, onProgress: (Progress) -> Unit): List<OpOutcome> {
         require(inputs.size in 2..MAX) { Strings.get(R.string.engine_collage_count, MAX) }
-        val plan = Collage.plan(layout, inputs.map { it.width.toFloat() / max(1, it.height) }, gutter)
+        val plan = Collage.plan(layout, inputs.map { it.width.toFloat() / max(1, it.height) }, style)
         val canvas = Collage.canvas(plan, min(Budget.exportPixels, 12_000_000L))
         val bitmap = Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bitmap)
         c.drawColor(if (options.format.alpha) background else (background or 0xFF000000.toInt()))
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        val cw = canvas.width.toFloat(); val ch = canvas.height.toFloat()
         try {
             val perCell = canvas.pixels / inputs.size
             for ((i, input) in inputs.withIndex()) {
                 context.checkCancelled()
                 onProgress(Progress(i, inputs.size + 1, input.displayName))
-                val cell = plan.cells[i]
-                val cw = cell.width * canvas.width; val ch = cell.height * canvas.height
+                val cell = Collage.cellPx(plan.cells[i], cw, ch)
                 val picture = context.renderer.decode(input.file, max(perCell, 400_000L), context.check)
                 try {
-                    // Cover the cell, centred, cropping whichever dimension overflows.
-                    val k = max(cw / picture.width, ch / picture.height)
-                    val pw = picture.width * k; val ph = picture.height * k
-                    val left = cell.left * canvas.width + (cw - pw) / 2; val top = cell.top * canvas.height + (ch - ph) / 2
+                    // The window is worked out on the file's own shape, as the preview does.
+                    val w = Collage.window(input.width.toFloat(), input.height.toFloat(), cell.width, cell.height, framings[input.file.path] ?: Collage.Framing.CENTRED)
+                    val src = Rect(
+                        (w.left * picture.width).roundToInt(), (w.top * picture.height).roundToInt(),
+                        ((w.left + w.width) * picture.width).roundToInt().coerceAtMost(picture.width), ((w.top + w.height) * picture.height).roundToInt().coerceAtMost(picture.height)
+                    )
+                    val dst = RectF(cell.left, cell.top, cell.right, cell.bottom)
+                    val radius = Collage.cornerPx(plan.style, cw, ch, cell)
                     c.save()
-                    c.clipRect(cell.left * canvas.width, cell.top * canvas.height, cell.left * canvas.width + cw, cell.top * canvas.height + ch)
-                    c.drawBitmap(picture, null, RectF(left, top, left + pw, top + ph), paint)
-                    c.restore()
+                    if (radius > 0f) c.clipPath(Path().apply { addRoundRect(dst, radius, radius, Path.Direction.CW) }) else c.clipRect(dst)
+                    c.drawBitmap(picture, src, dst, paint)
                     if (layout == Collage.Layout.POLAROID) {
-                        val white = Paint().apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = min(cw, ch) * 0.06f }
-                        c.drawRect(cell.left * canvas.width, cell.top * canvas.height, cell.left * canvas.width + cw, cell.top * canvas.height + ch, white)
+                        // A white border inside the cell: the stroke is centred on the edge, and the clip keeps its inner half.
+                        val border = Collage.polaroidBorderPx(cell)
+                        val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeWidth = border * 2 }
+                        white.style = Paint.Style.STROKE
+                        c.drawRoundRect(dst, radius, radius, white)
                     }
+                    c.restore()
                 } finally { picture.recycle() }
             }
             onProgress(Progress(inputs.size, inputs.size + 1, Strings.get(R.string.engine_encoding)))

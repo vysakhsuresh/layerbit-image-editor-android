@@ -494,6 +494,17 @@
     <string name="collage_strip">पट्टी</string>
     <string name="collage_polaroid">पोलरॉइड</string>
     <string name="collage_hint">तस्वीरें अपने खाने भरती हैं और समाने के लिए कटती हैं. अधिकतम %1$d.</string>
+    <string name="collage_preview">आपका कोलाज</string>
+    <string name="collage_preview_description">कोलाज की झलक. तस्वीर को खाने में खिसकाने के लिए खींचें, ज़ूम के लिए दो उंगलियों से फैलाएं, दो को अदला-बदली करने के लिए दबाकर खींचें.</string>
+    <string name="collage_steer_hint">हर तस्वीर पहले अपने सबसे बारीक हिस्से पर टिकी रहती है. तस्वीर को खाने में खिसकाने के लिए खींचें, ज़ूम के लिए दो उंगलियों से फैलाएं. एक को दबाकर दूसरी पर छोड़ें तो दोनों की जगह बदल जाती है. चुनने के लिए टैप करें.</string>
+    <string name="collage_picked">तस्वीर %1$d: %2$s</string>
+    <string name="collage_zoom">ज़ूम</string>
+    <string name="collage_earlier">पहले</string>
+    <string name="collage_later">बाद में</string>
+    <string name="collage_recentre">फिर से बीच में</string>
+    <string name="collage_spacing">दूरी</string>
+    <string name="collage_gutter">बीच की जगह</string>
+    <string name="collage_margin">किनारा</string>
 
     <!-- Batch tool screens -->
     <string name="tools_pictures">तस्वीरें</string>

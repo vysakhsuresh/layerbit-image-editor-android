@@ -31,6 +31,11 @@ import com.layerbit.still.ops.ToolId
 import com.layerbit.still.ops.WatermarkOp
 import com.layerbit.still.engine.WatermarkPlace
 import com.layerbit.still.text.Strings
+import android.util.LruCache
+import com.layerbit.still.engine.Palette
+import com.layerbit.still.image.Renderer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,6 +63,9 @@ data class ToolConfig(
     val watermarkPlace: WatermarkPlace = WatermarkPlace.TILED,
     val layout: Collage.Layout = Collage.Layout.GRID,
     val collageBackground: Int = 0xFFFFFFFF.toInt(),
+    val collageStyle: Collage.Style = Collage.Style(),
+    /** The person's own framing of each picture, by file path. A picture without one takes the automatic framing. */
+    val collageFraming: Map<String, Collage.Framing> = emptyMap(),
     val presetName: String = "",
     val frame: Frame = Frame(padding = 0.05f),
     val pattern: String = "{name}"
@@ -77,7 +85,11 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
         val files: List<StillFile> = emptyList(),
         val importing: Boolean = false,
         val message: String? = null,
-        val presets: List<ImageStore.Preset> = emptyList()
+        val presets: List<ImageStore.Preset> = emptyList(),
+        /** The automatic framing of each collage picture, by file path: centred on its detail. */
+        val collageAuto: Map<String, Collage.Framing> = emptyMap(),
+        /** Backgrounds in each collage picture's own colours, by file path. */
+        val collageColours: Map<String, List<Int>> = emptyMap()
     )
 
     private val _ui = MutableStateFlow(Ui())
@@ -112,10 +124,47 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
     fun addFile(file: StillFile) = _ui.update { it.copy(files = (it.files + file).take(MAX_INPUTS)) }
 
     fun remove(file: StillFile) = _ui.update { it.copy(files = it.files - file) }
+
+    /** Exchanges two pictures' places; each keeps its own framing, which is keyed by file. */
+    fun swap(i: Int, j: Int) = _ui.update { it.copy(files = Collage.swap(it.files, i, j)) }
     fun clear() = _ui.update { it.copy(files = emptyList()) }
     fun message(text: String?) = _ui.update { it.copy(message = text) }
 
     suspend fun thumbnail(file: StillFile): Bitmap? = still.store.thumbnail(file)
+
+    // ------------------------------------------------------------------ collage preview
+
+    private val collagePreviews = LruCache<String, Bitmap>(CollageOp.MAX + 4)
+
+    /**
+     * A picture for the collage preview, larger than a thumbnail so a cell looks sharp. The
+     * first time a picture is seen it is also studied: where its detail is, for the automatic
+     * framing, and its own colours, for the background swatches.
+     */
+    suspend fun collagePicture(file: StillFile): Bitmap? {
+        collagePreviews.get(file.file.path)?.let { return it }
+        val bitmap = withContext(Dispatchers.IO) { Renderer.thumbnail(file.file, COLLAGE_PREVIEW_PIXELS) } ?: return null
+        collagePreviews.put(file.file.path, bitmap)
+        val (focus, colours) = withContext(Dispatchers.Default) {
+            val px = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(px, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+            Collage.focus(px, bitmap.width, bitmap.height) to Palette.matched(px)
+        }
+        _ui.update { it.copy(collageAuto = it.collageAuto + (file.file.path to focus), collageColours = it.collageColours + (file.file.path to colours)) }
+        return bitmap
+    }
+
+    /** The framing a picture is drawn with: the person's, else the automatic one, else centred. */
+    fun framingOf(file: StillFile): Collage.Framing =
+        config.collageFraming[file.file.path] ?: _ui.value.collageAuto[file.file.path] ?: Collage.Framing.CENTRED
+
+    fun setFraming(file: StillFile, framing: Collage.Framing) {
+        config = config.copy(collageFraming = config.collageFraming + (file.file.path to framing))
+    }
+
+    fun resetFraming(file: StillFile) {
+        config = config.copy(collageFraming = config.collageFraming - file.file.path)
+    }
 
     /** The op for the current tool and config, or null with a message when the config is not ready. */
     fun buildOp(): Op? {
@@ -169,7 +218,7 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
                 if (c.watermarkText.isBlank()) { message(Strings.get(R.string.tools_need_text)); return null }
                 WatermarkOp(c.watermarkText, c.watermarkOpacity, c.watermarkAngle, c.watermarkSize, c.watermarkColor, export, c.pattern.ifBlank { "{name}-marked" }, c.watermarkPlace)
             }
-            ToolId.COLLAGE -> CollageOp(c.layout, c.collageBackground, export)
+            ToolId.COLLAGE -> CollageOp(c.layout, c.collageBackground, export, c.collageStyle, _ui.value.files.associate { it.file.path to framingOf(it) })
             ToolId.FRAME -> FrameOp(c.frame, export, c.pattern.ifBlank { "{name}-framed" })
             else -> null
         }
@@ -214,5 +263,9 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    companion object { const val MAX_INPUTS = 100 }
+    companion object {
+        const val MAX_INPUTS = 100
+        /** Twelve of these are under ten megabytes; a cell on a phone is rarely more than a third of this. */
+        const val COLLAGE_PREVIEW_PIXELS = 200_000L
+    }
 }

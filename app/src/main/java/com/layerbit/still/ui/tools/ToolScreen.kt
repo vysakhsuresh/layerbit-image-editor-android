@@ -138,7 +138,11 @@ fun ToolRoute(
             onAddFiles = { pickFiles.launch(arrayOf("image/*")) },
             onRemove = vm::remove, onClear = vm::clear, onRun = vm::run, onCancel = vm::cancel, onDone = vm::acknowledge,
             onSave = ::save, onSaveAll = ::saveInto, onShare = { files -> context.startActivity(vm.shareIntent(files)) },
-            onOpenInEditor = onOpenInEditor, onBack = onBack
+            onOpenInEditor = onOpenInEditor, onBack = onBack,
+            collage = if (tool == ToolId.COLLAGE) CollageHooks(
+                picture = vm::collagePicture, framing = vm::framingOf, setFraming = vm::setFraming, resetFraming = vm::resetFraming, swap = vm::swap,
+                matched = ui.files.flatMap { ui.collageColours[it.file.path].orEmpty() }.distinct().take(6)
+            ) else null
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter)) { data -> Snackbar(snackbarData = data, containerColor = StillColors.Surface, contentColor = StillColors.Text, actionColor = StillColors.BandBright) }
     }
@@ -153,7 +157,8 @@ fun ToolScreen(
     onAddPhotos: () -> Unit, onAddFiles: () -> Unit, onRemove: (StillFile) -> Unit, onClear: () -> Unit,
     onRun: () -> Unit, onCancel: () -> Unit, onDone: () -> Unit,
     onSave: (StillFile) -> Unit, onSaveAll: (List<StillFile>) -> Unit, onShare: (List<StillFile>) -> Unit,
-    onOpenInEditor: (StillFile) -> Unit, onBack: () -> Unit
+    onOpenInEditor: (StillFile) -> Unit, onBack: () -> Unit,
+    collage: CollageHooks? = null
 ) {
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
         // ---- results, when a job has finished
@@ -204,10 +209,15 @@ fun ToolScreen(
             TextButton(onClick = onClear) { Text(stringResource(R.string.tools_clear_all), color = StillColors.Muted) }
         }
 
+        // ---- the collage itself, to look at and steer
+        if (collage != null && files.size >= 2) item {
+            Panel(Modifier.fillMaxWidth()) { CollageStudio(files.take(CollageOp.MAX), config, collage, enabled = job !is JobState.Running) }
+        }
+
         // ---- options
         item {
             SectionHeading(stringResource(R.string.tools_options), modifier = Modifier.padding(bottom = 8.dp))
-            Panel(Modifier.fillMaxWidth()) { Options(tool, config, onConfig, presets) }
+            Panel(Modifier.fillMaxWidth()) { Options(tool, config, onConfig, presets, collage?.matched.orEmpty()) }
         }
 
         // ---- run
@@ -277,7 +287,7 @@ fun ResultRow(o: OpOutcome.Produced, thumbnail: suspend (StillFile) -> Bitmap?, 
 // ------------------------------------------------------------------ options per tool
 
 @Composable
-private fun Options(tool: ToolId, c: ToolConfig, set: (ToolConfig) -> Unit, presets: List<String>) {
+private fun Options(tool: ToolId, c: ToolConfig, set: (ToolConfig) -> Unit, presets: List<String>, matched: List<Int> = emptyList()) {
     when (tool) {
         ToolId.RESIZE -> {
             ChipRow(listOf("edge" to stringResource(R.string.resize_long_edge), "percent" to stringResource(R.string.resize_percent), "exact" to stringResource(R.string.resize_exact)), c.resizeMode, { set(c.copy(resizeMode = it)) })
@@ -336,11 +346,22 @@ private fun Options(tool: ToolId, c: ToolConfig, set: (ToolConfig) -> Unit, pres
         }
         ToolId.COLLAGE -> {
             ChipRow(Collage.Layout.entries.map { it to stringResource(CollageOp.layoutLabel(it)) }, c.layout, { set(c.copy(layout = it)) })
-            Row(Modifier.padding(top = 8.dp)) {
+            SectionHeading(stringResource(R.string.collage_spacing), modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
+            val st = c.collageStyle
+            val tenths = { v: Float -> "${(v * 1000).roundToInt()}" }
+            Knob(stringResource(R.string.collage_gutter), st.gutter, Collage.Style.GUTTER, onChange = { set(c.copy(collageStyle = st.copy(gutter = it))) }, onDone = {}, onReset = { set(c.copy(collageStyle = st.copy(gutter = Collage.Style().gutter))) }, format = tenths)
+            Knob(stringResource(R.string.collage_margin), st.margin, Collage.Style.MARGIN, onChange = { set(c.copy(collageStyle = st.copy(margin = it))) }, onDone = {}, onReset = { set(c.copy(collageStyle = st.copy(margin = Collage.Style().margin))) }, format = tenths)
+            Knob(stringResource(R.string.frame_corners), st.radius, Collage.Style.RADIUS, onChange = { set(c.copy(collageStyle = st.copy(radius = it))) }, onDone = {}, onReset = { set(c.copy(collageStyle = st.copy(radius = 0f))) }, format = tenths)
+            SectionHeading(stringResource(R.string.frame_background), modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
+            Row {
                 Swatch(0xFFFFFFFF.toInt(), stringResource(R.string.frame_white), c.collageBackground == 0xFFFFFFFF.toInt()) { set(c.copy(collageBackground = 0xFFFFFFFF.toInt())) }
                 Swatch(0xFF111111.toInt(), stringResource(R.string.frame_black), c.collageBackground == 0xFF111111.toInt()) { set(c.copy(collageBackground = 0xFF111111.toInt())) }
                 Swatch(0xFFF5F4EF.toInt(), stringResource(R.string.frame_paper), c.collageBackground == 0xFFF5F4EF.toInt()) { set(c.copy(collageBackground = 0xFFF5F4EF.toInt())) }
                 Swatch(0xFF0B1220.toInt(), stringResource(R.string.frame_ink), c.collageBackground == 0xFF0B1220.toInt()) { set(c.copy(collageBackground = 0xFF0B1220.toInt())) }
+            }
+            if (matched.isNotEmpty()) {
+                Text(stringResource(R.string.frame_from_picture), style = MaterialTheme.typography.labelSmall, color = StillColors.Dim, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
+                ColourRow(matched, c.collageBackground, { set(c.copy(collageBackground = it)) })
             }
             Hint(stringResource(R.string.collage_hint, CollageOp.MAX))
             FormatOptions(c, set)

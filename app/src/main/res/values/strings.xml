@@ -494,6 +494,17 @@
     <string name="collage_strip">Strip</string>
     <string name="collage_polaroid">Polaroid</string>
     <string name="collage_hint">Pictures fill their cells and are cropped to fit. Up to %1$d.</string>
+    <string name="collage_preview">Your collage</string>
+    <string name="collage_preview_description">Collage preview. Drag a picture to move it in its cell, pinch to zoom, hold and drag to swap two.</string>
+    <string name="collage_steer_hint">Each picture starts centred on its detail. Drag one to move it in its cell, pinch to zoom. Hold one and drag it onto another to swap them. Tap one to pick it.</string>
+    <string name="collage_picked">Picture %1$d: %2$s</string>
+    <string name="collage_zoom">Zoom</string>
+    <string name="collage_earlier">Earlier</string>
+    <string name="collage_later">Later</string>
+    <string name="collage_recentre">Recentre</string>
+    <string name="collage_spacing">Spacing</string>
+    <string name="collage_gutter">Space between</string>
+    <string name="collage_margin">Edge</string>
 
     <!-- Batch tool screens -->
     <string name="tools_pictures">Pictures</string>

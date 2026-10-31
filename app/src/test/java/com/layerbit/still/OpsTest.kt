@@ -170,6 +170,32 @@ class OpsTest {
     }
 
     @Test
+    fun collageDrawsTheFramingThePreviewShowsAndRoundsItsCorners() {
+        fun halves(name: String): StillFile {
+            val b = Bitmap.createBitmap(400, 200, Bitmap.Config.ARGB_8888)
+            for (y in 0 until 200) for (x in 0 until 400) b.setPixel(x, y, if (x < 200) Color.RED else Color.BLUE)
+            val f = File(dir, name); f.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle()
+            return StillFile(f, name, StillFile.Origin.Derived("test"), StillFile.MIME_PNG, 400, 200)
+        }
+        val a = halves("a.png"); val b = halves("b.png")
+        val style = Collage.Style(gutter = 0.04f, margin = 0.04f, radius = 0.1f)
+        val framings = mapOf(a.file.path to Collage.Framing(cx = 0f), b.file.path to Collage.Framing(cx = 1f))
+        val out = run(CollageOp(Collage.Layout.GRID, Color.WHITE, ExportOptions(OutputFormat.PNG), style, framings), a, b).single() as OpOutcome.Produced
+        val written = android.graphics.BitmapFactory.decodeFile(out.file.file.path)
+        val plan = Collage.plan(Collage.Layout.GRID, listOf(2f, 2f), style)
+        val w = written.width.toFloat(); val h = written.height.toFloat()
+        val left = Collage.cellPx(plan.cells[0], w, h); val right = Collage.cellPx(plan.cells[1], w, h)
+        fun at(x: Float, y: Float) = written.getPixel(x.toInt(), y.toInt())
+        // Framed to its left edge, the first shows red in the middle of its cell; the second, framed right, blue.
+        assertEquals(Color.RED, at((left.left + left.right) / 2, (left.top + left.bottom) / 2))
+        assertEquals(Color.BLUE, at((right.left + right.right) / 2, (right.top + right.bottom) / 2))
+        // A rounded corner shows the background, the spacing too.
+        assertEquals(Color.WHITE, at(left.left + 1, left.top + 1))
+        assertEquals(Color.WHITE, at((left.right + right.left) / 2, (left.top + left.bottom) / 2))
+        written.recycle()
+    }
+
+    @Test
     fun storeImportsAProjectKeepsItsRecipeAndNeverTouchesTheSource() = runBlocking {
         val store = ImageStore(app, renderer)
         val src = picture(320, 240, jpeg = true, name = "import.jpg", gps = true)
