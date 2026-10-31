@@ -177,4 +177,20 @@ class HealTest {
         val r = Recipe(marks = listOf(m))
         assertEquals(r, RecipeJson.read(RecipeJson.write(r)))
     }
+
+    @Test
+    fun healingALineOfTextOnAPageLeavesPaperNotAnotherLine() {
+        val w = 240; val h = 240
+        val paper = Argb.pack(255, 240, 236, 226); val ink = Argb.pack(255, 50, 50, 55)
+        val px = IntArray(w * h) { paper }
+        // Three lines of "letters": dark blocks with gaps, rows 60-68, 90-98, 120-128.
+        for (row in listOf(60, 90, 120)) for (y in row until row + 9) for (x in 30 until 170) if ((x / 6) % 3 != 2) px[y * w + x] = ink
+        val stroke = listOf(Pt(26f / w, 94f / h), Pt(174f / w, 94f / h))
+        val width = 0.07f
+        val source = Heal.findSource(px, w, h, stroke, width)!!
+        Heal.apply(px, w, h, 0, 0, w, h, stroke, width, source, 1f)
+        var dark = 0
+        for (y in 90 until 99) for (x in 30 until 170) if (Argb.luma(px[y * w + x]) < 150) dark++
+        assertTrue("ink left in the healed line: $dark", dark < 40)
+    }
 }

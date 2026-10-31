@@ -118,7 +118,8 @@ object Heal {
             val dr = small[a * 3] - small[b * 3]; val dg = small[a * 3 + 1] - small[b * 3 + 1]; val db = small[a * 3 + 2] - small[b * 3 + 2]
             dr * dr + dg * dg + db * db
         }
-        val coarse = search(coarseDiff, sw, sh, cs, null, (ceil(SEARCH * cs.reach)).toInt(), check) ?: return null
+        val coarseRgb = { i: Int, out: FloatArray -> out[0] = small[i * 3]; out[1] = small[i * 3 + 1]; out[2] = small[i * 3 + 2] }
+        val coarse = search(coarseDiff, coarseRgb, sw, sh, cs, null, (ceil(SEARCH * cs.reach)).toInt(), check) ?: return null
         check()
         // Refine around the coarse winner, one pixel at a time, so a fine texture lines up.
         val fineDiff = { a: Int, b: Int ->
@@ -126,7 +127,8 @@ object Heal {
             val dr = (Argb.red(ca) - Argb.red(cb)).toFloat(); val dg = (Argb.green(ca) - Argb.green(cb)).toFloat(); val db = (Argb.blue(ca) - Argb.blue(cb)).toFloat()
             dr * dr + dg * dg + db * db
         }
-        val fine = search(fineDiff, w, h, s, intArrayOf(coarse[0] * f, coarse[1] * f), f, check) ?: intArrayOf(coarse[0] * f, coarse[1] * f)
+        val fineRgb = { i: Int, out: FloatArray -> val c = pixels[i]; out[0] = Argb.red(c).toFloat(); out[1] = Argb.green(c).toFloat(); out[2] = Argb.blue(c).toFloat() }
+        val fine = search(fineDiff, fineRgb, w, h, s, intArrayOf(coarse[0] * f, coarse[1] * f), f, check) ?: intArrayOf(coarse[0] * f, coarse[1] * f)
         val first = points.first()
         return Pt(first.x + fine[0].toFloat() / w, first.y + fine[1].toFloat() / h)
     }
@@ -153,7 +155,7 @@ object Heal {
      * blemish's region and must lie inside the picture. Score: mean squared difference over the
      * border band, plus a light pull towards nearby patches.
      */
-    private fun search(diff: (Int, Int) -> Float, w: Int, h: Int, s: Shape, around: IntArray?, range: Int, check: () -> Unit): IntArray? {
+    private fun search(diff: (Int, Int) -> Float, rgb: (Int, FloatArray) -> Unit, w: Int, h: Int, s: Shape, around: IntArray?, range: Int, check: () -> Unit): IntArray? {
         val reach = s.reach
         val bx0 = floor(s.minX - reach).toInt(); val by0 = floor(s.minY - reach).toInt()
         val bx1 = ceil(s.maxX + reach).toInt(); val by1 = ceil(s.maxY + reach).toInt()
@@ -171,6 +173,17 @@ object Heal {
         }
         if (bandIdx.isEmpty() || coreIdx.isEmpty()) return null
         val band = thin(bandIdx, 6000); val core = thin(coreIdx, 3000)
+        // What the surroundings look like, and how busy they are: a patch whose inside is busier
+        // than the spot's surroundings carries something in (a letter, a twig) and is marked down.
+        val c3 = FloatArray(3)
+        val ref = FloatArray(3)
+        for (i in band) { rgb((by0 + i / ww) * w + bx0 + i % ww, c3); ref[0] += c3[0]; ref[1] += c3[1]; ref[2] += c3[2] }
+        for (k in 0..2) ref[k] /= band.size
+        fun dev(idx: Int): Double { rgb(idx, c3); val a = c3[0] - ref[0]; val b = c3[1] - ref[1]; val c = c3[2] - ref[2]; return (a * a + b * b + c * c).toDouble() }
+        var surround = 0.0
+        for (i in band) surround += dev((by0 + i / ww) * w + bx0 + i % ww)
+        surround /= band.size
+        val inner = thin(coreIdx, 500)
         val cx = around?.get(0) ?: 0; val cy = around?.get(1) ?: 0
         var best: IntArray? = null
         var bestScore = Double.MAX_VALUE
@@ -190,7 +203,13 @@ object Heal {
                     sum += diff(y * w + x, (y + p) * w + x + o).toDouble()
                     if (sum >= limit) break
                 }
-                val score = sum / (band.size * 3) + penalty
+                var score = sum / (band.size * 3) + penalty
+                if (score < bestScore) {
+                    var busy = 0.0
+                    for (i in inner) { val x = bx0 + i % ww; val y = by0 + i / ww; busy += dev((y + p) * w + x + o) }
+                    busy /= inner.size
+                    score += max(0.0, busy - surround) / 3.0
+                }
                 if (score < bestScore) { bestScore = score; best = intArrayOf(o, p) }
             }
         }
