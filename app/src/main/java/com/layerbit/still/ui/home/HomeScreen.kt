@@ -1,6 +1,23 @@
 package com.layerbit.still.ui.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.layerbit.still.ui.components.pressScale
 import androidx.compose.runtime.remember
@@ -122,13 +139,44 @@ fun HomeScreen(
                     Triple(Glyph.WATERMARK, R.string.home_quick_watermark) { onProcessMany("watermark") },
                     Triple(Glyph.COLLAGE, R.string.home_quick_collage) { onCollage() }
                 )
-                val accents = listOf(Neon.Coral, Neon.Cyan, Neon.Lime, Neon.Mint, Neon.Sky, Neon.Violet, Neon.Magenta, Neon.Lime, Neon.Coral, Neon.Cyan, Neon.Violet, Neon.Magenta)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().testTag("quickTools")) {
+                // Each tile is a pair of neighbouring neons, so the strip reads as one sweep of colour.
+                val accents = listOf(
+                    Neon.Coral to Neon.Magenta, Neon.Cyan to Neon.Sky, Neon.Lime to Neon.Mint, Neon.Mint to Neon.Cyan,
+                    Neon.Sky to Neon.Violet, Neon.Violet to Neon.Magenta, Neon.Magenta to Neon.Coral, Neon.Lime to Neon.Cyan,
+                    Neon.Coral to Neon.Violet, Neon.Cyan to Neon.Mint, Neon.Violet to Neon.Sky, Neon.Magenta to Neon.Violet
+                )
+                val quickState = rememberLazyListState()
+                val canScrollRight = quickState.canScrollForward
+                val canScrollLeft = quickState.canScrollBackward
+                val rightFade by animateFloatAsState(if (canScrollRight) 1f else 0f, label = "quickFadeRight")
+                val leftFade by animateFloatAsState(if (canScrollLeft) 1f else 0f, label = "quickFadeLeft")
+                LazyRow(
+                    state = quickState,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    // Room for each tile's glow, which would otherwise be clipped by the strip.
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 6.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("quickTools")
+                        // Fade the edges where more tools are hidden, so the strip reads as scrollable.
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .drawWithContent {
+                            drawContent()
+                            val edge = 36.dp.toPx()
+                            if (rightFade > 0f) drawRect(
+                                Brush.horizontalGradient(listOf(Color.Black, Color.Black.copy(alpha = 1f - rightFade)), startX = size.width - edge, endX = size.width),
+                                topLeft = Offset(size.width - edge, 0f), size = Size(edge, size.height), blendMode = BlendMode.DstIn
+                            )
+                            if (leftFade > 0f) drawRect(
+                                Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 1f - leftFade), Color.Black), startX = 0f, endX = edge),
+                                topLeft = Offset.Zero, size = Size(edge, size.height), blendMode = BlendMode.DstIn
+                            )
+                        }
+                ) {
                     items(quick.size) { i ->
                         val (glyph, label, action) = quick[i]
-                        Quick(glyph, accents[i % accents.size], stringResource(label), Modifier.width(80.dp), action)
+                        Quick(glyph, accents[i % accents.size], stringResource(label), i, Modifier.width(84.dp), action)
                     }
                 }
+                QuickScrollIndicator(quickState, Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp))
             }
         }
         item(key = "doors") {
@@ -177,8 +225,7 @@ private fun Hero(onSettings: () -> Unit, onAbout: () -> Unit) {
                 stringResource(R.string.app_name_short),
                 style = MaterialTheme.typography.displayMedium.copy(brush = Brush.horizontalGradient(listOf(StillColors.BandBright, StillColors.Band, Neon.Magenta)))
             )
-            Box(drawOn().padding(top = 2.dp, bottom = 6.dp).height(4.dp).width(72.dp).background(Brush.horizontalGradient(listOf(StillColors.Band, Neon.Magenta)), RoundedCornerShape(2.dp)))
-            Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
         }
         RoundIconButton(icon = Icons.Filled.Settings, contentDescription = stringResource(R.string.app_settings), onClick = onSettings)
         Spacer(Modifier.width(8.dp))
@@ -255,25 +302,111 @@ private fun Door(glyph: Glyph, accent: Color, title: String, body: String, onCli
     }
 }
 
-/** A quick tool: its glyph in a coloured bubble, its name under it. */
+/** A short track under the quick strip; the thumb shows how much is in view and where. */
 @Composable
-private fun Quick(glyph: Glyph, accent: Color, label: String, modifier: Modifier, onClick: () -> Unit) {
+private fun QuickScrollIndicator(state: LazyListState, modifier: Modifier = Modifier) {
+    val trackWidth = 64.dp
+    val metrics by remember(state) {
+        derivedStateOf {
+            val info = state.layoutInfo
+            val visible = info.visibleItemsInfo
+            val viewport = (info.viewportEndOffset - info.viewportStartOffset).toFloat()
+            if (visible.isEmpty() || viewport <= 0f || info.totalItemsCount == 0) return@derivedStateOf 1f to 0f
+            val itemSpan = (visible.first().size + info.mainAxisItemSpacing).toFloat()
+            val content = (itemSpan * info.totalItemsCount - info.mainAxisItemSpacing).coerceAtLeast(viewport)
+            val scrolled = state.firstVisibleItemIndex * itemSpan + state.firstVisibleItemScrollOffset
+            val fraction = (viewport / content).coerceIn(0.1f, 1f)
+            val progress = if (content > viewport) (scrolled / (content - viewport)).coerceIn(0f, 1f) else 0f
+            fraction to progress
+        }
+    }
+    val (fraction, progress) = metrics
+    if (fraction >= 1f) return
+    Box(modifier.width(trackWidth).height(4.dp).clip(RoundedCornerShape(2.dp)).background(StillColors.Border)) {
+        val thumb = trackWidth * fraction
+        Box(
+            Modifier.offset(x = (trackWidth - thumb) * progress).width(thumb).fillMaxHeight()
+                .clip(RoundedCornerShape(2.dp))
+                .background(Brush.horizontalGradient(listOf(StillColors.Band, Neon.Magenta)))
+        )
+    }
+}
+
+/**
+ * A quick tool as a small cousin of the doors below: a glossy tile in two neighbouring neons
+ * with a glow of its own colour, the moving glyph in white, and its name under it. Tiles spring
+ * in one after another, and a sheen runs along the strip every few seconds, tile by tile.
+ */
+@Composable
+private fun Quick(glyph: Glyph, accent: Pair<Color, Color>, label: String, index: Int, modifier: Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
+    val clock = LocalLivelyClock.current
+    val (from, to) = accent
+    val dark = StillColors.isDark
+    val shape = RoundedCornerShape(22.dp)
+    // Arrival: a small spring from below, staggered along the strip.
+    val arrive = remember { Animatable(if (clock == null) 1f else 0f) }
+    LaunchedEffect(Unit) {
+        if (clock != null) { delay(60L * index.coerceAtMost(8)); arrive.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 260f)) }
+    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.pressScale(interaction, 0.93f).clip(RoundedCornerShape(18.dp))
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick).padding(vertical = 6.dp, horizontal = 2.dp)
+        modifier = modifier
+            .graphicsLayer {
+                val a = arrive.value
+                alpha = a.coerceIn(0f, 1f)
+                translationY = (1f - a) * 18.dp.toPx()
+                val sc = 0.82f + 0.18f * a
+                scaleX = sc; scaleY = sc
+            }
+            .pressScale(interaction, 0.9f)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 2.dp)
     ) {
         Box(
-            Modifier.size(60.dp).clip(CircleShape)
-                .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.34f), accent.copy(alpha = 0.14f))))
-                .drawBehind { drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.38f), Color.Transparent), center = Offset(size.width * 0.32f, size.height * 0.26f), radius = size.width * 0.5f), size.width * 0.5f, Offset(size.width * 0.32f, size.height * 0.26f)) }
-                .border(1.5.dp, accent.copy(alpha = 0.55f), CircleShape),
+            Modifier.size(68.dp)
+                .shadow(if (dark) 12.dp else 7.dp, shape, clip = false, ambientColor = from.copy(alpha = 0.55f), spotColor = to.copy(alpha = 0.65f))
+                .clip(shape)
+                .background(Brush.linearGradient(listOf(from, to)))
+                .drawWithContent {
+                    // Gloss: a light in the top-left corner, as on the doors.
+                    drawCircle(
+                        Brush.radialGradient(listOf(Color.White.copy(alpha = 0.34f), Color.Transparent), center = Offset(size.width * 0.22f, size.height * 0.12f), radius = size.width * 0.75f),
+                        size.width * 0.75f, Offset(size.width * 0.22f, size.height * 0.12f)
+                    )
+                    // A darker lip at the bottom gives the tile depth.
+                    drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.16f)), startY = size.height * 0.55f, endY = size.height))
+                    // A soft shade behind the glyph, so white reads on the palest neon too.
+                    drawCircle(Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.2f), Color.Transparent), center = center, radius = size.width * 0.42f), size.width * 0.42f, center)
+                    drawContent()
+                    // The sheen: a diagonal band of light crossing the tile, a beat after its neighbour.
+                    val t = clock?.value
+                    if (t != null) {
+                        val phase = ((t * 2f) - index * 0.035f).mod(1f)
+                        if (phase < 0.16f) {
+                            val x = -size.width + (phase / 0.16f) * size.width * 3f
+                            drawRect(
+                                Brush.linearGradient(
+                                    listOf(Color.Transparent, Color.White.copy(alpha = 0.32f), Color.Transparent),
+                                    start = Offset(x, 0f), end = Offset(x + size.width * 0.7f, size.height)
+                                )
+                            )
+                        }
+                    }
+                    // A fine lit edge along the top.
+                    drawRoundRect(
+                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.0f)), endY = size.height * 0.5f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(22.dp.toPx()), style = Stroke(1.2.dp.toPx())
+                    )
+                },
             contentAlignment = Alignment.Center
         ) {
-            AnimatedGlyph(glyph, accent, Modifier.size(32.dp), seed = glyph.ordinal * 11)
+            AnimatedGlyph(glyph, Color.White, Modifier.size(34.dp), seed = glyph.ordinal * 11)
         }
-        Text(label, style = MaterialTheme.typography.labelSmall, color = StillColors.Text, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 7.dp), maxLines = 2, minLines = 2)
+        Text(
+            label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = StillColors.Text,
+            textAlign = TextAlign.Center, modifier = Modifier.padding(top = 9.dp), maxLines = 2, minLines = 2, lineHeight = 15.sp
+        )
     }
 }
 
