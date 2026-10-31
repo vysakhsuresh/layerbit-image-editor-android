@@ -469,7 +469,7 @@ fun EditorScreen(
                 }
             }
             if (wide) Row(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1.3f).fillMaxHeight()); panelArea(Modifier.weight(1f).fillMaxHeight()) }
-            else Column(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1f).fillMaxWidth()); panelArea(Modifier.fillMaxWidth().heightIn(max = panelLimit)) }
+            else Column(Modifier.fillMaxSize()) { canvasArea(Modifier.weight(1f).fillMaxWidth()); panelArea(Modifier.fillMaxWidth().height(panelLimit)) }
         }
         Celebrate(key = ui.export, modifier = Modifier.fillMaxSize())
     }
