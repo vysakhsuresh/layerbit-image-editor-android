@@ -117,4 +117,25 @@ class RecipeJsonTest {
         // A slider outside its range is a corrupt file.
         try { RecipeJson.read("""{"schema":2,"locals":[{"mask":{"kind":"SKY"},"exposure":9}]}"""); fail() } catch (e: IllegalArgumentException) { }
     }
+
+    @Test
+    fun frameStylesRoundTripAndOldFramesReadAsPlain() {
+        for (style in FrameStyle.entries) {
+            val r = Recipe(frame = FrameStyles.preset(style).copy(thickness = 0.25f, variant = style.variants - 1, caption = "Goa, \"June\"", seed = 7))
+            assertEquals(r, RecipeJson.read(RecipeJson.write(r)))
+        }
+        val old = """{"schema":2,"frame":{"aspect":1,"padding":0.05,"border":0.01,"borderColor":-1,"background":-1,"cornerRadius":0,"blurredFill":false}}"""
+        val f = RecipeJson.read(old).frame
+        assertEquals(FrameStyle.PLAIN, f.style)
+        assertEquals(Frame(aspect = 1f, padding = 0.05f, border = 0.01f), f)
+        // A plain frame is written exactly as before: no style fields.
+        assertFalse(RecipeJson.write(Recipe(frame = Frame(padding = 0.1f))).contains("style"))
+        // A style from a newer app falls back to the plain frame; a variant out of range to the first.
+        assertEquals(FrameStyle.PLAIN, RecipeJson.read("""{"schema":2,"frame":{"style":"HOLOGRAM","padding":0.1}}""").frame.style)
+        assertEquals(0, RecipeJson.read("""{"schema":2,"frame":{"style":"FILM","variant":9}}""").frame.variant)
+        // A preset keeps the style, not the words.
+        val styled = Recipe(frame = Frame(style = FrameStyle.POLAROID, caption = "Us"))
+        assertEquals("", styled.asPreset().frame.caption)
+        assertEquals(FrameStyle.POLAROID, styled.asPreset().frame.style)
+    }
 }

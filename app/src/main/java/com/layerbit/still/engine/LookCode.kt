@@ -101,7 +101,7 @@ object LookCode {
                 "tone" -> keep(out, k, value) { _, it -> it != zero }
                 "mix" -> keep(out, k, value) { _, a -> a.arr()?.all { it == zero } != true }
                 // Colours read as white when missing; a transparent background (0) must stay.
-                "frame" -> keep(out, k, value) { key, it -> if (key == "borderColor" || key == "background") it != white else it != zero && it != off }
+                "frame" -> keep(out, k, value) { key, it -> if (key == "borderColor" || key == "background") it != white else key == "thickness" || (it != zero && it != off) }
                 "curves" -> keep(out, k, value) { _, it -> it != identity }
                 "look" -> if (value.str() != Look.NONE.name) out[k] = value
                 "lookStrength" -> if (value.num() != 1.0) out[k] = round(value)

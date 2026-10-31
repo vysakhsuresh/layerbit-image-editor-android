@@ -18,6 +18,8 @@ import android.text.TextPaint
 import androidx.exifinterface.media.ExifInterface
 import com.layerbit.still.engine.Argb
 import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.FrameStyle
+import com.layerbit.still.engine.FrameStyles
 import com.layerbit.still.engine.Expand
 import com.layerbit.still.engine.Geometry
 import com.layerbit.still.engine.Geometry2D
@@ -719,6 +721,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     // ------------------------------------------------------------------ frame
 
     private fun frame(picture: Bitmap, f: Frame, check: () -> Unit): Bitmap {
+        if (f.style != FrameStyle.PLAIN) return styledFrame(picture, f, check)
         val canvas = Geometry2D.Size(picture.width, picture.height)
         val size = Geometry2D.framedSize(canvas, f)
         val out = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
@@ -755,6 +758,54 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             c.drawRoundRect(RectF(left, top, left + canvas.width, top + canvas.height), radius, radius, paint)
         } else {
             c.drawBitmap(picture, left, top, paint)
+        }
+        return out
+    }
+
+    /**
+     * A designed frame: every pixel of it decided by [FrameStyles], over the blurred copy when
+     * asked; only the caption's letters are Android's, in the box the engine gives them.
+     */
+    private fun styledFrame(picture: Bitmap, f: Frame, check: () -> Unit): Bitmap {
+        val w = picture.width; val h = picture.height
+        val layout = FrameStyles.layout(w, h, f)
+        val px = IntArray(w * h)
+        picture.getPixels(px, 0, w, 0, 0, w, h)
+        val backdrop = if (f.blurredFill) {
+            val cover = max(layout.width.toFloat() / w, layout.height.toFloat() / h)
+            val small = scale(picture, max(1, (w * cover / 8).roundToInt()), max(1, (h * cover / 8).roundToInt()))
+            val sp = IntArray(small.width * small.height)
+            small.getPixels(sp, 0, small.width, 0, 0, small.width, small.height)
+            val blurred = Spatial.boxBlur(sp, small.width, small.height, max(2, small.width / 40), check = check)
+            val full = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
+            Canvas(full).apply {
+                val b = Bitmap.createBitmap(blurred, small.width, small.height, Bitmap.Config.ARGB_8888)
+                drawBitmap(b, null, RectF(0f, 0f, layout.width.toFloat(), layout.height.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+                drawColor(Color.argb(60, 0, 0, 0))
+                b.recycle()
+            }
+            if (small !== picture) small.recycle()
+            IntArray(layout.width * layout.height).also { full.getPixels(it, 0, layout.width, 0, 0, layout.width, layout.height); full.recycle() }
+        } else null
+        check()
+        val pixels = FrameStyles.render(px, w, h, f, backdrop, check)
+        val out = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
+        out.setPixels(pixels, 0, layout.width, 0, 0, layout.width, layout.height)
+        val box = layout.caption
+        val words = f.caption.trim()
+        if (box != null && words.isNotEmpty() && box.height >= 2f) {
+            val tp = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+                color = FrameStyles.captionInk(f)
+                typeface = if (layout.captionCentred) Typeface.create(Typeface.SERIF, Typeface.ITALIC) else Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                textSize = box.height * if (layout.captionCentred) 0.5f else 0.42f
+            }
+            val measured = tp.measureText(words)
+            if (measured > box.width) tp.textSize *= box.width / measured
+            val tw = tp.measureText(words)
+            val x = if (layout.captionCentred) box.left + (box.width - tw) / 2f else box.left
+            val fm = tp.fontMetrics
+            val y = box.top + box.height / 2f - (fm.ascent + fm.descent) / 2f
+            Canvas(out).drawText(words, x, y, tp)
         }
         return out
     }

@@ -491,10 +491,13 @@ fun markLabel(kind: MarkKind): String = stringResource(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FramePanel(s: PanelScope, swatches: List<Int> = emptyList()) {
+fun FramePanel(s: PanelScope, swatches: List<Int> = emptyList(), thumbs: Map<com.layerbit.still.engine.FrameStyle?, Bitmap> = emptyMap()) {
     val f = s.recipe.frame
     fun set(block: (Frame) -> Frame) = s.change { it.copy(frame = block(it.frame)) }
     fun live(block: (Frame) -> Frame) = s.draft(s.recipe.copy(frame = block(s.recipe.frame)))
+    // Designed frames first, as pictures; a chosen style's own controls replace the plain ones below.
+    FrameStyleStrip(f, thumbs) { style -> set { if (style == null) Frame() else com.layerbit.still.engine.FrameStyles.preset(style, it) } }
+    if (f.style != com.layerbit.still.engine.FrameStyle.PLAIN) { FrameStyleControls(s, swatches); return }
     val aspects = listOf(0f to stringResource(R.string.crop_original), 1f to "1:1", 4f / 5f to "4:5", 16f / 9f to "16:9", 9f / 16f to "9:16", 3f / 2f to "3:2")
     SectionHeading(stringResource(R.string.frame_pad_to), modifier = Modifier.padding(bottom = 6.dp))
     ChipRow(aspects, f.aspect, { a -> set { it.copy(aspect = a) } })

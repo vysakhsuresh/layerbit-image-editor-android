@@ -83,6 +83,7 @@ object Geometry2D {
     /** The canvas plus the frame's padding and border. */
     fun framedSize(canvas: Size, frame: Frame): Size {
         if (frame.isIdentity) return canvas
+        if (frame.style != FrameStyle.PLAIN) return FrameStyles.layout(canvas.width, canvas.height, frame).size
         val shorter = min(canvas.width, canvas.height)
         val inset = ((frame.padding + frame.border) * shorter).roundToInt()
         var w = canvas.width + 2 * inset

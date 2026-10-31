@@ -259,12 +259,26 @@ data class Frame(
     /** Rounded picture corners, as a fraction of the shorter edge. */
     val cornerRadius: Float = 0f,
     /** Fill the padding with a blurred copy of the picture instead of a flat colour. */
-    val blurredFill: Boolean = false
+    val blurredFill: Boolean = false,
+    /** A designed frame drawn by [FrameStyles]; [FrameStyle.PLAIN] is the padding and border above. */
+    val style: FrameStyle = FrameStyle.PLAIN,
+    /** How heavy a style's own margins are, 0..1. */
+    val thickness: Float = 0.5f,
+    /** A style's colour or texture choice, below its [FrameStyle.variants]. */
+    val variant: Int = 0,
+    /** Words under an instant print or a magazine picture. */
+    val caption: String = "",
+    /** A different seed, a different tear, grain or frame number. */
+    val seed: Int = 0
 ) {
     val isIdentity: Boolean get() = this == Frame()
     val valid: Boolean
         get() = aspect.isFinite() && aspect >= 0f && aspect <= 20f && padding in 0f..0.5f && border in 0f..0.25f &&
-            cornerRadius in 0f..0.5f
+            cornerRadius in 0f..0.5f && thickness in 0f..1f && variant in 0 until style.variants && caption.length <= MAX_CAPTION
+
+    companion object {
+        const val MAX_CAPTION = 80
+    }
 }
 
 data class Recipe(
@@ -303,7 +317,7 @@ data class Recipe(
 
     /** The recipe without what belongs to one particular picture: what a preset keeps. */
     fun asPreset(): Recipe = copy(marks = emptyList(), geometry = geometry.copy(quad = Quad.IDENTITY, crop = Crop.FULL), cutout = Cutout(),
-        locals = emptyList(), portrait = portrait.asPreset(), double = DoubleExposure(), expand = Expand())
+        locals = emptyList(), portrait = portrait.asPreset(), double = DoubleExposure(), expand = Expand(), frame = frame.copy(caption = ""))
 
     companion object {
         const val MAX_MARKS = 400

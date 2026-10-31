@@ -29,7 +29,13 @@ object RecipeJson {
         "frame" to if (r.frame.isIdentity) null else jsonOf(
             "aspect" to r.frame.aspect.json(), "padding" to r.frame.padding.json(), "border" to r.frame.border.json(),
             "borderColor" to r.frame.borderColor.json(), "background" to r.frame.background.json(),
-            "cornerRadius" to r.frame.cornerRadius.json(), "blurredFill" to r.frame.blurredFill.json()
+            "cornerRadius" to r.frame.cornerRadius.json(), "blurredFill" to r.frame.blurredFill.json(),
+            // A style's fields only when there is a style: a plain frame is written as it always was.
+            "style" to r.frame.style.takeIf { it != FrameStyle.PLAIN }?.name?.json(),
+            "thickness" to r.frame.thickness.takeIf { r.frame.style != FrameStyle.PLAIN || it != 0.5f }?.json(),
+            "variant" to r.frame.variant.takeIf { it != 0 }?.json(),
+            "caption" to r.frame.caption.takeIf { it.isNotEmpty() }?.json(),
+            "seed" to r.frame.seed.takeIf { it != 0 }?.json()
         ),
         "mix" to if (r.mix.isIdentity) null else jsonOf(
             "hue" to JsonValue.Arr(r.mix.hue.map { it.json() }), "saturation" to JsonValue.Arr(r.mix.saturation.map { it.json() }),
@@ -250,8 +256,14 @@ object RecipeJson {
                 aspect = f.f("aspect"), padding = f.f("padding"), border = f.f("border"),
                 borderColor = f["borderColor"]?.num()?.toLong()?.toInt() ?: d.frame.borderColor,
                 background = f["background"]?.num()?.toLong()?.toInt() ?: d.frame.background,
-                cornerRadius = f.f("cornerRadius"), blurredFill = f["blurredFill"]?.bool() ?: false
-            ),
+                cornerRadius = f.f("cornerRadius"), blurredFill = f["blurredFill"]?.bool() ?: false,
+                // A style this app does not know yet reads as the plain frame it is drawn over.
+                style = f["style"]?.str()?.let { name -> FrameStyle.entries.firstOrNull { it.name == name } } ?: FrameStyle.PLAIN,
+                thickness = (f["thickness"]?.num()?.toFloat() ?: 0.5f).coerceIn(0f, 1f),
+                variant = f["variant"]?.num()?.toInt() ?: 0,
+                caption = f["caption"]?.str()?.take(Frame.MAX_CAPTION) ?: "",
+                seed = f["seed"]?.num()?.toInt() ?: 0
+            ).let { fr -> if (fr.variant in 0 until fr.style.variants) fr else fr.copy(variant = 0) },
             mix = o["mix"]?.let { m ->
                 fun band(key: String) = m[key]?.arr()?.map { (it.num()?.toFloat() ?: 0f).coerceIn(-1f, 1f) }?.takeIf { it.size == ColourMix.BANDS } ?: ColourMix.ZERO
                 ColourMix(band("hue"), band("saturation"), band("lightness"))

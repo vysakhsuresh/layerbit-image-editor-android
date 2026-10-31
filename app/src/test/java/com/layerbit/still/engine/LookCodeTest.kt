@@ -69,4 +69,11 @@ class LookCodeTest {
         assertTrue(LookCode.encode("", Recipe()).length < 60)
         assertEquals(Recipe(), LookCode.decode(LookCode.encode("", Recipe())).second)
     }
+
+    @Test
+    fun aFrameStyleTravelsInTheCodeEvenAtZeroThickness() {
+        val r = Recipe(frame = Frame(style = FrameStyle.MARBLE, thickness = 0f, variant = 2, seed = 5, caption = "mine"))
+        val back = LookCode.decode(LookCode.encode("Stone", r)).second
+        assertEquals(r.frame.copy(caption = ""), back.frame)
+    }
 }

@@ -10,6 +10,8 @@ import com.layerbit.still.engine.Backdrop
 import com.layerbit.still.engine.Cutout
 import com.layerbit.still.engine.CutoutMode
 import com.layerbit.still.engine.Frame
+import com.layerbit.still.engine.FrameStyle
+import com.layerbit.still.engine.FrameStyles
 import com.layerbit.still.engine.Scan
 import com.layerbit.still.engine.ScanMode
 import com.layerbit.still.engine.Scribble
@@ -136,6 +138,23 @@ class RendererTest {
         val diff = renderer.difference(small, shrunk)
         assertTrue("mean difference $diff", diff < 6.0)
         small.recycle(); large.recycle(); shrunk.recycle()
+    }
+
+    @Test
+    fun aDesignedFrameOnThePreviewIsTheFrameOnTheExport() = runBlocking {
+        val src = scene(1200, 800)
+        for (style in listOf(FrameStyle.POLAROID, FrameStyle.FILM, FrameStyle.TORN, FrameStyle.MARBLE, FrameStyle.NEON)) {
+            val r = Recipe(frame = FrameStyles.preset(style).copy(caption = "Summer", seed = 2))
+            val small = renderer.render(src, r, maxPixels = 300 * 200)
+            val large = renderer.render(src, r, maxPixels = 1200 * 800)
+            // The canvas is the one the engine promised, at both sizes.
+            assertEquals(com.layerbit.still.engine.Geometry2D.framedSize(com.layerbit.still.engine.Geometry2D.Size(1200, 800), r.frame).width, large.width)
+            assertEquals(com.layerbit.still.engine.Geometry2D.framedSize(com.layerbit.still.engine.Geometry2D.Size(300, 200), r.frame).width, small.width)
+            val shrunk = renderer.scale(large, small.width, small.height)
+            val diff = renderer.difference(small, shrunk)
+            assertTrue("$style mean difference $diff", diff < 8.0)
+            small.recycle(); large.recycle(); shrunk.recycle()
+        }
     }
 
     @Test

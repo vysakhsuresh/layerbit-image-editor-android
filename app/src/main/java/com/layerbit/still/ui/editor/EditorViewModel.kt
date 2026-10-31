@@ -114,6 +114,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val cutoutKept: Float? = null,
         /** The picture under each look, small, for the Looks strip. Filled the first time the panel opens. */
         val lookThumbs: Map<Look, Bitmap> = emptyMap(),
+        /** The picture in every frame style, small, for the Frame strip; null key is no frame. */
+        val frameThumbs: Map<com.layerbit.still.engine.FrameStyle?, Bitmap> = emptyMap(),
         /** Each effect over a small copy of the picture in the user's own colour, for the Effects strip. */
         val effectThumbs: Map<EffectKind, Bitmap> = emptyMap(),
         /** Every style of an effect the user has opened, the same way. */
@@ -689,6 +691,30 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 // The strip falls back to labels alone; the looks themselves are unaffected.
                 android.util.Log.w("Still", "look thumbnails", e)
+            }
+        }
+    }
+
+    private var frameThumbJob: Job? = null
+
+    /** Draws the picture in every frame style, once per project, for the Frame strip. */
+    fun ensureFrameThumbs() {
+        if (_ui.value.frameThumbs.isNotEmpty() || frameThumbJob?.isActive == true) return
+        frameThumbJob = viewModelScope.launch {
+            val project = _ui.value.project ?: return@launch
+            try {
+                val small = withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }
+                val thumbs = LinkedHashMap<com.layerbit.still.engine.FrameStyle?, Bitmap>()
+                thumbs[null] = renderer.finish(small, Recipe())
+                for (style in com.layerbit.still.engine.FrameStyle.entries) {
+                    thumbs[style] = renderer.finish(small, Recipe(frame = com.layerbit.still.engine.FrameStyles.preset(style).copy(caption = "")))
+                }
+                _ui.update { it.copy(frameThumbs = thumbs) }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (e: Exception) {
+                // The strip falls back to names alone; the frames themselves are unaffected.
+                android.util.Log.w("Still", "frame thumbnails", e)
             }
         }
     }
