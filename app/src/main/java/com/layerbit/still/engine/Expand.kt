@@ -476,6 +476,9 @@ object Expansion {
 
     // ------------------------------------------------------------------ smart fill: render
 
+    /** Detail above about this many levels is an object, not texture, and is softened. */
+    private const val TEXTURE_KNEE = 70.0
+
     private fun smartFill(px: IntArray, w: Int, h: Int, lay: Expand.Layout, out: IntArray, plan: Plan, check: () -> Unit) {
         // This picture's own split into colour and texture, at the plan's analysis size.
         val small = shrink(px, w, h, plan.aiw, plan.aih)
@@ -483,6 +486,15 @@ object Expansion {
         check()
         // Full pixels per analysis pixel, from the picture (the canvas rounds the same way).
         val kx = w.toDouble() / plan.aiw; val ky = h.toDouble() / plan.aih
+        // How evenly the picture's detail is spread: a texture (stripes, grass) has strong detail
+        // everywhere and keeps it far out; a picture of things has it in a few places, and those
+        // are softened as the fill moves away, so no recognisable piece repeats.
+        val mags = FloatArray(plan.aiw * plan.aih) { i -> (abs(small[i * 3] - low[i * 3]) + abs(small[i * 3 + 1] - low[i * 3 + 1]) + abs(small[i * 3 + 2] - low[i * 3 + 2])) / 3f }
+        mags.sort()
+        val typical = mags[mags.size / 2].toDouble()
+        val even = typical / (typical + 12.0)
+        val knee = TEXTURE_KNEE + 4.0 * typical
+        val floor = 0.3 + 0.65 * even
         Parallel.bands(lay.height) { from, to ->
             for (y in from until to) {
                 if (y and 0x1F == 0) check()
@@ -516,7 +528,18 @@ object Expansion {
                         db += wt * ((c and 0xFF) - bilinear(low, plan.aiw, plan.aih, su, sv, 2))
                         wsum += wt
                     }
-                    if (wsum > 0.0) { r += dr / wsum; g += dg / wsum; b += db / wsum }
+                    if (wsum > 0.0) {
+                        // Texture fades with distance from the picture, and strong detail (a face,
+                        // a stripe) is softened more than fine grain: near the edge the fill
+                        // continues the picture, further out it settles into its colours instead
+                        // of repeating recognisable pieces.
+                        val ddx = max(0, max(lay.x - x, x - (lay.x + lay.innerWidth - 1))).toDouble()
+                        val ddy = max(0, max(lay.y - y, y - (lay.y + lay.innerHeight - 1))).toDouble()
+                        val reach = Math.hypot(ddx, ddy) / max(1, min(lay.innerWidth, lay.innerHeight))
+                        val fade = 1.0 - (1.0 - floor) * smoothstep(((reach - 0.03) / 0.3).coerceIn(0.0, 1.0))
+                        fun soft(d: Double): Double = d / (1.0 + Math.abs(d) / knee) * fade
+                        r += soft(dr / wsum); g += soft(dg / wsum); b += soft(db / wsum)
+                    }
                     out[y * lay.width + x] = pack(r.toFloat(), g.toFloat(), b.toFloat())
                 }
             }
