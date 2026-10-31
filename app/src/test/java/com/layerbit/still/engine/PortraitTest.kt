@@ -253,4 +253,44 @@ class PortraitTest {
         assertEquals(0.5f, r.portrait.smooth, 0f)
         assertTrue(r.portrait.strokes.isEmpty() && r.portrait.taps.isEmpty())
     }
+
+    @Test
+    fun skinIsTakenFromThePersonNotFromAGoldenBackgroundThatOutnumbersIt() {
+        // A small warm face in the middle; most of the picture is a golden, skin-like sky.
+        val w = 160; val h = 200
+        val px = IntArray(w * h) { i ->
+            val x = i % w; val y = i / w
+            val dx = (x - 80) / 28f; val dy = (y - 95) / 36f
+            if (dx * dx + dy * dy <= 1f) Argb.pack(255, 196, 132, 104) else Argb.pack(255, 236, 196, 120)
+        }
+        val s = Portrait.skin(px, w, h)
+        val face = s.mask[95 * w + 80]; val sky = s.mask[20 * w + 20]
+        assertTrue("face $face sky $sky", face > 150 && sky < 60)
+    }
+
+    @Test
+    fun paintedAmberSkinIsFoundOnThePersonNotOnTheGoldAroundIt() {
+        // Stylised art: deep amber skin with almost no blue, on a gold background of the same hue
+        // and a grey misty sky. The subject mask says where the person is.
+        val w = 160; val h = 240
+        val person = IntArray(w * h); val px = IntArray(w * h)
+        for (y in 0 until h) for (x in 0 until w) {
+            val i = y * w + x
+            val inPerson = (x - 80) * (x - 80) / (40f * 40f) + (y - 130) * (y - 130) / (90f * 90f) <= 1f
+            person[i] = if (inPerson) 255 else 0
+            val shade = ((x * 7 + y * 3) % 9) - 4
+            px[i] = when {
+                y < 50 -> Argb.pack(255, 150 + shade, 150 + shade, 160 + shade)                // misty sky
+                inPerson -> Argb.pack(255, 235 + shade, 150 + shade, 56 + shade)              // painted skin
+                else -> Argb.pack(255, 200 + shade, 130 + shade, 20 + shade)                  // gold
+            }
+        }
+        val s = Portrait.skin(px, w, h, prior = person)
+        assertTrue("person ${s.mask[130 * w + 80]}", s.mask[130 * w + 80] > 150)
+        assertTrue("gold ${s.mask[200 * w + 10]}", s.mask[200 * w + 10] < 30)
+        assertTrue("sky ${s.mask[20 * w + 80]}", s.mask[20 * w + 80] < 30)
+        // With no person known the painter's range is never used: gold alone is not skin.
+        val none = Portrait.skin(px, w, h)
+        assertTrue("gold without a person ${none.mask[200 * w + 10]}", none.mask[200 * w + 10] < 100)
+    }
 }

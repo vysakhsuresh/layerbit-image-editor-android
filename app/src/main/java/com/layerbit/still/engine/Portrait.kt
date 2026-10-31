@@ -1,5 +1,6 @@
 package com.layerbit.still.engine
 
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -124,7 +125,8 @@ object Portrait {
     }
 
     /** 0..1: how much a colour looks like skin to the broad, picture-independent gate. [wide] loosens it for the adapted pass. */
-    fun genericSkin(c: Int, wide: Boolean = false): Float {
+    fun genericSkin(c: Int, wide: Boolean = false, painted: Boolean = false): Float {
+        if (painted) return paintedSkin(c, wide)
         val r = Argb.red(c); val g = Argb.green(c); val b = Argb.blue(c)
         // Skin is red-led: red the largest channel, blue the smallest or close to it.
         if (r < g || r <= b || r < 45) return 0f
@@ -137,11 +139,79 @@ object Portrait {
     }
 
     /**
+     * Skin as painters and colour graders leave it: any warm hue from rosy to amber at any
+     * saturation, red leading green leading blue. Far too broad to look for skin with on its own;
+     * it is only tried when the ordinary range finds little skin where a person is, and the
+     * cluster, texture and subject gates still narrow it to the face.
+     */
+    private fun paintedSkin(c: Int, wide: Boolean): Float {
+        val r = Argb.red(c); val g = Argb.green(c); val b = Argb.blue(c)
+        if (r < g || g < b || r < 60) return 0f
+        val hsv = Palette.hsv(r, g, b)
+        val hue = hsv[0]; val sat = hsv[1]; val v = hsv[2]
+        val lo = if (wide) 0f else 4f; val hi = if (wide) 48f else 42f
+        val inHue = smoothstep(lo - 4f, lo + 2f, hue) * (1f - smoothstep(hi - 4f, hi + 4f, hue))
+        return inHue * smoothstep(0.12f, 0.22f, sat) * smoothstep(0.22f, 0.35f, v) * (1f - smoothstep(0.985f, 1f, v * (1f - sat)))
+    }
+
+    /**
      * The skin on [pixels] (at the analysis size): broad gate, the dominant cluster measured and
      * the gate tightened round it, the texture gate, small holes closed, the [subject] mask if
      * given, then the user's [strokes], then a light feather.
      */
-    fun skin(pixels: IntArray, w: Int, h: Int, strokes: List<SkinStroke> = emptyList(), subject: IntArray? = null, check: () -> Unit = {}): Skin {
+    fun skin(pixels: IntArray, w: Int, h: Int, strokes: List<SkinStroke> = emptyList(), subject: IntArray? = null, check: () -> Unit = {}, prior: IntArray? = null): Skin {
+        val first = skinOn(pixels, w, h, strokes, subject, check, prior)
+        // A strong colour grade (golden hour, a teal-orange look) can push every face out of the
+        // range skin is looked for in, so skin is also looked for with the picture's own cast taken
+        // out, the way the eye adapts. Only the search sees the neutral copy, never the picture.
+        // The answer that finds more skin where a person is likely to be wins.
+        val where = prior ?: subject
+        var best = first; var bestScore = personal(first, where)
+        neutralised(pixels)?.let { neutral ->
+            val second = skinOn(neutral, w, h, strokes, subject, check, prior)
+            val score = personal(second, where)
+            if (score > bestScore * 1.2f) { best = second; bestScore = score }
+        }
+        // Painted or heavily graded skin (deep amber, almost no blue) is outside any camera's range:
+        // only if little skin was found where the person is, look with the painter's range.
+        // Only with a person found: the painter's range is too broad to trust anywhere else.
+        val person = prior ?: subject
+        if (bestScore < 0.12f && person != null && Segment.coverage(person) in 0.03f..0.85f) {
+            val third = skinOn(pixels, w, h, strokes, person, check, prior, painted = true)
+            val score = personal(third, where)
+            if (score > bestScore * 1.5f && score > 0.06f) best = third
+        }
+        return best
+    }
+
+    /** How much skin lies where a person is likely to be: the subject if known, else the middle of the frame. */
+    private fun personal(s: Skin, where: IntArray?): Float {
+        if (!s.found) return 0f
+        var sum = 0.0; var weight = 0.0
+        for (i in s.mask.indices) {
+            val wgt = if (where != null) where[i] / 255.0 else {
+                val dx = ((i % s.width) + 0.5) / s.width - 0.5; val dy = ((i / s.width) + 0.5) / s.height - 0.45
+                kotlin.math.exp(-(dx * dx + dy * dy) / (2 * 0.25 * 0.25))
+            }
+            sum += wgt * s.mask[i] / 255.0; weight += wgt
+        }
+        return if (weight > 0) (sum / weight).toFloat() else 0f
+    }
+
+    /** [pixels] with the cast of what ought to be grey removed, or null when there is none to speak of. */
+    internal fun neutralised(pixels: IntArray): IntArray? {
+        val e = AutoWhite.estimate(pixels) ?: return null
+        val mean = (e.r + e.g + e.b) / 3f
+        if (mean < 8f) return null
+        val gr = (mean / max(1, e.r)).coerceIn(0.5f, 2.2f); val gg = (mean / max(1, e.g)).coerceIn(0.5f, 2.2f); val gb = (mean / max(1, e.b)).coerceIn(0.5f, 2.2f)
+        if (abs(gr - 1f) < 0.06f && abs(gg - 1f) < 0.06f && abs(gb - 1f) < 0.06f) return null
+        return IntArray(pixels.size) { i ->
+            val c = pixels[i]
+            Argb.pack(Argb.alpha(c), (Argb.red(c) * gr).roundToInt().coerceIn(0, 255), (Argb.green(c) * gg).roundToInt().coerceIn(0, 255), (Argb.blue(c) * gb).roundToInt().coerceIn(0, 255))
+        }
+    }
+
+    private fun skinOn(pixels: IntArray, w: Int, h: Int, strokes: List<SkinStroke>, subject: IntArray?, check: () -> Unit, prior: IntArray?, painted: Boolean = false): Skin {
         val n = w * h
         val shorter = min(w, h)
         val ys = FloatArray(n); val cbs = FloatArray(n); val crs = FloatArray(n); val generic = FloatArray(n)
@@ -149,23 +219,38 @@ object Portrait {
             val c = pixels[i]
             val ycc = ycbcr(c)
             ys[i] = ycc[0]; cbs[i] = ycc[1]; crs[i] = ycc[2]
-            generic[i] = genericSkin(c)
+            generic[i] = genericSkin(c, painted = painted)
         }
         check()
-        val texture = textureGate(ys, w, h, max(1, (0.005f * shorter).roundToInt()))
+        // Painted and sharpened skin carries more shading per pixel than a camera's: a looser gate.
+        val texture = if (painted) textureGate(ys, w, h, max(1, (0.005f * shorter).roundToInt()), 16f, 34f)
+        else textureGate(ys, w, h, max(1, (0.005f * shorter).roundToInt()))
         // The dominant skin cluster: a Cb/Cr histogram of confident, smooth skin, its peak, and the
         // mean and spread of the pixels near that peak.
         val bins = 32
         val hist = FloatArray(bins * bins)
         var confident = 0
+        // Where a person is likely to be: the subject, when one is known, else the middle of the
+        // frame. Only the choice of skin colour leans on it - a golden sky or a tiger that
+        // outnumbers the skin must not decide what skin looks like - not the mask itself.
+        val (bias, guide) = prior?.let { p -> p to subject } ?: (subject to subject)
+        val lean = FloatArray(n) { i ->
+            val from = bias ?: guide
+            if (from != null) 0.15f + 0.85f * from[i] / 255f
+            else {
+                val dx = ((i % w) + 0.5f) / w - 0.5f; val dy = ((i / w) + 0.5f) / h - 0.45f
+                0.25f + 0.75f * kotlin.math.exp(-(dx * dx + dy * dy) / (2f * 0.3f * 0.3f))
+            }
+        }
         for (i in 0 until n) {
             val wgt = generic[i] * texture[i]
             if (wgt < 0.5f) continue
             confident++
             val bx = (cbs[i] / 8f).toInt().coerceIn(0, bins - 1); val by = (crs[i] / 8f).toInt().coerceIn(0, bins - 1)
-            hist[by * bins + bx] += wgt
+            hist[by * bins + bx] += wgt * lean[i]
         }
         var found = confident >= max(16, n / 400)
+        val clusterless = painted
         var mCb = CB0; var mCr = CR0; var sCb = CB_SPREAD; var sCr = CR_SPREAD
         if (found) {
             // Smoothed peak, so one noisy bin does not win.
@@ -182,7 +267,8 @@ object Portrait {
                 if (wgt < 0.5f) continue
                 val dcb = cbs[i] - pcb; val dcr = crs[i] - pcr
                 if (dcb * dcb + dcr * dcr > 14f * 14f) continue
-                sw += wgt; a += wgt * cbs[i]; b += wgt * crs[i]; aa += wgt * cbs[i] * cbs[i]; bb += wgt * crs[i] * crs[i]
+                val lw = wgt * lean[i]
+                sw += lw; a += lw * cbs[i]; b += lw * crs[i]; aa += lw * cbs[i] * cbs[i]; bb += lw * crs[i] * crs[i]
             }
             if (sw > 8.0) {
                 mCb = (a / sw).toFloat(); mCr = (b / sw).toFloat()
@@ -194,11 +280,11 @@ object Portrait {
         check()
         val raw = IntArray(n)
         for (i in 0 until n) {
-            val adapted = if (found) {
+            val adapted = if (found && !clusterless) {
                 val dcb = (cbs[i] - mCb) / sCb; val dcr = (crs[i] - mCr) / (if (crs[i] > mCr) sCr * 1.8f else sCr)
                 1f - smoothstep(1.4f, 2.2f, sqrt(dcb * dcb + dcr * dcr))
             } else 1f
-            val g = if (found) genericSkin(pixels[i], wide = true) else generic[i]
+            val g = if (found) genericSkin(pixels[i], wide = true, painted = painted) else generic[i]
             raw[i] = (min(g, adapted) * 255f).roundToInt()
         }
         // Close small holes (a highlight on a cheek, a freckle) before the texture gate cuts the busy parts back out.
@@ -215,13 +301,13 @@ object Portrait {
     }
 
     /** 1 where the luminance is smooth, falling to 0 where its local spread is wide: busy surfaces are not skin. */
-    private fun textureGate(y: FloatArray, w: Int, h: Int, r: Int): FloatArray {
+    private fun textureGate(y: FloatArray, w: Int, h: Int, r: Int, lo: Float = 8f, hi: Float = 16f): FloatArray {
         val mean = boxMean(y, w, h, r)
         val sq = FloatArray(y.size) { y[it] * y[it] }
         val meanSq = boxMean(sq, w, h, r)
         return FloatArray(y.size) { i ->
             val sd = sqrt((meanSq[i] - mean[i] * mean[i]).coerceAtLeast(0f))
-            1f - smoothstep(8f, 16f, sd)
+            1f - smoothstep(lo, hi, sd)
         }
     }
 

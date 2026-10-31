@@ -358,8 +358,10 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         small.getPixels(px, 0, size.width, 0, 0, size.width, size.height)
         if (small !== base) small.recycle()
         check()
-        val subject = if (p.subjectOnly) maskFor(base, Cutout(), key, check).mask else null
-        val skin = Portrait.skin(px, size.width, size.height, p.strokes, subject, check)
+        // The subject guides which colour is skin always, and limits the mask only when asked.
+        val found = runCatching { maskFor(base, Cutout(), key, check).mask }.getOrNull()
+        val subject = if (p.subjectOnly) found else null
+        val skin = Portrait.skin(px, size.width, size.height, p.strokes, subject, check, prior = found)
         if (key != null) synchronized(skinCache) { skinCache.removeAll { it.key == cacheKey }; skinCache.addFirst(SkinEntry(cacheKey, skin)); while (skinCache.size > 2) skinCache.removeLast() }
         return skin
     }
