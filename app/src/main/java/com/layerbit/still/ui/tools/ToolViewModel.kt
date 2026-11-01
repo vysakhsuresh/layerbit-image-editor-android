@@ -259,7 +259,7 @@ class ToolViewModel(app: Application) : AndroidViewModel(app) {
                 val p = still.exporter.writeInto(folder, f)
                 if (p == null) saved++ else { problem = p; break }
             }
-            done(problem?.let { Strings.get(R.string.tools_saved_some, saved, it) } ?: Strings.get(R.string.tools_saved_all, saved))
+            done(problem?.let { Strings.get(R.string.tools_saved_some, saved, it) } ?: Strings.plural(R.plurals.tools_saved_all, saved))
         }
     }
 

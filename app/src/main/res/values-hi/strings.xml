@@ -572,7 +572,10 @@
     <string name="tools_start_again">फिर से शुरू करें</string>
     <string name="tools_edit_result">संपादित करें</string>
     <string name="tools_saved_one">%1$s सहेजी गई.</string>
-    <string name="tools_saved_all">%1$d तस्वीरें सहेजी गईं.</string>
+    <plurals name="tools_saved_all">
+        <item quantity="one">%1$d तस्वीर सहेजी गई.</item>
+        <item quantity="other">%1$d तस्वीरें सहेजी गईं.</item>
+    </plurals>
     <string name="tools_saved_some">%1$d सहेजीं, फिर रुक गया: %2$s</string>
     <string name="tools_too_many">पहली %1$d जोड़ी गईं; एक बैच में अधिकतम इतनी ही होती हैं.</string>
     <string name="tools_add_first">पहले एक तस्वीर जोड़ें.</string>
@@ -680,11 +683,20 @@
     <string name="tool_process_action">चलाएं</string>
     <string name="pipeline_steps">चरण</string>
     <string name="pipeline_steps_hint">जो चाहिए वह चालू करें. चरण एक ही बार में मिलकर चलते हैं, इसलिए पचास तस्वीरों का आकार बदलना, 100 KB के नीचे लाना, वॉटरमार्क लगाना और साफ़ करना एक टैप है.</string>
-    <string name="pipeline_total">%1$d तस्वीरें, %2$s</string>
+    <plurals name="pipeline_total">
+        <item quantity="one">%1$d तस्वीर, %2$s</item>
+        <item quantity="other">%1$d तस्वीरें, %2$s</item>
+    </plurals>
     <string name="pipeline_run_pdf">%1$d पेज की PDF बनाएँ</string>
-    <string name="pipeline_run">%1$d तस्वीरों पर चलाएं</string>
+    <plurals name="pipeline_run">
+        <item quantity="one">%1$d तस्वीर पर चलाएं</item>
+        <item quantity="other">%1$d तस्वीरों पर चलाएं</item>
+    </plurals>
     <string name="pipeline_run_empty">शुरू करने के लिए तस्वीरें जोड़ें</string>
-    <string name="pipeline_run_clean">%1$d तस्वीरों से छिपा डेटा हटाएं</string>
+    <plurals name="pipeline_run_clean">
+        <item quantity="one">%1$d तस्वीर से छिपा डेटा हटाएं</item>
+        <item quantity="other">%1$d तस्वीरों से छिपा डेटा हटाएं</item>
+    </plurals>
     <string name="step_resize_detail">सबसे लंबा किनारा, प्रतिशत या सटीक पिक्सेल</string>
     <string name="step_under_detail">जो समाए उसमें सबसे अच्छी गुणवत्ता, फिर ज़रूरत हो तभी छोटा</string>
     <string name="step_format_detail">JPEG, PNG, WebP या लॉसलेस WebP; बंद रहने पर हर तस्वीर का अपना फ़ॉर्मैट</string>
@@ -731,7 +743,10 @@
     <string name="cutout_keep_brush">रखें</string>
     <string name="cutout_remove_brush">हटाएं</string>
     <string name="cutout_hint_first">लाल धुलाई वह है जो हटेगा. गलती से लाल हुए हिस्से पर “रखें” से और गलती से रखे गए पर “हटाएं” से पेंट करें. हर स्ट्रोक पूर्ववत हो सकता है.</string>
-    <string name="cutout_hint_strokes">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है. लोकल, इफ़ेक्ट्स और पोर्ट्रेट भी यही सब्जेक्ट लेते हैं, इसलिए ये स्ट्रोक वहाँ भी ठीक करते हैं.</string>
+    <plurals name="cutout_hint_strokes">
+        <item quantity="one">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है. लोकल, इफ़ेक्ट्स और पोर्ट्रेट भी यही सब्जेक्ट लेते हैं, इसलिए ये स्ट्रोक वहाँ भी ठीक करते हैं.</item>
+        <item quantity="other">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है. लोकल, इफ़ेक्ट्स और पोर्ट्रेट भी यही सब्जेक्ट लेते हैं, इसलिए ये स्ट्रोक वहाँ भी ठीक करते हैं.</item>
+    </plurals>
     <string name="cutout_clear_strokes">स्ट्रोक साफ़ करें</string>
     <string name="cutout_threshold">स्याही की सीमा</string>
     <string name="cutout_ink_hint">गहरे और तेज़ रंग के निशान रहते हैं; कागज़ हटता है. ऑटो पन्ने से तय करता है; हल्की स्याही रखने के लिए सीमा बढ़ाएं.</string>
@@ -974,7 +989,10 @@
     <string name="portrait_tool_teeth">दाँत</string>
     <string name="portrait_brush_add">त्वचा जोड़ें</string>
     <string name="portrait_brush_remove">त्वचा नहीं</string>
-    <string name="portrait_brush_hint">जो छूट गया या जो त्वचा नहीं है, उस पर ब्रश चलाइए. अब तक %1$d स्ट्रोक.</string>
+    <plurals name="portrait_brush_hint">
+        <item quantity="one">जो छूट गया या जो त्वचा नहीं है, उस पर ब्रश चलाइए. अब तक %1$d स्ट्रोक.</item>
+        <item quantity="other">जो छूट गया या जो त्वचा नहीं है, उस पर ब्रश चलाइए. अब तक %1$d स्ट्रोक.</item>
+    </plurals>
     <string name="portrait_eye_hint">हर आँख पर टैप करें, वह साफ़ और चमकदार दिखेगी. दोबारा टैप करने से हट जाएगा. अब तक %1$d.</string>
     <string name="portrait_eyes">आँखों की साफ़ी</string>
     <string name="portrait_teeth_hint">पीलापन हटाने के लिए दाँतों पर टैप करें. होंठ और मसूड़े नहीं छुए जाते. अब तक %1$d.</string>

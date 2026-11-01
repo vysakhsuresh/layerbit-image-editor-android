@@ -72,7 +72,7 @@ fun PortraitPanel(
         PortraitTool.BRUSH -> {
             ChipRow(listOf(true to stringResource(R.string.portrait_brush_add), false to stringResource(R.string.portrait_brush_remove)), add, onAdd, modifier = Modifier.padding(top = 6.dp))
             Knob(stringResource(R.string.mark_size), width, 0.01f..0.2f, onChange = onWidth, onDone = {}, onReset = { onWidth(0.05f) }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
-            Hint(stringResource(R.string.portrait_brush_hint, p.strokes.size))
+            Hint(androidx.compose.ui.res.pluralStringResource(R.plurals.portrait_brush_hint, p.strokes.size, p.strokes.size))
             if (p.strokes.isNotEmpty()) TextButton(onClick = onClearStrokes) { Text(stringResource(R.string.cutout_clear_strokes), color = StillColors.Muted) }
         }
         PortraitTool.EYE -> {

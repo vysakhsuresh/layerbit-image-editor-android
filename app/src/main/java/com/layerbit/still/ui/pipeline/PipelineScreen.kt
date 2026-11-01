@@ -208,7 +208,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                         Text(if (shown.unitsTotal > 0) "${shown.unitsDone} / ${shown.unitsTotal}" else shown.label, style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.padding(start = 12.dp))
                     }
                 } else {
-                    val label = when { ui.files.isEmpty() -> stringResource(R.string.pipeline_run_empty); vm.steps.pdfOn -> stringResource(R.string.pipeline_run_pdf, ui.files.size); vm.steps.anyOn -> stringResource(R.string.pipeline_run, ui.files.size); else -> stringResource(R.string.pipeline_run_clean, ui.files.size) }
+                    val label = when { ui.files.isEmpty() -> stringResource(R.string.pipeline_run_empty); vm.steps.pdfOn -> stringResource(R.string.pipeline_run_pdf, ui.files.size); vm.steps.anyOn -> androidx.compose.ui.res.pluralStringResource(R.plurals.pipeline_run, ui.files.size, ui.files.size); else -> androidx.compose.ui.res.pluralStringResource(R.plurals.pipeline_run_clean, ui.files.size, ui.files.size) }
                     PrimaryButton(label, onClick = batchRun, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                 }
             }
@@ -225,7 +225,7 @@ private fun InputRow(files: List<StillFile>, thumbnail: suspend (StillFile) -> a
         for (f in files) InputChip(f, thumbnail, onRemove = { onRemove(f) })
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.pipeline_total, files.size, FitSize.sizeText(files.sumOf { it.sizeBytes })), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.weight(1f))
+        Text(androidx.compose.ui.res.pluralStringResource(R.plurals.pipeline_total, files.size, files.size, FitSize.sizeText(files.sumOf { it.sizeBytes })), style = MaterialTheme.typography.bodySmall, color = StillColors.Dim, modifier = Modifier.weight(1f))
         TextButton(onClick = onClear) { Text(stringResource(R.string.tools_clear_all), color = StillColors.Muted) }
     }
 }

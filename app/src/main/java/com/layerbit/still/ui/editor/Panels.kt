@@ -652,7 +652,7 @@ fun CutoutPanel(s: PanelScope, keep: Boolean, onKeep: (Boolean) -> Unit, width: 
                 else SecondaryButton(stringResource(R.string.cutout_remove_brush), onClick = { onKeep(false) }, modifier = Modifier.weight(1f), tall = false)
             }
             Knob(stringResource(R.string.mark_size), width, 0.01f..0.2f, onChange = onWidth, onDone = {}, onReset = { onWidth(0.06f) }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
-            Hint(stringResource(if (c.scribbles.isEmpty()) R.string.cutout_hint_first else R.string.cutout_hint_strokes, c.scribbles.size))
+            Hint(if (c.scribbles.isEmpty()) stringResource(R.string.cutout_hint_first) else androidx.compose.ui.res.pluralStringResource(R.plurals.cutout_hint_strokes, c.scribbles.size, c.scribbles.size))
             if (c.scribbles.isNotEmpty()) TextButton(onClick = onClearStrokes) { Text(stringResource(R.string.cutout_clear_strokes), color = StillColors.Muted) }
             ToggleRow(stringResource(R.string.cutout_refine), c.refine, { v -> s.change { it.copy(cutout = it.cutout.copy(refine = v)) } }, detail = stringResource(R.string.cutout_refine_detail))
             Knob(stringResource(R.string.cutout_feather), c.feather, 0f..0.05f, onChange = { v -> s.draft(s.recipe.copy(cutout = c.copy(feather = v))) }, onDone = s.commit, onReset = { s.change { it.copy(cutout = it.cutout.copy(feather = 0.004f)) } }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
