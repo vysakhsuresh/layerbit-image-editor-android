@@ -326,4 +326,16 @@ class EffectsTest {
             x += 0.0137f
         }
     }
+
+    @Test
+    fun blackAndWhiteFiltersDarkenTheSkyAndKeepGreyAlone() {
+        val sky = Argb.pack(255, 70, 130, 220); val grey = Argb.pack(255, 128, 128, 128)
+        fun bw(c: Int, style: Int) = Effects.applyOne(IntArray(64) { c }, 8, 8, Effect(EffectKind.BLACK_WHITE, style = style, extra = 0f))[0]
+        val neutral = bw(sky, 0); val red = bw(sky, 1); val blue = bw(sky, 5)
+        org.junit.Assert.assertEquals("grey out", Argb.red(neutral), Argb.blue(neutral))
+        org.junit.Assert.assertTrue("red filter darkens a blue sky", Argb.red(red) < Argb.red(neutral) - 30)
+        org.junit.Assert.assertTrue("blue filter lightens it", Argb.red(blue) > Argb.red(neutral) + 20)
+        for (s in 0 until EffectKind.BLACK_WHITE.styles) org.junit.Assert.assertTrue(kotlin.math.abs(Argb.red(bw(grey, s)) - 128) <= 1)
+        org.junit.Assert.assertEquals(1f, Effect(EffectKind.BLACK_WHITE).strength)
+    }
 }

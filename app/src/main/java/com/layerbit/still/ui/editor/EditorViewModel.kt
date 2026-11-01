@@ -749,7 +749,11 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         effectJob = viewModelScope.launch {
             try {
                 val small = effectSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { effectSmall = it }
-                fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf((if (k == EffectKind.VIGNETTE) Effect.added(k).copy(style = style, strength = 0.8f) else Effect(k, style = style, strength = 0.8f, size = 0.12f))))
+                fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf(when (k) {
+                    EffectKind.VIGNETTE -> Effect.added(k).copy(style = style, strength = 0.8f)
+                    EffectKind.BLACK_WHITE -> Effect(k, style = style)
+                    else -> Effect(k, style = style, strength = 0.8f, size = 0.12f)
+                }))
                 // The open effect's styles first, since those are what the user is looking at.
                 if (kind != null && (effectThumbKey != baseRecipe || _ui.value.effectStyleThumbs[kind] == null)) {
                     val styles = (0 until kind.styles).map { previewIdle(); renderer.finish(small, sample(kind, it)) }

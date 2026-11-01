@@ -68,6 +68,7 @@ fun effectLabelRes(kind: EffectKind): Int = when (kind) {
     EffectKind.TONAL_CONTRAST -> R.string.effect_tonal_contrast
     EffectKind.HDR_SCAPE -> R.string.effect_hdr_scape
     EffectKind.DRAMA -> R.string.effect_drama
+    EffectKind.BLACK_WHITE -> R.string.effect_black_white
     EffectKind.GLAMOUR_GLOW -> R.string.effect_glamour_glow
     EffectKind.GRUNGE -> R.string.effect_grunge
     EffectKind.RETROLUX -> R.string.effect_retrolux
@@ -82,6 +83,7 @@ fun effectStyleRes(kind: EffectKind): List<Int> = when (kind) {
     EffectKind.TONAL_CONTRAST -> listOf(R.string.effect_style_fine_detail, R.string.effect_style_mid_tones, R.string.effect_style_broad, R.string.effect_style_balanced)
     EffectKind.HDR_SCAPE -> listOf(R.string.effect_style_nature, R.string.effect_style_people, R.string.effect_style_fine, R.string.effect_style_strong)
     EffectKind.DRAMA -> listOf(R.string.effect_style_bright, R.string.effect_style_dark, R.string.effect_style_silver, R.string.effect_style_grit)
+    EffectKind.BLACK_WHITE -> listOf(R.string.effect_style_neutral, R.string.effect_filter_red, R.string.effect_filter_orange, R.string.effect_filter_yellow, R.string.effect_filter_green, R.string.effect_filter_blue)
     EffectKind.GLAMOUR_GLOW -> listOf(R.string.effect_style_soft, R.string.effect_style_warm, R.string.effect_style_dreamy, R.string.effect_style_bloom)
     EffectKind.GRUNGE -> listOf(R.string.effect_style_dust, R.string.effect_style_rust, R.string.effect_style_concrete, R.string.effect_style_teal)
     EffectKind.RETROLUX -> listOf(R.string.effect_style_summer, R.string.effect_style_amber, R.string.effect_style_faded, R.string.effect_style_rose)
@@ -93,6 +95,7 @@ fun effectStyleRes(kind: EffectKind): List<Int> = when (kind) {
 fun effectExtraRes(kind: EffectKind): Int = when (kind) {
     EffectKind.AMBIANCE, EffectKind.HDR_SCAPE, EffectKind.DRAMA -> R.string.effect_extra_saturation
     EffectKind.TONAL_CONTRAST -> R.string.effect_extra_protect
+    EffectKind.BLACK_WHITE -> R.string.effect_extra_contrast
     EffectKind.GLAMOUR_GLOW -> R.string.effect_extra_warmth
     EffectKind.GRUNGE -> R.string.effect_extra_texture
     EffectKind.RETROLUX -> R.string.effect_extra_scratches

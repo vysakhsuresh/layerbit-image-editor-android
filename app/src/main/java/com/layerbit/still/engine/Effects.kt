@@ -36,6 +36,8 @@ enum class EffectKind(
     HDR_SCAPE(4, 0f..1f, -1f..1f, 0f, Effects.Stage.TONE),
     /** Heavy local contrast with the colour drained: the gritty look. */
     DRAMA(4, 0f..1f, -1f..1f, 0f, Effects.Stage.TONE),
+    /** Black and white through a coloured filter, as on film: red darkens blue skies, green lightens leaves. The extra is contrast. */
+    BLACK_WHITE(6, 0f..1f, -1f..1f, 0.15f, Effects.Stage.TONE),
     /** A soft glow that spreads from the highlights, warm or cool. */
     GLAMOUR_GLOW(4, 0f..1f, -1f..1f, 0f, Effects.Stage.TONE),
     /** A generated stained texture and a colour grade over the picture. */
@@ -49,7 +51,8 @@ enum class EffectKind(
     /** Darkened (or brightened) surroundings around an oval you place, size and turn; the extra is its softness. */
     VIGNETTE(2, 0f..1f, 0f..1f, 0.5f, Effects.Stage.LENS);
 
-    val defaultStrength: Float get() = 0.5f
+    /** Black and white starts fully grey; the rest start halfway. */
+    val defaultStrength: Float get() = if (this == BLACK_WHITE) 1f else 0.5f
 }
 
 /**
@@ -128,6 +131,7 @@ object Effects {
             EffectKind.TONAL_CONTRAST -> tonalContrast(px, w, h, e, scale, check)
             EffectKind.HDR_SCAPE -> hdr(px, w, h, e, scale, check)
             EffectKind.DRAMA -> drama(px, w, h, e, scale, check)
+            EffectKind.BLACK_WHITE -> blackWhite(px, w, h, e)
             EffectKind.GLAMOUR_GLOW -> glow(px, w, h, e, scale, check)
             EffectKind.GRUNGE -> grunge(px, w, h, e, scale, check)
             EffectKind.RETROLUX -> retrolux(px, w, h, e, scale, check)
@@ -268,6 +272,38 @@ object Effects {
                 // A soft knee so a strong push compresses rather than clips.
                 val nl = nb + 0.6f * softTanh(d * s / 0.6f)
                 out[i] = finish(px[i], nl - li, satFactor, plainSaturation = true)
+            }
+        }
+        return out
+    }
+
+    // ------------------------------------------------------------------ black and white
+
+    /**
+     * How much red, green and blue make the grey, per filter: neutral, then red, orange,
+     * yellow, green and blue glass in front of the lens. Each row adds up to one, so a grey
+     * picture stays exactly as bright whichever filter is on.
+     */
+    private val BW_FILTERS = arrayOf(
+        floatArrayOf(0.299f, 0.587f, 0.114f),  // neutral
+        floatArrayOf(0.80f, 0.30f, -0.10f),    // red: skies go dark, skin goes pale
+        floatArrayOf(0.60f, 0.45f, -0.05f),    // orange
+        floatArrayOf(0.45f, 0.55f, 0.00f),     // yellow
+        floatArrayOf(0.15f, 0.80f, 0.05f),     // green: leaves go light
+        floatArrayOf(0.05f, 0.30f, 0.65f)      // blue
+    )
+
+    private fun blackWhite(px: IntArray, w: Int, h: Int, e: Effect): IntArray {
+        val f = BW_FILTERS[e.style]
+        val s = e.strength; val k = e.extra
+        val out = IntArray(px.size)
+        Parallel.bands(h) { from, to ->
+            for (i in from * w until to * w) {
+                val c = px[i]
+                val r = ((c shr 16) and 0xFF) / 255f; val g = ((c shr 8) and 0xFF) / 255f; val b = (c and 0xFF) / 255f
+                var grey = (f[0] * r + f[1] * g + f[2] * b).coerceIn(0f, 1f)
+                grey = if (k >= 0f) sCurve(grey, k * 0.5f) else grey + (grey - 0.5f) * k * 0.5f
+                out[i] = pack(c, r + (grey - r) * s, g + (grey - g) * s, b + (grey - b) * s)
             }
         }
         return out

@@ -1000,6 +1000,13 @@
     <string name="effect_tonal_contrast">टोनल कंट्रास्ट</string>
     <string name="effect_hdr_scape">HDR स्केप</string>
     <string name="effect_drama">ड्रामा</string>
+    <string name="effect_black_white">ब्लैक एंड व्हाइट</string>
+    <string name="effect_filter_red">लाल फ़िल्टर</string>
+    <string name="effect_filter_orange">नारंगी फ़िल्टर</string>
+    <string name="effect_filter_yellow">पीला फ़िल्टर</string>
+    <string name="effect_filter_green">हरा फ़िल्टर</string>
+    <string name="effect_filter_blue">नीला फ़िल्टर</string>
+    <string name="effect_extra_contrast">कंट्रास्ट</string>
     <string name="effect_glamour_glow">ग्लैमर ग्लो</string>
     <string name="effect_grunge">ग्रंज</string>
     <string name="effect_retrolux">रेट्रोलक्स</string>
@@ -1188,7 +1195,7 @@
     <string name="guide_local_title">सिर्फ़ एक हिस्सा बदलें</string>
     <string name="guide_local_body">हिस्सा: ब्रश करें, ग्रेडिएंट या गोला बनाएँ, या कोई रंग टैप करें. आसमान, मुख्य चीज़ और पृष्ठभूमि अपने-आप मिलते हैं. मास्क दिखाएँ से देखें क्या बदलेगा.</string>
     <string name="guide_effects_title">स्टाइल वाले इफ़ेक्ट</string>
-    <string name="guide_effects_body">एम्बियंस, HDR, ड्रामा, ग्लो, फ़िल्म, लेंस ब्लर और खिसकाने वाला विनेट. हर एक में स्टाइल और मात्रा है, और इन्हें एक साथ लगा सकते हैं.</string>
+    <string name="guide_effects_body">एम्बियंस, HDR, ड्रामा, रंगीन फ़िल्टर वाला ब्लैक एंड व्हाइट, ग्लो, फ़िल्म, लेंस ब्लर और खिसकाने वाला विनेट. हर एक में स्टाइल और मात्रा है, और इन्हें एक साथ लगा सकते हैं.</string>
     <string name="guide_portrait_title">पोर्ट्रेट, नरमी से</string>
     <string name="guide_portrait_body">पोर्ट्रेट त्वचा ढूँढकर उसे चिकना करता है पर रोमछिद्र रखता है, लाली कम करता है और चेहरे पर रोशनी देता है. आँखें या दाँत टैप करके निखारें.</string>
     <string name="guide_expand_title">तस्वीर के चारों ओर और जगह</string>
