@@ -441,6 +441,22 @@ object LocalMasks {
         var low = 0; var all = 0
         for (i in 0 until n) if (region[i] > 0f) { all++; if (i / w >= bandFrom) low++ }
         if (all < n * 0.9f && low > (h - bandFrom) * w * 0.3f) return FloatArray(n)
+        // A sky sits above the land. Plain bright colour holding much of the lower half (a white
+        // wall down a corridor, a kitchen's tiles) is a wall, unless it is truly blue: a sky
+        // reflected in water or seen down to a low horizon still reads blue.
+        var lowerHalf = 0; var blueCount = 0
+        for (i in 0 until n) if (region[i] > 0f) {
+            if (i / w >= h / 2) lowerHalf++
+            val c = px[i]
+            if (Argb.blue(c) - Argb.red(c) > 18) blueCount++
+        }
+        var topRow = 0
+        for (y in 0 until max(1, h / 50)) for (x in 0 until w) if (region[y * w + x] > 0f) topRow++
+        val topShare = topRow.toFloat() / (w * max(1, h / 50))
+        if (all < n * 0.9f && lowerHalf > all * 0.3f && blueCount < all * 0.5f) return FloatArray(n)
+        // An overcast, misty or sunset sky (no blue to vouch for it) must also hold most of the top
+        // edge and stay up: an indoor wall, cabinets or a lit corridor reach the top in patches.
+        if (all < n * 0.9f && blueCount < all * 0.15f && (topShare < 0.5f || lowerHalf > all * 0.2f)) return FloatArray(n)
         val soft = blur(region, w, h, max(1, (0.006f * min(w, h)).roundToInt()))
         for (i in 0 until n) soft[i] = (soft[i] * step(0.1f, 0.45f, colour[i]) * 1.25f).coerceIn(0f, 1f)
         return soft

@@ -257,4 +257,21 @@ class LocalAdjustTest {
         val m = LocalMasks.sky(px, w, h)
         assertTrue("wall taken as sky: ${m.average()}", m.average() < 0.02)
     }
+
+    @Test
+    fun aWhiteWallDownMostOfTheFrameIsNotSky() {
+        // A corridor: white tiled wall from the top to the floor at 85% height, a brown door on the left.
+        val w = 120; val h = 160
+        val px = IntArray(w * h) { i ->
+            val x = i % w; val y = i / w
+            val tile = if (x % 15 == 0 || y % 20 == 0) -18 else 0
+            when {
+                y > h * 0.85 -> Argb.pack(255, 120, 118, 115)
+                x < 30 -> Argb.pack(255, 90, 50, 30)
+                else -> Argb.pack(255, 232 + tile, 234 + tile, 238 + tile)
+            }
+        }
+        val m = LocalMasks.sky(px, w, h)
+        assertTrue("wall taken as sky: ${m.average()}", m.average() < 0.03)
+    }
 }
