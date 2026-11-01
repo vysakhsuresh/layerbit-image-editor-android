@@ -193,4 +193,24 @@ class HealTest {
         for (y in 90 until 99) for (x in 30 until 170) if (Argb.luma(px[y * w + x]) < 150) dark++
         assertTrue("ink left in the healed line: $dark", dark < 40)
     }
+
+    @Test
+    fun aSpotOnAnEdgeKeepsTheEdgeStraight() {
+        // Light skin on the left, dark hair on the right, a soft slanted edge between, a spot right on it.
+        val w = 240; val h = 180
+        val clean = picture(w, h) { u, v ->
+            val edge = 0.5 + 0.1 * (v - 0.5)
+            val t = ((u - edge) / 0.012).coerceIn(-1.0, 1.0) * 0.5 + 0.5
+            val n = ((u * 9173 + v * 6151).toInt() % 7) - 3
+            Argb.pack(255, (215 - 175 * t + n).toInt(), (170 - 140 * t + n).toInt(), (140 - 115 * t + n).toInt())
+        }
+        val spotted = clean.copyOf()
+        blemish(spotted, w, h, 0.5f, 0.5f, 0.035f, Argb.pack(255, 150, 60, 60))
+        val stroke = listOf(Pt(0.495f, 0.5f), Pt(0.505f, 0.5f))
+        val source = Heal.findSource(spotted, w, h, stroke, 0.11f)!!
+        val out = heal(spotted, w, h, stroke, 0.11f, source)
+        val (mean, worst) = error(out, clean, w, 120f, 90f, 9f)
+        println("heal: edge mean $mean worst $worst")
+        assertTrue("mean error on the edge $mean", mean < 6)
+    }
 }
