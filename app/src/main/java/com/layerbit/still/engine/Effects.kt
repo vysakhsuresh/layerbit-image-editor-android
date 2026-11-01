@@ -42,6 +42,8 @@ enum class EffectKind(
     GLAMOUR_GLOW(4, 0f..1f, -1f..1f, 0f, Effects.Stage.TONE),
     /** A generated stained texture and a colour grade over the picture. */
     GRUNGE(4, 0f..1f, 0f..1f, 0.6f, Effects.Stage.SURFACE, seeded = true),
+    /** Faded tones, a coloured wash and darkened corners, like an old print. The extra is the corners. */
+    VINTAGE(5, 0f..1f, 0f..1f, 0.5f, Effects.Stage.SURFACE),
     /** Light leaks, scratches and dust on a vintage colour. */
     RETROLUX(4, 0f..1f, 0f..1f, 0.4f, Effects.Stage.SURFACE, seeded = true),
     /** Film grain of a chosen size on the colour of a film stock. */
@@ -171,6 +173,7 @@ object Effects {
             EffectKind.BLACK_WHITE -> blackWhite(px, w, h, e)
             EffectKind.GLAMOUR_GLOW -> glow(px, w, h, e, scale, check)
             EffectKind.GRUNGE -> grunge(px, w, h, e, scale, check)
+            EffectKind.VINTAGE -> vintage(px, w, h, e)
             EffectKind.RETROLUX -> retrolux(px, w, h, e, scale, check)
             EffectKind.GRAINY_FILM -> grainyFilm(px, w, h, e, scale, check)
             EffectKind.LENS_BLUR -> lensBlur(px, w, h, e, scale, check)
@@ -341,6 +344,51 @@ object Effects {
                 var grey = (f[0] * r + f[1] * g + f[2] * b).coerceIn(0f, 1f)
                 grey = if (k >= 0f) sCurve(grey, k * 0.5f) else grey + (grey - 0.5f) * k * 0.5f
                 out[i] = pack(c, r + (grey - r) * s, g + (grey - g) * s, b + (grey - b) * s)
+            }
+        }
+        return out
+    }
+
+    // ------------------------------------------------------------------ vintage
+
+    /** The wash per style, screened over the picture, and how much colour is kept. */
+    private class Vintage(val r: Float, val g: Float, val b: Float, val keep: Float)
+    private val VINTAGE_STYLES = arrayOf(
+        Vintage(1.0f, 0.82f, 0.52f, 0.85f),  // warm
+        Vintage(1.0f, 0.72f, 0.76f, 0.85f),  // rose
+        Vintage(0.74f, 0.9f, 0.68f, 0.8f),   // moss
+        Vintage(0.96f, 0.8f, 0.58f, 0f),     // sepia: the colour drained first
+        Vintage(0.62f, 0.76f, 1.0f, 0.8f)    // blue hour
+    )
+
+    private fun vintage(px: IntArray, w: Int, h: Int, e: Effect): IntArray {
+        val st = VINTAGE_STYLES[e.style]
+        val s = e.strength
+        val cx = w / 2f; val cy = h / 2f
+        // Corners measured on an ellipse that fits the frame, so the falloff is the same shape at any size.
+        val ix = 1f / max(1f, cx); val iy = 1f / max(1f, cy)
+        val wash = 0.22f
+        val out = IntArray(px.size)
+        Parallel.bands(h) { from, to ->
+            for (y in from until to) {
+                val dy = (y + 0.5f - cy) * iy
+                for (x in 0 until w) {
+                    val i = y * w + x
+                    val c = px[i]
+                    var r = ((c shr 16) and 0xFF) / 255f; var g = ((c shr 8) and 0xFF) / 255f; var b = (c and 0xFF) / 255f
+                    val l = 0.299f * r + 0.587f * g + 0.114f * b
+                    r = l + (r - l) * st.keep; g = l + (g - l) * st.keep; b = l + (b - l) * st.keep
+                    // Faded: blacks lifted, whites held down.
+                    r = 0.07f + r * 0.86f; g = 0.07f + g * 0.86f; b = 0.06f + b * 0.84f
+                    // The wash, screened: it tints the shadows most and leaves the whites near white.
+                    r = 1f - (1f - r) * (1f - wash * st.r); g = 1f - (1f - g) * (1f - wash * st.g); b = 1f - (1f - b) * (1f - wash * st.b)
+                    r *= 0.9f + 0.1f * st.r; g *= 0.9f + 0.1f * st.g; b *= 0.9f + 0.1f * st.b
+                    val dx = (x + 0.5f - cx) * ix
+                    val k = 1f - e.extra * 0.55f * smooth(0.45f, 1.35f, sqrt(dx * dx + dy * dy))
+                    r *= k; g *= k; b *= k
+                    val o0 = ((c shr 16) and 0xFF) / 255f; val o1 = ((c shr 8) and 0xFF) / 255f; val o2 = (c and 0xFF) / 255f
+                    out[i] = pack(c, o0 + (r - o0) * s, o1 + (g - o1) * s, o2 + (b - o2) * s)
+                }
             }
         }
         return out

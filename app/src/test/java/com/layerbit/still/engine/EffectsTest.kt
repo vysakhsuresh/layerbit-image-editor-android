@@ -360,4 +360,17 @@ class EffectsTest {
         org.junit.Assert.assertEquals(MaskKind.BRUSH, painted.areaMask!!.kind)
         org.junit.Assert.assertEquals(painted.strokes, painted.areaMask!!.strokes)
     }
+
+    @Test
+    fun vintageFadesWarmsAndDarkensTheCorners() {
+        val w = 40; val h = 30
+        val px = IntArray(w * h) { Argb.pack(255, 128, 128, 128) }
+        val out = Effects.applyOne(px, w, h, Effect(EffectKind.VINTAGE, style = 0, strength = 1f, extra = 1f))
+        val mid = out[(h / 2) * w + w / 2]; val corner = out[0]
+        org.junit.Assert.assertTrue("warm", Argb.red(mid) > Argb.blue(mid) + 10)
+        org.junit.Assert.assertTrue("corners", Argb.luma(corner) < Argb.luma(mid) - 20)
+        val black = Effects.applyOne(IntArray(4) { Argb.pack(255, 0, 0, 0) }, 2, 2, Effect(EffectKind.VINTAGE, strength = 1f, extra = 0f))
+        org.junit.Assert.assertTrue("faded blacks", Argb.luma(black[0]) > 15)
+        for (st in 0 until EffectKind.VINTAGE.styles) org.junit.Assert.assertTrue(Effect(EffectKind.VINTAGE, style = st).valid)
+    }
 }

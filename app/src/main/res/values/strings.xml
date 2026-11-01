@@ -726,7 +726,7 @@
     <string name="cutout_keep_brush">Keep</string>
     <string name="cutout_remove_brush">Remove</string>
     <string name="cutout_hint_first">The red wash is what will go. Paint over anything wrongly red with Keep, or anything wrongly kept with Remove. Every stroke can be undone.</string>
-    <string name="cutout_hint_strokes">%1$d strokes so far. The decision follows edges, so a short stroke usually does.</string>
+    <string name="cutout_hint_strokes">%1$d strokes so far. The decision follows edges, so a short stroke usually does. Local, Effects and Portrait use the same subject, so these strokes fix it there too.</string>
     <string name="cutout_clear_strokes">Clear the strokes</string>
     <string name="cutout_threshold">Ink threshold</string>
     <string name="cutout_ink_hint">Dark and strongly coloured marks stay; the paper goes. Auto decides from the page; raise the threshold to keep fainter ink.</string>
@@ -1009,8 +1009,15 @@
     <string name="effect_tonal_contrast">Tonal contrast</string>
     <string name="effect_hdr_scape">HDR scape</string>
     <string name="effect_drama">Drama</string>
+    <string name="effect_vintage">Vintage</string>
+    <string name="effect_style_moss">Moss</string>
+    <string name="effect_style_sepia">Sepia</string>
+    <string name="effect_style_blue_hour">Blue hour</string>
+    <string name="effect_extra_corners">Darker corners</string>
     <string name="effects_where">Where</string>
     <string name="effects_area_all">Whole picture</string>
+    <string name="effects_area_none">No %1$s found in this picture. Try another place, or paint it in with Brush.</string>
+    <string name="effects_area_found">Covers %1$d%% of the picture.</string>
     <string name="effects_paint_hint">Paint where the effect should go. Until you paint, it shows nowhere.</string>
     <string name="effects_paint_clear">Clear the painting</string>
     <string name="effect_black_white">Black &amp; White</string>
@@ -1208,7 +1215,7 @@
     <string name="guide_local_title">Change just one part</string>
     <string name="guide_local_body">Local: brush it, draw a gradient or a circle, or tap a colour. Sky, subject and background are found for you. Show mask to see exactly what changes.</string>
     <string name="guide_effects_title">Effects with styles</string>
-    <string name="guide_effects_body">Ambiance, HDR, drama, black and white with colour filters, glow, film, lens blur and a vignette you can place. Each has styles and a strength, can be kept to the subject, background or sky, and you can stack them.</string>
+    <string name="guide_effects_body">Ambiance, HDR, drama, black and white with colour filters, vintage, glow, film, lens blur and a vignette you can place. Each has styles and a strength, can be kept to the subject, background or sky, and you can stack them.</string>
     <string name="guide_portrait_title">Portraits, kindly</string>
     <string name="guide_portrait_body">Portrait finds the skin, smooths it and keeps its pores, evens redness and lights the face. Tap eyes to brighten them, teeth to whiten. Show skin to check.</string>
     <string name="guide_expand_title">More room around a picture</string>

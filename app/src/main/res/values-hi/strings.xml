@@ -726,7 +726,7 @@
     <string name="cutout_keep_brush">रखें</string>
     <string name="cutout_remove_brush">हटाएं</string>
     <string name="cutout_hint_first">लाल धुलाई वह है जो हटेगा. गलती से लाल हुए हिस्से पर “रखें” से और गलती से रखे गए पर “हटाएं” से पेंट करें. हर स्ट्रोक पूर्ववत हो सकता है.</string>
-    <string name="cutout_hint_strokes">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है.</string>
+    <string name="cutout_hint_strokes">अब तक %1$d स्ट्रोक. फ़ैसला किनारों के साथ चलता है, इसलिए छोटा स्ट्रोक अक्सर काफ़ी है. लोकल, इफ़ेक्ट्स और पोर्ट्रेट भी यही सब्जेक्ट लेते हैं, इसलिए ये स्ट्रोक वहाँ भी ठीक करते हैं.</string>
     <string name="cutout_clear_strokes">स्ट्रोक साफ़ करें</string>
     <string name="cutout_threshold">स्याही की सीमा</string>
     <string name="cutout_ink_hint">गहरे और तेज़ रंग के निशान रहते हैं; कागज़ हटता है. ऑटो पन्ने से तय करता है; हल्की स्याही रखने के लिए सीमा बढ़ाएं.</string>
@@ -1009,8 +1009,15 @@
     <string name="effect_tonal_contrast">टोनल कंट्रास्ट</string>
     <string name="effect_hdr_scape">HDR स्केप</string>
     <string name="effect_drama">ड्रामा</string>
+    <string name="effect_vintage">विंटेज</string>
+    <string name="effect_style_moss">काई</string>
+    <string name="effect_style_sepia">सेपिया</string>
+    <string name="effect_style_blue_hour">नीला पहर</string>
+    <string name="effect_extra_corners">गहरे कोने</string>
     <string name="effects_where">कहाँ</string>
     <string name="effects_area_all">पूरी तस्वीर</string>
+    <string name="effects_area_none">इस तस्वीर में %1$s नहीं मिला. दूसरी जगह चुनें, या ब्रश से पेंट करें.</string>
+    <string name="effects_area_found">तस्वीर का %1$d%% हिस्सा.</string>
     <string name="effects_paint_hint">जहाँ इफ़ेक्ट चाहिए वहाँ पेंट करें. पेंट करने तक यह कहीं नहीं दिखेगा.</string>
     <string name="effects_paint_clear">पेंटिंग हटाएँ</string>
     <string name="effect_black_white">ब्लैक एंड व्हाइट</string>
@@ -1208,7 +1215,7 @@
     <string name="guide_local_title">सिर्फ़ एक हिस्सा बदलें</string>
     <string name="guide_local_body">हिस्सा: ब्रश करें, ग्रेडिएंट या गोला बनाएँ, या कोई रंग टैप करें. आसमान, मुख्य चीज़ और पृष्ठभूमि अपने-आप मिलते हैं. मास्क दिखाएँ से देखें क्या बदलेगा.</string>
     <string name="guide_effects_title">स्टाइल वाले इफ़ेक्ट</string>
-    <string name="guide_effects_body">एम्बियंस, HDR, ड्रामा, रंगीन फ़िल्टर वाला ब्लैक एंड व्हाइट, ग्लो, फ़िल्म, लेंस ब्लर और खिसकाने वाला विनेट. हर एक में स्टाइल और मात्रा है, और इन्हें एक साथ लगा सकते हैं.</string>
+    <string name="guide_effects_body">एम्बियंस, HDR, ड्रामा, रंगीन फ़िल्टर वाला ब्लैक एंड व्हाइट, विंटेज, ग्लो, फ़िल्म, लेंस ब्लर और खिसकाने वाला विनेट. हर एक में स्टाइल और मात्रा है, और इन्हें एक साथ लगा सकते हैं.</string>
     <string name="guide_portrait_title">पोर्ट्रेट, नरमी से</string>
     <string name="guide_portrait_body">पोर्ट्रेट त्वचा ढूँढकर उसे चिकना करता है पर रोमछिद्र रखता है, लाली कम करता है और चेहरे पर रोशनी देता है. आँखें या दाँत टैप करके निखारें.</string>
     <string name="guide_expand_title">तस्वीर के चारों ओर और जगह</string>

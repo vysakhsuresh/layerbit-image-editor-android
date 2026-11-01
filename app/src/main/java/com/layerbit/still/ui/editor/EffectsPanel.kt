@@ -72,6 +72,7 @@ fun effectLabelRes(kind: EffectKind): Int = when (kind) {
     EffectKind.BLACK_WHITE -> R.string.effect_black_white
     EffectKind.GLAMOUR_GLOW -> R.string.effect_glamour_glow
     EffectKind.GRUNGE -> R.string.effect_grunge
+    EffectKind.VINTAGE -> R.string.effect_vintage
     EffectKind.RETROLUX -> R.string.effect_retrolux
     EffectKind.GRAINY_FILM -> R.string.effect_grainy_film
     EffectKind.LENS_BLUR -> R.string.effect_lens_blur
@@ -87,6 +88,7 @@ fun effectStyleRes(kind: EffectKind): List<Int> = when (kind) {
     EffectKind.BLACK_WHITE -> listOf(R.string.effect_style_neutral, R.string.effect_filter_red, R.string.effect_filter_orange, R.string.effect_filter_yellow, R.string.effect_filter_green, R.string.effect_filter_blue)
     EffectKind.GLAMOUR_GLOW -> listOf(R.string.effect_style_soft, R.string.effect_style_warm, R.string.effect_style_dreamy, R.string.effect_style_bloom)
     EffectKind.GRUNGE -> listOf(R.string.effect_style_dust, R.string.effect_style_rust, R.string.effect_style_concrete, R.string.effect_style_teal)
+    EffectKind.VINTAGE -> listOf(R.string.effect_style_warm, R.string.effect_style_rose, R.string.effect_style_moss, R.string.effect_style_sepia, R.string.effect_style_blue_hour)
     EffectKind.RETROLUX -> listOf(R.string.effect_style_summer, R.string.effect_style_amber, R.string.effect_style_faded, R.string.effect_style_rose)
     EffectKind.GRAINY_FILM -> listOf(R.string.effect_style_neutral, R.string.effect_style_warm, R.string.effect_style_cool, R.string.effect_style_mono)
     EffectKind.LENS_BLUR -> listOf(R.string.effect_style_line, R.string.effect_style_round)
@@ -99,6 +101,7 @@ fun effectExtraRes(kind: EffectKind): Int = when (kind) {
     EffectKind.BLACK_WHITE -> R.string.effect_extra_contrast
     EffectKind.GLAMOUR_GLOW -> R.string.effect_extra_warmth
     EffectKind.GRUNGE -> R.string.effect_extra_texture
+    EffectKind.VINTAGE -> R.string.effect_extra_corners
     EffectKind.RETROLUX -> R.string.effect_extra_scratches
     EffectKind.GRAINY_FILM -> R.string.effect_extra_grain_size
     EffectKind.LENS_BLUR -> R.string.effect_extra_transition
@@ -135,7 +138,9 @@ fun EffectsPanel(
     styleThumbs: Map<EffectKind, List<Bitmap>>,
     onFull: () -> Unit,
     /** The brush shared with the Local tool, for an effect painted in. */
-    brush: LocalTools = remember { LocalTools() }
+    brush: LocalTools = remember { LocalTools() },
+    /** How much of the picture each area covers, measured on the preview. */
+    coverage: Map<com.layerbit.still.engine.LocalMask, Float> = emptyMap()
 ) {
     val effects = s.recipe.effects
     val sel = effectSelection(effects, chosen)
@@ -182,6 +187,10 @@ fun EffectsPanel(
         listOf<Pair<com.layerbit.still.engine.MaskKind?, String>>(null to stringResource(R.string.effects_area_all)) + Effect.AREAS.map { it to maskLabel(it) },
         open.area, { a -> s.changeEffect(sel) { it.copy(area = a) } }
     )
+    val found = open.areaMask?.let { coverage[it] }
+    if (open.area != null && open.area != com.layerbit.still.engine.MaskKind.BRUSH && found != null) {
+        Hint(if (found < 0.005f) stringResource(R.string.effects_area_none, maskLabel(open.area).lowercase()) else stringResource(R.string.effects_area_found, (found * 100).roundToInt()))
+    }
     if (open.area == com.layerbit.still.engine.MaskKind.BRUSH) {
         com.layerbit.still.ui.components.ChipRow(listOf(false to stringResource(R.string.local_paint), true to stringResource(R.string.local_erase)), brush.erase, { brush.erase = it }, modifier = Modifier.padding(top = 6.dp))
         Knob(stringResource(R.string.local_brush_size), brush.width, 0.01f..0.3f, onChange = { brush.width = it }, onDone = {}, onReset = { brush.width = 0.08f }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })

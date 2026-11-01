@@ -125,7 +125,7 @@ fun EditorScreen(
     var comparing by remember { mutableStateOf(false) }
     var strokePoints by remember { mutableStateOf<List<Pt>>(emptyList()) }
     var cropDragging by remember { mutableStateOf(false) }
-    var editingText by remember { mutableIntStateOf(-1) }
+    var editingText by rememberSaveable { mutableIntStateOf(-1) }
     var presetDialog by remember { mutableStateOf(false) }
     var draggingText by remember { mutableIntStateOf(-1) }
     // The heal mark whose patch was last added or dragged, drawn strongest.
@@ -437,7 +437,9 @@ fun EditorScreen(
                 ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).size(width = 40.dp, height = 4.dp).background(StillColors.BorderStrong, RoundedCornerShape(2.dp)))
                     PanelStrip(panel, onPick = { vm.setPanel(it); strokePoints = emptyList(); comparing = false; scrubHost.target = null })
-                    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Each panel opens at its top, where its presets and main controls are, not where the last one was left.
+                    val panelScroll = androidx.compose.runtime.key(panel) { rememberScrollState() }
+                    Column(Modifier.fillMaxWidth().verticalScroll(panelScroll).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when (panel) {
                             ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it }, onAutoStraighten = vm::autoStraighten)
                             ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope, onFindPage = { vm.findPage() })
@@ -462,7 +464,7 @@ fun EditorScreen(
                             ToolId.Panel.EFFECTS -> {
                                 val openKind = recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.kind
                                 LaunchedEffect(ui.project?.id, openKind) { vm.ensureEffectThumbs(openKind) }
-                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) }, brush = localTools)
+                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) }, brush = localTools, coverage = ui.effectCoverage)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.LOCAL -> LocalPanel(
@@ -526,8 +528,8 @@ fun EditorScreen(
     }
     if (editingText >= 0 && editingText < recipe.marks.size) {
         val m = recipe.marks[editingText]
-        var text by remember(editingText) { mutableStateOf(m.text) }
-        var angle by remember(editingText) { mutableFloatStateOf(m.angle) }
+        var text by rememberSaveable(editingText) { mutableStateOf(m.text) }
+        var angle by rememberSaveable(editingText) { mutableFloatStateOf(m.angle) }
         var look by remember(editingText) { mutableStateOf(m.color to m.style) }
         AlertDialog(
             onDismissRequest = { editingText = -1 }, containerColor = StillColors.Surface,

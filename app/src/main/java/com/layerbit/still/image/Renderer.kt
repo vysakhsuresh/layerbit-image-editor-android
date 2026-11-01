@@ -279,7 +279,9 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         val tone = com.layerbit.still.engine.Looks.combine(r.tone, r.curves, r.look, r.lookStrength).tone
         // The steps up to noise reduction depend only on their own settings. While a later slider
         // moves (an effect, detail, a frame), their result is reused rather than redone.
-        val earlyKey = EarlyKey(base, base.generationId, r.tone.copy(clarity = 0f, dehaze = 0f, sharpness = 0f, vignette = 0f, grain = 0f), r.curves, r.look, r.lookStrength, r.mix, r.locals, r.scan, maskKey)
+        // The subject every tool shares: the Background tool's, with the user's keep and remove strokes.
+        val subject = subjectOf(r.cutout)
+        val earlyKey = EarlyKey(base, base.generationId, r.tone.copy(clarity = 0f, dehaze = 0f, sharpness = 0f, vignette = 0f, grain = 0f), r.curves, r.look, r.lookStrength, r.mix, r.locals, r.scan, maskKey + "|" + subject.maskKey)
         val cachedEarly = earlyCache?.takeIf { it.key == earlyKey }
         var working: IntArray
         if (cachedEarly != null) {
@@ -293,7 +295,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             r.mix.compile()?.let { mix -> parallelRows(h) { from, to -> mix.apply(pixels, w, from, to) } }
             check()
             // Local adjustments: after the global tone, curves and mix, before detail, vignette and the layers.
-            if (r.locals.isNotEmpty()) LocalAdjustments.apply(pixels, w, h, r.locals, { m -> localMask(base, m, w, h, maskKey, check) }, check)
+            if (r.locals.isNotEmpty()) LocalAdjustments.apply(pixels, w, h, r.locals, { m -> localMask(base, m, w, h, maskKey, check, subject) }, check)
             working = pixels
             // Paper cleanup before detail, so sharpening works on clean ink.
             if (!r.scan.isIdentity) working = ScanMath.apply(working, w, h, r.scan, check)
@@ -303,7 +305,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             if (w.toLong() * h <= Budget.PREVIEW_PIXELS) earlyCache = Early(earlyKey, working.copyOf())
         }
         // An effect kept to the subject, background or sky uses the same mask the Local tool would draw.
-        val effectArea: (com.layerbit.still.engine.LocalMask) -> com.layerbit.still.engine.LocalMasks.Grid = { m -> localMask(base, m, w, h, maskKey, check) }
+        val effectArea: (com.layerbit.still.engine.LocalMask) -> com.layerbit.still.engine.LocalMasks.Grid = { m -> localMask(base, m, w, h, maskKey, check, subject) }
         // Filter effects: tone ones before sharpening, the lens after it, film surfaces last.
         if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check, effectArea)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
@@ -311,11 +313,11 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         }
         // Skin, then the second picture: after detail so sharpening never undoes the smoothing, before vignette and grain so both cover them.
         if (r.portrait.active || skinPreview) {
-            val skin = if (r.portrait.needsMask || skinPreview) skinFor(base, r.portrait, maskKey, check) else null
+            val skin = if (r.portrait.needsMask || skinPreview) skinFor(base, r.portrait, maskKey, check, subject) else null
             working = Portrait.apply(working, w, h, r.portrait, skin, check)
             if (skinPreview && skin != null) Portrait.paintMask(working, w, h, skin)
         }
-        if (r.double.active && assets != null) doubleStage(working, w, h, base, r.double, assets, maskKey, check)
+        if (r.double.active && assets != null) doubleStage(working, w, h, base, r.double, assets, maskKey, check, subject)
         if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.LENS, check, effectArea)
         if (tone.vignette != 0f) Spatial.vignette(working, w, h, tone.vignette, check)
         if (tone.grain > 0f) Spatial.grain(working, w, h, tone.grain, check = check)
@@ -341,7 +343,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
 
     // ------------------------------------------------------------------ local adjustments
 
-    private class LocalEntry(val key: String?, val mask: LocalMask, val width: Int, val height: Int, val grid: LocalMasks.Grid)
+    private class LocalEntry(val key: String?, val mask: LocalMask, val width: Int, val height: Int, val subject: String, val grid: LocalMasks.Grid)
     private val localCache = ArrayDeque<LocalEntry>()
 
     /**
@@ -350,20 +352,21 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * never moves the mask; the subject comes from the cut-out's own decision. Remembered, so a
      * slider drag redraws no mask.
      */
-    fun localMask(base: Bitmap, mask: LocalMask, w: Int, h: Int, key: String?, check: () -> Unit = {}): LocalMasks.Grid {
-        synchronized(localCache) { localCache.firstOrNull { it.key == key && it.width == w && it.height == h && it.mask == mask }?.let { return it.grid } }
+    fun localMask(base: Bitmap, mask: LocalMask, w: Int, h: Int, key: String?, check: () -> Unit = {}, subject: Cutout = SUBJECT_MASK): LocalMasks.Grid {
+        val subjectKey = if (mask.readsPicture) subject.maskKey else ""
+        synchronized(localCache) { localCache.firstOrNull { it.key == key && it.width == w && it.height == h && it.mask == mask && it.subject == subjectKey }?.let { return it.grid } }
         val analysis = if (mask.readsPicture) {
             val size = Segment.analysisSize(base.width, base.height)
             val small = scale(base, size.width, size.height)
             val px = IntArray(size.width * size.height)
             small.getPixels(px, 0, size.width, 0, 0, size.width, size.height)
             if (small !== base) small.recycle()
-            LocalMasks.Analysis(px, size.width, size.height) { maskFor(base, SUBJECT_MASK, key, check).mask }
+            LocalMasks.Analysis(px, size.width, size.height) { maskFor(base, subject, key, check).mask }
         } else null
         check()
         val grid = LocalMasks.render(mask, w, h, analysis, check)
         // Only a keyed preview is worth remembering: an export is drawn once, and its grid is large.
-        if (key != null && w.toLong() * h <= Budget.PREVIEW_PIXELS) synchronized(localCache) { localCache.addFirst(LocalEntry(key, mask, w, h, grid)); while (localCache.size > 6) localCache.removeLast() }
+        if (key != null && w.toLong() * h <= Budget.PREVIEW_PIXELS) synchronized(localCache) { localCache.addFirst(LocalEntry(key, mask, w, h, subjectKey, grid)); while (localCache.size > 6) localCache.removeLast() }
         return grid
     }
 
@@ -376,9 +379,9 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * The skin decided at the analysis size from the geometry stage, as the cut-out's mask is, and
      * remembered so the export reuses the preview's decision. Restricted to the subject when asked.
      */
-    private fun skinFor(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit): Portrait.Skin {
+    private fun skinFor(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit, subject: Cutout = SUBJECT_MASK): Portrait.Skin {
         val size = Segment.analysisSize(base.width, base.height)
-        val cacheKey = "${key ?: ""}|${p.maskKey}|${size.width}x${size.height}"
+        val cacheKey = "${key ?: ""}|${p.maskKey}|${subject.maskKey}|${size.width}x${size.height}"
         synchronized(skinCache) { skinCache.firstOrNull { it.key == cacheKey }?.let { return it.skin } }
         val small = scale(base, size.width, size.height)
         val px = IntArray(size.width * size.height)
@@ -386,7 +389,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         if (small !== base) small.recycle()
         check()
         // The subject guides which colour is skin always, and limits the mask only when asked.
-        val found = runCatching { maskFor(base, Cutout(), key, check).mask }.getOrNull()
+        val found = runCatching { maskFor(base, subject, key, check).mask }.getOrNull()
         val subject = if (p.subjectOnly) found else null
         val skin = Portrait.skin(px, size.width, size.height, p.strokes, subject, check, prior = found)
         if (key != null) synchronized(skinCache) { skinCache.removeAll { it.key == cacheKey }; skinCache.addFirst(SkinEntry(cacheKey, skin)); while (skinCache.size > 2) skinCache.removeLast() }
@@ -394,7 +397,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
     }
 
     /** How much of the picture the skin mask covers, for the Portrait panel. */
-    fun skinCoverage(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit = {}): Float = skinFor(base, p, key, check).coverage
+    fun skinCoverage(base: Bitmap, p: PortraitEdit, key: String?, check: () -> Unit = {}, subject: Cutout = SUBJECT_MASK): Float = skinFor(base, p, key, check, subject).coverage
 
     // ------------------------------------------------------------------ double exposure
 
@@ -405,7 +408,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
      * The second picture, decoded from the project's private copy at as many pixels as it covers on
      * this canvas, laid over [px] by the engine. Missing or unreadable: nothing is drawn.
      */
-    private fun doubleStage(px: IntArray, w: Int, h: Int, base: Bitmap, d: DoubleExposure, assets: File, key: String?, check: () -> Unit) {
+    private fun doubleStage(px: IntArray, w: Int, h: Int, base: Bitmap, d: DoubleExposure, assets: File, key: String?, check: () -> Unit, subject: Cutout = SUBJECT_MASK) {
         if (!DoubleExposure.safeName(d.file)) return
         val file = File(assets, d.file)
         if (!file.isFile) return
@@ -426,7 +429,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         }
         check()
         if (d.insideSubject) {
-            val m = maskFor(base, Cutout(), key, check)
+            val m = maskFor(base, subject, key, check)
             val soft = Segment.feather(m.mask, m.width, m.height, max(1, (0.004f * min(m.width, m.height)).roundToInt()))
             Blend.composite(px, w, h, layer.pixels, layer.width, layer.height, d, soft, m.width, m.height, check)
         } else {
@@ -874,6 +877,14 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         const val STICKER_EDGE = 512
         /** The cut-out settings whose mask is the Local panel's subject and background. */
         private val SUBJECT_MASK = Cutout(enabled = true, mode = CutoutMode.SUBJECT)
+
+        /**
+         * The subject the other tools use: found the same way as the Background tool's, and
+         * corrected by its keep and remove strokes, so one fix there fixes Local, Effects,
+         * Portrait and Double exposure too. Ink mode's strokes mean something else and are left out.
+         */
+        fun subjectOf(c: Cutout): Cutout =
+            if (c.mode == CutoutMode.SUBJECT && c.scribbles.isNotEmpty()) SUBJECT_MASK.copy(scribbles = c.scribbles) else SUBJECT_MASK
         const val STICKER_MARGIN = 8
         /** The most a preview decode may oversample to: 24 MB of pixels, passing, on any phone. */
         const val OVERSAMPLE_CAP = 6_000_000L

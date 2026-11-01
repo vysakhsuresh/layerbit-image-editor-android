@@ -55,6 +55,7 @@ import com.layerbit.still.files.ImageStore
 import com.layerbit.still.files.StillFile
 import com.layerbit.still.image.Budget
 import com.layerbit.still.image.ExportOptions
+import com.layerbit.still.image.Renderer
 import com.layerbit.still.image.Exported
 import com.layerbit.still.ops.ToolId
 import com.layerbit.still.text.Strings
@@ -145,6 +146,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val showLocalMask: Boolean = false,
         /** On the Local panel: how much of the picture the selected mask covers, measured on the preview. */
         val localCoverage: Float? = null,
+        /** How much of the picture each effect's area covers, so the panel can say when a sky or subject was not found. */
+        val effectCoverage: Map<com.layerbit.still.engine.LocalMask, Float> = emptyMap(),
         /** On the Portrait panel: the skin mask painted over the preview. */
         val showSkin: Boolean = false,
         /** On the Portrait panel: how much of the picture the skin mask covers, measured on the preview's mask. */
@@ -860,17 +863,22 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val finished = renderer.finish(source, shown, check, maskKey = maskKey(geometry, shown.expand), cutoutPreview = cutoutPanel, assets = project.file.file.parentFile, skinPreview = onPortrait && state.showSkin)
                 if (BuildConfig.DEBUG) android.util.Log.d("Still", "preview ${if (fast) "fast" else "full"} ${source.width}x${source.height} in ${(System.nanoTime() - started) / 1_000_000} ms")
                 val kept = if (onCutout && !fast) withContext(Dispatchers.Default) { renderer.cutoutCoverage(b, shown.cutout, maskKey(geometry, shown.expand), check) } else state.cutoutKept
-                val skinKept = if (onPortrait && !fast) withContext(Dispatchers.Default) { renderer.skinCoverage(b, shown.portrait, maskKey(geometry, shown.expand), check) } else state.skinKept
+                val skinKept = if (onPortrait && !fast) withContext(Dispatchers.Default) { renderer.skinCoverage(b, shown.portrait, maskKey(geometry, shown.expand), check, Renderer.subjectOf(shown.cutout)) } else state.skinKept
                 val original = state.original ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.PREVIEW_PIXELS, check) }
                 // The selected local mask, for its coverage and, when asked, the red wash; drawn from the stage the preview was made from.
                 val localMask = if (state.panel == ToolId.Panel.LOCAL && finished.width == source.width && finished.height == source.height) state.recipe.locals.getOrNull(state.localSelected)?.mask else null
                 var coverage: Float? = null
+                val effectAreas = if (state.panel == ToolId.Panel.EFFECTS && !fast) withContext(Dispatchers.Default) {
+                    state.recipe.effects.mapNotNull { it.areaMask }.distinct().associateWith { m ->
+                        renderer.localMask(source, m, source.width, source.height, maskKey(geometry), check, Renderer.subjectOf(shown.cutout)).coverage
+                    }
+                } else state.effectCoverage
                 val (histogram, palette, shown2) = withContext(Dispatchers.Default) {
                     val px = IntArray(finished.width * finished.height)
                     finished.getPixels(px, 0, finished.width, 0, 0, finished.width, finished.height)
                     val h = Histogram.of(px)
                     val pal = if (fast) state.palette else Palette.of(px)
-                    val grid = localMask?.let { renderer.localMask(source, it, finished.width, finished.height, maskKey(geometry), check) }
+                    val grid = localMask?.let { renderer.localMask(source, it, finished.width, finished.height, maskKey(geometry), check, Renderer.subjectOf(shown.cutout)) }
                     coverage = grid?.coverage
                     // The clipping warning and the mask are drawn on a copy, after the histogram has been read from the real pixels.
                     val display = if (state.showClipping && state.panel == ToolId.Panel.LIGHT) {
@@ -885,7 +893,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 val canvas = Geometry2D.framedSize(state.recipe.expand.grow(Geometry2D.canvasSize(Geometry2D.Size(project.file.width, project.file.height), state.recipe.geometry)), state.recipe.frame)
                 // Displayed bitmaps are never recycled by hand: the canvas may be mid-draw on the
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
-                _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, skinKept = skinKept, previewFast = fast, palette = palette, localCoverage = coverage) }
+                _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, skinKept = skinKept, previewFast = fast, palette = palette, localCoverage = coverage, effectCoverage = effectAreas) }
                 if (pagePending) findPage(quiet = true)
             } catch (c: CancellationException) {
                 throw c
