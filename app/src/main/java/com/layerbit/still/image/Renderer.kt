@@ -302,8 +302,10 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             // Only preview-sized pictures are kept: an export is drawn once.
             if (w.toLong() * h <= Budget.PREVIEW_PIXELS) earlyCache = Early(earlyKey, working.copyOf())
         }
+        // An effect kept to the subject, background or sky uses the same mask the Local tool would draw.
+        val effectArea: (com.layerbit.still.engine.MaskKind) -> com.layerbit.still.engine.LocalMasks.Grid = { k -> localMask(base, com.layerbit.still.engine.LocalMask(k), w, h, maskKey, check) }
         // Filter effects: tone ones before sharpening, the lens after it, film surfaces last.
-        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check)
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check, effectArea)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {
             working = Spatial.detail(working, w, h, tone, check)
         }
@@ -314,10 +316,10 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             if (skinPreview && skin != null) Portrait.paintMask(working, w, h, skin)
         }
         if (r.double.active && assets != null) doubleStage(working, w, h, base, r.double, assets, maskKey, check)
-        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.LENS, check)
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.LENS, check, effectArea)
         if (tone.vignette != 0f) Spatial.vignette(working, w, h, tone.vignette, check)
         if (tone.grain > 0f) Spatial.grain(working, w, h, tone.grain, check = check)
-        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.SURFACE, check)
+        if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.SURFACE, check, effectArea)
         check()
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         out.setPixels(working, 0, w, 0, 0, w, h)

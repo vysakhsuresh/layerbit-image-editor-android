@@ -1000,6 +1000,8 @@
     <string name="effect_tonal_contrast">टोनल कंट्रास्ट</string>
     <string name="effect_hdr_scape">HDR स्केप</string>
     <string name="effect_drama">ड्रामा</string>
+    <string name="effects_where">कहाँ</string>
+    <string name="effects_area_all">पूरी तस्वीर</string>
     <string name="effect_black_white">ब्लैक एंड व्हाइट</string>
     <string name="effect_filter_red">लाल फ़िल्टर</string>
     <string name="effect_filter_orange">नारंगी फ़िल्टर</string>

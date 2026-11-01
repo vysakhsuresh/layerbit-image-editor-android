@@ -338,4 +338,20 @@ class EffectsTest {
         for (s in 0 until EffectKind.BLACK_WHITE.styles) org.junit.Assert.assertTrue(kotlin.math.abs(Argb.red(bw(grey, s)) - 128) <= 1)
         org.junit.Assert.assertEquals(1f, Effect(EffectKind.BLACK_WHITE).strength)
     }
+
+    @Test
+    fun anEffectKeptToAnAreaLeavesTheRestAlone() {
+        val w = 10; val h = 4
+        val px = IntArray(w * h) { Argb.pack(255, 60, 120, 200) }
+        // Left half is the "subject".
+        val grid = LocalMasks.Grid(FloatArray(w * h) { if (it % w < 5) 1f else 0f }, w, h)
+        val e = Effect(EffectKind.BLACK_WHITE, area = MaskKind.SUBJECT)
+        val out = Effects.apply(px, w, h, listOf(e), Effects.Stage.TONE, area = { grid })
+        org.junit.Assert.assertEquals(Argb.red(out[0]), Argb.blue(out[0]))
+        org.junit.Assert.assertEquals(px[9], out[9])
+        // Saved and read back with its area.
+        val r = RecipeJson.read(RecipeJson.write(Recipe(effects = listOf(e))))
+        org.junit.Assert.assertEquals(MaskKind.SUBJECT, r.effects.single().area)
+        org.junit.Assert.assertNull(RecipeJson.read(RecipeJson.write(Recipe(effects = listOf(Effect(EffectKind.DRAMA))))).effects.single().area)
+    }
 }

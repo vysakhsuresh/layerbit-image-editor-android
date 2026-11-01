@@ -74,7 +74,9 @@ data class Effect(
     /** Lens blur: degrees; the line's direction, or the ellipse's turn. */
     val angle: Float = 0f,
     /** Lens blur, round style: the ellipse's height over its width. */
-    val aspect: Float = 1f
+    val aspect: Float = 1f,
+    /** Where the effect lands: the whole picture when null, else the subject, the background or the sky as the Local tool finds them. */
+    val area: MaskKind? = null
 ) {
     val isIdentity: Boolean get() = strength == 0f
 
@@ -86,11 +88,14 @@ data class Effect(
         get() = style in 0 until kind.styles && strength.isFinite() && strength in kind.strengthRange &&
             extra.isFinite() && extra in kind.extraRange && center.finite && center.x in 0f..1f && center.y in 0f..1f &&
             size.isFinite() && size in MIN_SIZE..MAX_SIZE && angle.isFinite() && angle in -360f..360f &&
-            aspect.isFinite() && aspect in MIN_ASPECT..MAX_ASPECT
+            aspect.isFinite() && aspect in MIN_ASPECT..MAX_ASPECT && (area == null || area in AREAS)
 
     companion object {
         /** A new effect as the panel adds it: a vignette starts as a wide oval round the middle. */
         fun added(kind: EffectKind): Effect = if (kind == EffectKind.VIGNETTE) Effect(kind, strength = 0.6f, size = 0.55f, aspect = 1.25f) else Effect(kind)
+
+        /** The places an effect can be kept to, each found without the user painting. */
+        val AREAS = listOf(MaskKind.SUBJECT, MaskKind.BACKGROUND, MaskKind.SKY)
 
         const val MIN_SIZE = 0.01f
         const val MAX_SIZE = 1.5f
@@ -111,13 +116,39 @@ object Effects {
      */
     enum class Stage { TONE, LENS, SURFACE }
 
-    /** Runs every effect of [stage] in [effects], in order. Returns [px] itself when none applies. */
-    fun apply(px: IntArray, w: Int, h: Int, effects: List<Effect>, stage: Stage, check: () -> Unit = {}): IntArray {
+    /**
+     * Runs every effect of [stage] in [effects], in order. Returns [px] itself when none applies.
+     * An effect kept to an [Effect.area] is blended in through the mask [area] draws for it;
+     * without [area] it covers the whole picture.
+     */
+    fun apply(
+        px: IntArray, w: Int, h: Int, effects: List<Effect>, stage: Stage, check: () -> Unit = {},
+        area: ((MaskKind) -> LocalMasks.Grid)? = null
+    ): IntArray {
         var out = px
         for (e in effects) {
             if (e.kind.stage != stage || e.isIdentity) continue
             check()
-            out = applyOne(out, w, h, e, check)
+            val done = applyOne(out, w, h, e, check)
+            val mask = e.area?.let { area?.invoke(it) }
+            out = if (mask == null) done else within(out, done, w, h, mask)
+        }
+        return out
+    }
+
+    /** [after] where [mask] is whole, [before] where it is empty, mixed between. */
+    fun within(before: IntArray, after: IntArray, w: Int, h: Int, mask: LocalMasks.Grid): IntArray {
+        val out = IntArray(before.size)
+        Parallel.bands(h) { from, to ->
+            for (y in from until to) for (x in 0 until w) {
+                val i = y * w + x
+                val m = mask.at(x, y, w, h).coerceIn(0f, 1f)
+                out[i] = if (m >= 0.999f) after[i] else if (m <= 0.001f) before[i] else {
+                    val a = before[i]; val b = after[i]
+                    fun ch(sh: Int): Int { val p = (a shr sh) and 0xFF; val q = (b shr sh) and 0xFF; return (p + (q - p) * m + 0.5f).toInt().coerceIn(0, 255) }
+                    (b and 0xFF000000.toInt()) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+                }
+            }
         }
         return out
     }

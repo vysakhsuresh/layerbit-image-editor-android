@@ -1000,6 +1000,8 @@
     <string name="effect_tonal_contrast">Tonal contrast</string>
     <string name="effect_hdr_scape">HDR scape</string>
     <string name="effect_drama">Drama</string>
+    <string name="effects_where">Where</string>
+    <string name="effects_area_all">Whole picture</string>
     <string name="effect_black_white">Black &amp; White</string>
     <string name="effect_filter_red">Red filter</string>
     <string name="effect_filter_orange">Orange filter</string>
@@ -1195,7 +1197,7 @@
     <string name="guide_local_title">Change just one part</string>
     <string name="guide_local_body">Local: brush it, draw a gradient or a circle, or tap a colour. Sky, subject and background are found for you. Show mask to see exactly what changes.</string>
     <string name="guide_effects_title">Effects with styles</string>
-    <string name="guide_effects_body">Ambiance, HDR, drama, black and white with colour filters, glow, film, lens blur and a vignette you can place. Each has styles, a strength, and you can stack them.</string>
+    <string name="guide_effects_body">Ambiance, HDR, drama, black and white with colour filters, glow, film, lens blur and a vignette you can place. Each has styles and a strength, can be kept to the subject, background or sky, and you can stack them.</string>
     <string name="guide_portrait_title">Portraits, kindly</string>
     <string name="guide_portrait_body">Portrait finds the skin, smooths it and keeps its pores, evens redness and lights the face. Tap eyes to brighten them, teeth to whiten. Show skin to check.</string>
     <string name="guide_expand_title">More room around a picture</string>

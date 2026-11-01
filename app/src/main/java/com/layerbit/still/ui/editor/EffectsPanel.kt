@@ -173,13 +173,19 @@ fun EffectsPanel(
         onChange = { v -> s.draftEffect(sel) { it.copy(extra = v) } }, onDone = s.commit,
         onReset = { s.changeEffect(sel) { it.copy(extra = kind.extraDefault) } }, haptics = s.haptics, scrub = s.scrub
     )
+    // Where it lands: the whole picture, or a part found without painting.
+    SectionHeading(stringResource(R.string.effects_where), modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+    com.layerbit.still.ui.components.ChipRow(
+        listOf<Pair<com.layerbit.still.engine.MaskKind?, String>>(null to stringResource(R.string.effects_area_all)) + Effect.AREAS.map { it to maskLabel(it) },
+        open.area, { a -> s.changeEffect(sel) { it.copy(area = a) } }
+    )
     if (kind == EffectKind.LENS_BLUR) Hint(stringResource(if (open.style == 0) R.string.effects_lens_hint else R.string.effects_lens_round_hint))
     if (kind.seeded) SecondaryButton(stringResource(R.string.effects_shuffle), onClick = { s.changeEffect(sel) { it.copy(seed = (it.seed % 99_991) + 1) } }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), tall = false)
 
     SectionHeading(stringResource(R.string.effects_stack), modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
     for ((i, e) in effects.withIndex()) {
         StackRow(
-            "${i + 1}. ${stringResource(effectLabelRes(e.kind))} · ${stringResource(effectStyleRes(e.kind)[e.style])}",
+            "${i + 1}. ${stringResource(effectLabelRes(e.kind))} · ${stringResource(effectStyleRes(e.kind)[e.style])}" + (e.area?.let { " · " + maskLabel(it) } ?: ""),
             active = i == sel, first = i == 0, last = i == effects.lastIndex,
             onOpen = { onChoose(i) },
             onUp = { s.change { r -> r.copy(effects = r.effects.toMutableList().apply { add(i - 1, removeAt(i)) }) }; onChoose(i - 1) },
