@@ -191,4 +191,25 @@ class ExpandTest {
         assertTrue("an object was copied far out: $brightest", brightest < 160)
         assertTrue("far ground not calm: ${spread(l.width - 30, l.width)}", spread(l.width - 30, l.width) < 10)
     }
+
+    @Test
+    fun aPictureOfThingsDoesNotRepeatThemFarOut() {
+        // A few sharp dark rings on a soft ground: pieces, not a texture. Far out the fill should be calm.
+        val w = 192; val h = 192
+        val px = picture(w, h) { x, y ->
+            val rings = listOf(40 to 50, 150 to 60, 60 to 150, 140 to 140)
+            val onRing = rings.any { (cx, cy) -> val d = kotlin.math.hypot((x - cx).toDouble(), (y - cy).toDouble()); d in 10.0..16.0 }
+            // A busy ground (fine grain everywhere) with a few strong things on it, as in a poster.
+            val grain = ((x * 7919 + y * 104729) % 41) - 20
+            if (onRing) 15 else 150 + grain
+        }
+        val e = Expand(left = 1f, right = 1f)
+        val l = e.layout(w, h)
+        val out = Expansion.apply(px, w, h, e)
+        // The outer quarter of the left strip.
+        // Copied pieces of the rings show as dark pixels in the fill; a calm fill has almost none.
+        var dark = 0; var n = 0
+        for (y in 0 until h) for (x in 0 until l.x * 2 / 3) { if (grey(out[y * l.width + x]) < 80) dark++; n++ }
+        assertTrue("ring pieces in the fill ${dark.toDouble() / n}", dark.toDouble() / n < 0.01)
+    }
 }

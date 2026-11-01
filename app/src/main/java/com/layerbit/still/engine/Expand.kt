@@ -500,8 +500,15 @@ object Expansion {
         // Strong detail in places: a picture of things, which is what can repeat. A smooth picture has none.
         val things = ((mags[(mags.size * 9) / 10].toDouble() - 12.0) / 30.0).coerceIn(0.0, 1.0)
         val even = typical / (typical + 12.0)
-        val knee = TEXTURE_KNEE + 4.0 * typical
-        val floor = 0.3 + 0.65 * even
+        // Pieces: strong detail in some places and not others (tigers, lamps), against a texture whose
+        // detail is the same everywhere (stripes, grass). The top tenth against the middle tells them apart.
+        val spread = mags[(mags.size * 9) / 10].toDouble() / (typical + 4.0)
+        val pieces = things * smoothstep(((spread - 1.4) / 1.2).coerceIn(0.0, 1.0))
+        // Strong detail is what makes a piece recognisable; a picture of things keeps less of it.
+        val knee = (TEXTURE_KNEE + 4.0 * typical) * (1.0 - 0.65 * pieces)
+        // A busy picture of things (tigers, stairs, lamps) is busy everywhere and so looks even; its
+        // strong pieces are still what repeats, so being a picture of things outweighs being even.
+        val floor = (0.3 + 0.65 * even) * (1.0 - 0.6 * pieces)
         Parallel.bands(lay.height) { from, to ->
             for (y in from until to) {
                 if (y and 0x1F == 0) check()
@@ -549,7 +556,7 @@ object Expansion {
                         // A picture of things, far out: settle into the soft backdrop, as a lens
                         // would, rather than tile what is not there. A texture never does.
                         if (backdrop != null) {
-                            val m = (1.0 - even) * things * smoothstep(((reach - 0.1) / 0.35).coerceIn(0.0, 1.0))
+                            val m = max((1.0 - even) * things, 0.85 * pieces) * smoothstep(((reach - 0.06) / 0.3).coerceIn(0.0, 1.0))
                             if (m > 0.0) {
                                 val c = backdrop[y * lay.width + x]
                                 r += ((c shr 16 and 0xFF) - r) * m; g += ((c shr 8 and 0xFF) - g) * m; b += ((c and 0xFF) - b) * m
