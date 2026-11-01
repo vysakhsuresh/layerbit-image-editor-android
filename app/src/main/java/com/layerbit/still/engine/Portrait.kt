@@ -40,6 +40,8 @@ data class PortraitEdit(
     val even: Float = 0f,
     /** Face light, 0..1: a soft lift on the skin, like a reflector held below the face. */
     val light: Float = 0f,
+    /** Clear spots, 0..1: small dark or red marks on the skin lifted to the skin around them; pores stay. */
+    val spots: Float = 0f,
     /** Eye clarity at each eye tap, 0..1. */
     val eyes: Float = 0.6f,
     /** Whitening at each teeth tap, 0..1. */
@@ -52,13 +54,13 @@ data class PortraitEdit(
     val isIdentity: Boolean get() = this == PortraitEdit()
 
     /** Whether anything changes pixels. Strokes alone change nothing until a strength is up. */
-    val active: Boolean get() = smooth > 0f || even > 0f || light > 0f || (taps.isNotEmpty() && (eyes > 0f || teeth > 0f))
+    val active: Boolean get() = smooth > 0f || even > 0f || light > 0f || spots > 0f || (taps.isNotEmpty() && (eyes > 0f || teeth > 0f))
 
     /** Whether the skin mask is needed at all. */
-    val needsMask: Boolean get() = smooth > 0f || even > 0f || light > 0f
+    val needsMask: Boolean get() = smooth > 0f || even > 0f || light > 0f || spots > 0f
 
     val valid: Boolean
-        get() = smooth in 0f..1f && texture in 0f..1f && even in 0f..1f && light in 0f..1f && eyes in 0f..1f && teeth in 0f..1f &&
+        get() = smooth in 0f..1f && texture in 0f..1f && even in 0f..1f && light in 0f..1f && spots in 0f..1f && eyes in 0f..1f && teeth in 0f..1f &&
             strokes.size <= MAX_STROKES && strokes.all { it.valid } && taps.size <= MAX_TAPS && taps.all { it.valid }
 
     /** What decides the mask, as a key for a cache. */
@@ -384,7 +386,8 @@ object Portrait {
         val glow = if (p.light > 0f) Segment.feather(skin.mask, mw, mh, max(1, (0.03f * min(mw, mh)).roundToInt())) else null
         // Work only inside the skin's bounds and a margin as wide as the widest filter.
         val bounds = Segment.bounds(skin.mask, mw, mh, margin = 0f, threshold = 8) ?: return
-        val margin = 3 * max(smoothR, evenR) + 2
+        val spotR = max(2, (7f * scale).roundToInt())
+        val margin = 3 * max(max(smoothR, evenR), spotR * 5) + 2
         val x0 = ((bounds[0] * w).toInt() - margin).coerceIn(0, w - 1); val y0 = ((bounds[1] * h).toInt() - margin).coerceIn(0, h - 1)
         val x1 = ((bounds[2] * w).roundToInt() + margin).coerceIn(x0 + 1, w); val y1 = ((bounds[3] * h).roundToInt() + margin).coerceIn(y0 + 1, h)
         val ww = x1 - x0; val wh = y1 - y0; val n = ww * wh
@@ -395,6 +398,32 @@ object Portrait {
             ys[i] = ycc[0]; cbs[i] = ycc[1]; crs[i] = ycc[2]
         }
         check()
+        // Spots first, so smoothing and even tone work on clear skin. A spot is darker (or redder)
+        // than the skin a little way round it, at a size above pores: the near mean is compared with
+        // a wider ring, so single-pixel pore texture never counts, and the spot is lifted to the ring.
+        if (p.spots > 0f) {
+            val near = boxMean(ys, ww, wh, max(1, spotR / 3))
+            val wide = boxMean(boxMean(ys, ww, wh, spotR * 3), ww, wh, spotR * 2)
+            val crNearS = boxMean(crs, ww, wh, max(1, spotR / 3))
+            val crWideS = boxMean(boxMean(crs, ww, wh, spotR * 3), ww, wh, spotR * 2)
+            val sxs = (mw - 1).toFloat() / max(1, w - 1); val sys = (mh - 1).toFloat() / max(1, h - 1)
+            // A spot is often too dark to read as skin itself, so the mask's small holes are closed first.
+            val closeR = max(2, (0.012f * min(mw, mh)).roundToInt())
+            val closed = Segment.shrink(Segment.grow(skin.mask, mw, mh, closeR), mw, mh, closeR)
+            for (y in 0 until wh) for (x in 0 until ww) {
+                val i = y * ww + x
+                val m = Segment.sample(closed, mw, mh, (x + x0) * sxs, (y + y0) * sys) / 255f
+                if (m <= 0f) continue
+                val dark = wide[i] - near[i]
+                val red = crNearS[i] - crWideS[i]
+                val k = max(smoothstep(4f, 14f, dark), smoothstep(3f, 10f, red)) * m * p.spots
+                if (k <= 0f) continue
+                // Lifted by the darkness and redness, keeping the pixel's own texture round the near mean.
+                ys[i] += max(0f, dark) * k
+                crs[i] -= max(0f, red) * k
+            }
+            check()
+        }
         // Frequency separation: a self-guided filter is the low band (edges kept, soft wobble flattened),
         // what it took away is the high band, and [texture] of the high band goes back on.
         var low: FloatArray? = null

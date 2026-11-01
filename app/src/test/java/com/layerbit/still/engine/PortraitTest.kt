@@ -293,4 +293,36 @@ class PortraitTest {
         val none = Portrait.skin(px, w, h)
         assertTrue("gold without a person ${none.mask[200 * w + 10]}", none.mask[200 * w + 10] < 100)
     }
+
+    @Test
+    fun clearSpotsLiftsSmallDarkMarksOnSkinAndLeavesThePicture() {
+        val w = 400; val h = 400
+        val clean = face(w, h)
+        // Dark spots, a few pixels across, on the cheeks.
+        val spotted = clean.copyOf()
+        val centres = listOf(0.38f to 0.55f, 0.62f to 0.56f, 0.44f to 0.5f)
+        for ((cx, cy) in centres) for (dy in -3..3) for (dx in -3..3) if (dx * dx + dy * dy <= 9) {
+            val x = (cx * w).toInt() + dx; val y = (cy * h).toInt() + dy
+            val c = spotted[y * w + x]
+            spotted[y * w + x] = Argb.pack(255, Argb.red(c) - 55, Argb.green(c) - 45, Argb.blue(c) - 40)
+        }
+        val s = Portrait.skin(spotted, w, h)
+        val out = Portrait.apply(spotted, w, h, PortraitEdit(spots = 1f), s)
+        for ((cx, cy) in centres) {
+            val i = (cy * h).toInt() * w + (cx * w).toInt()
+            val before = Argb.luma(clean[i]) - Argb.luma(spotted[i])
+            val after = Argb.luma(clean[i]) - Argb.luma(out[i])
+            assertTrue("spot at $cx,$cy: $before -> $after", after < before * 0.5)
+        }
+        // Away from the face nothing moves.
+        for (y in 0 until h) for (x in 0 until w) {
+            val fx = (x + 0.5f) / w; val fy = (y + 0.5f) / h
+            if (inFace(fx, fy) > 1.6f) assertEquals("($x,$y)", spotted[y * w + x], out[y * w + x])
+        }
+        // A clean face stays nearly as it was: pores are not spots.
+        val cleanOut = Portrait.apply(clean, w, h, PortraitEdit(spots = 1f), Portrait.skin(clean, w, h))
+        var moved = 0L; var n = 0
+        for (y in 0 until h) for (x in 0 until w) if (cheeks((x + 0.5f) / w, (y + 0.5f) / h)) { moved += abs(Argb.luma(cleanOut[y * w + x]) - Argb.luma(clean[y * w + x])); n++ }
+        assertTrue("clean skin moved ${moved.toFloat() / n}", moved.toFloat() / n < 2.5f)
+    }
 }

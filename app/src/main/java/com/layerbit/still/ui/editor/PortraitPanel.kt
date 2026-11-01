@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 enum class PortraitTool { NONE, BRUSH, EYE, TEETH }
 
 /** The strengths a first press of "Retouch skin" sets: gentle, and every one of them a slider afterwards. */
-val PortraitStart = PortraitEdit(smooth = 0.5f, texture = 0.35f, even = 0.4f, light = 0.25f)
+val PortraitStart = PortraitEdit(smooth = 0.5f, texture = 0.35f, even = 0.4f, light = 0.25f, spots = 0.6f)
 
 /**
  * Skin smoothing, even tone, face light, then eyes and teeth by tap. The skin is found by itself;
@@ -59,6 +59,7 @@ fun PortraitPanel(
     }
     Knob(stringResource(R.string.portrait_even), p.even, 0f..1f, onChange = { v -> set { it.copy(even = v) } }, onDone = s.commit, onReset = { setNow { it.copy(even = 0f) } }, haptics = s.haptics, scrub = s.scrub)
     Knob(stringResource(R.string.portrait_light), p.light, 0f..1f, onChange = { v -> set { it.copy(light = v) } }, onDone = s.commit, onReset = { setNow { it.copy(light = 0f) } }, haptics = s.haptics, scrub = s.scrub)
+    Knob(stringResource(R.string.portrait_spots), p.spots, 0f..1f, onChange = { v -> set { it.copy(spots = v) } }, onDone = s.commit, onReset = { setNow { it.copy(spots = 0f) } }, haptics = s.haptics, scrub = s.scrub)
 
     SectionHeading(stringResource(R.string.portrait_skin_heading), modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
     ToggleRow(stringResource(R.string.portrait_show_skin), showSkin, onShowSkin, detail = stringResource(R.string.portrait_show_skin_detail))

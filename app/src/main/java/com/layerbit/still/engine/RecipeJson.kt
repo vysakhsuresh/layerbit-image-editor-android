@@ -96,7 +96,7 @@ object RecipeJson {
     }
 
     private fun portrait(p: PortraitEdit) = jsonOf(
-        "smooth" to p.smooth.json(), "texture" to p.texture.json(), "even" to p.even.json(), "light" to p.light.json(),
+        "smooth" to p.smooth.json(), "texture" to p.texture.json(), "even" to p.even.json(), "light" to p.light.json(), "spots" to p.spots.json(),
         "eyes" to p.eyes.json(), "teeth" to p.teeth.json(), "subjectOnly" to p.subjectOnly.json(),
         "strokes" to p.strokes.map { jsonOf("points" to points(it.points), "width" to it.width.json(), "add" to it.add.json()) }.json(),
         "taps" to p.taps.map { jsonOf("at" to listOf(it.at.x.json(), it.at.y.json()).json(), "kind" to it.kind.name.json(), "radius" to it.radius.json()) }.json()
@@ -112,7 +112,7 @@ object RecipeJson {
         if (v == null || v == JsonValue.Null) return PortraitEdit()
         val d = PortraitEdit()
         return PortraitEdit(
-            smooth = v.f("smooth"), texture = v["texture"]?.num()?.toFloat() ?: d.texture, even = v.f("even"), light = v.f("light"),
+            smooth = v.f("smooth"), texture = v["texture"]?.num()?.toFloat() ?: d.texture, even = v.f("even"), light = v.f("light"), spots = v.f("spots"),
             eyes = v["eyes"]?.num()?.toFloat() ?: d.eyes, teeth = v["teeth"]?.num()?.toFloat() ?: d.teeth,
             subjectOnly = v["subjectOnly"]?.bool() ?: false,
             strokes = v["strokes"]?.arr()?.map { s -> SkinStroke(s["points"]?.let { pts(it) } ?: emptyList(), s["width"]?.num()?.toFloat() ?: 0.05f, s["add"]?.bool() ?: true) } ?: emptyList(),

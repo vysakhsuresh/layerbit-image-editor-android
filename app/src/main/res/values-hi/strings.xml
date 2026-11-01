@@ -961,6 +961,7 @@
     <string name="portrait_texture">बनावट रखें</string>
     <string name="portrait_texture_hint">ज़्यादा रखने पर रोमछिद्र बने रहते हैं, ताकि त्वचा त्वचा जैसी दिखे.</string>
     <string name="portrait_even">एक-सा रंग</string>
+    <string name="portrait_spots">दाग हटाएँ</string>
     <string name="portrait_light">चेहरे पर रोशनी</string>
     <string name="portrait_skin_heading">त्वचा कहाँ है</string>
     <string name="portrait_show_skin">त्वचा दिखाएँ</string>

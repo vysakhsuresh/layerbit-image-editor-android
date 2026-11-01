@@ -961,6 +961,7 @@
     <string name="portrait_texture">Keep texture</string>
     <string name="portrait_texture_hint">Higher keeps more pores, so skin still looks like skin.</string>
     <string name="portrait_even">Even tone</string>
+    <string name="portrait_spots">Clear spots</string>
     <string name="portrait_light">Face light</string>
     <string name="portrait_skin_heading">Where the skin is</string>
     <string name="portrait_show_skin">Show skin</string>
@@ -1222,7 +1223,7 @@
     <string name="guide_effects_title">Effects with styles</string>
     <string name="guide_effects_body">Ambiance, HDR, drama, black and white with colour filters, vintage, glow, film, lens blur and a vignette you can place. Each has styles and a strength, can be kept to the subject, background or sky, and you can stack them.</string>
     <string name="guide_portrait_title">Portraits, kindly</string>
-    <string name="guide_portrait_body">Portrait finds the skin, smooths it and keeps its pores, evens redness and lights the face. Tap eyes to brighten them, teeth to whiten. Show skin to check.</string>
+    <string name="guide_portrait_body">Portrait finds the skin, clears small spots, smooths it and keeps its pores, evens redness and lights the face. Tap eyes to brighten them, teeth to whiten. Show skin to check.</string>
     <string name="guide_expand_title">More room around a picture</string>
     <string name="guide_expand_body">Expand grows the canvas to a square, a story or any size and fills it from the picture itself.</string>
     <string name="guide_history_title">Every edit in plain words</string>
