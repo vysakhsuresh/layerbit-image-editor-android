@@ -167,9 +167,10 @@ class TonePipeline private constructor(
             if (t.exposure != 0f) m = multiply(scale(2f.pow(t.exposure)), m)
             // Temperature and tint as channel gains, normalised so mid-grey keeps its luminance.
             if (t.temperature != 0f || t.tint != 0f) {
-                var r = 1f + 0.18f * t.temperature - 0.04f * t.tint
-                var g = 1f + 0.10f * t.tint
-                var b = 1f - 0.18f * t.temperature - 0.04f * t.tint
+                val tp = reach(t.temperature); val tn = reach(t.tint)
+                var r = 1f + 0.18f * tp - 0.04f * tn
+                var g = 1f + 0.10f * tn
+                var b = 1f - 0.18f * tp - 0.04f * tn
                 val l = 0.2126f * r + 0.7152f * g + 0.0722f * b
                 r /= l; g /= l; b /= l
                 m = multiply(diag(r, g, b), m)
@@ -177,6 +178,33 @@ class TonePipeline private constructor(
             if (t.saturation != 0f) m = multiply(saturation(1f + t.saturation), m)
             if (t.hue != 0f) m = multiply(hueRotate(t.hue * 180f), m)
             return m
+        }
+
+        /**
+         * A slider's travel to its strength: straight up to half way, then reaching half again as
+         * far by the end, so the last stretch can cancel a strong tungsten or green cast.
+         */
+        internal fun reach(v: Float): Float {
+            val a = kotlin.math.abs(v)
+            return if (a <= 0.5f) v else kotlin.math.sign(v) * (a + 2f * (a - 0.5f) * (a - 0.5f))
+        }
+
+        private fun unreach(x: Float): Float {
+            val a = kotlin.math.abs(x)
+            return if (a <= 0.5f) x else kotlin.math.sign(x) * (0.5f + (-1f + kotlin.math.sqrt(1f + 8f * (a - 0.5f))) / 4f)
+        }
+
+        /**
+         * The temperature and tint whose channel gains bring ([r], [g], [b]) to grey, solved
+         * exactly from the matrix above: red and blue meet at their harmonic mean, then green is
+         * brought to it. Clamped to the sliders' travel when a cast is beyond their reach.
+         */
+        internal fun neutralFor(r: Int, g: Int, b: Int): FloatArray {
+            val rr = max(1, r).toFloat(); val gg = max(1, g).toFloat(); val bb = max(1, b).toFloat()
+            val k = 2f * rr * bb / (rr + bb)
+            val y = ((k - gg) / (0.04f * k + 0.10f * gg)).coerceIn(-1.5f, 1.5f)
+            val x = ((bb - rr) * (1f - 0.04f * y) / (0.18f * (rr + bb))).coerceIn(-1.5f, 1.5f)
+            return floatArrayOf(unreach(x).coerceIn(-1f, 1f), unreach(y).coerceIn(-1f, 1f))
         }
 
         private fun identity() = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f)

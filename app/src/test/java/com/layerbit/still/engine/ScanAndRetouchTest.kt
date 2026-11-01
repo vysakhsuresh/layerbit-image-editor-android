@@ -71,12 +71,12 @@ class ScanAndRetouchTest {
     }
 
     @Test
-    fun neutraliseWarmsABlueCastAndAddsMagentaToAGreenOne() {
+    fun neutraliseWarmsABlueCastAndTakesGreenOutOfAGreenOne() {
         val blue = Retouch.neutralise(120, 128, 170, Tone())
         assertTrue(blue.temperature > 0.2f)
-        assertTrue(abs(blue.tint) < 0.15f)
+        // The tapped colour coming out grey is checked in NeutralTest.
         val green = Retouch.neutralise(120, 160, 120, Tone(exposure = 0.4f))
-        assertTrue(green.tint > 0.2f)
+        assertTrue("tint ${green.tint}", green.tint < -0.2f) // negative tint takes green out
         assertEquals(0.4f, green.exposure, 1e-6f)
         val grey = Retouch.neutralise(128, 128, 128, Tone())
         assertEquals(0f, grey.temperature, 1e-6f); assertEquals(0f, grey.tint, 1e-6f)

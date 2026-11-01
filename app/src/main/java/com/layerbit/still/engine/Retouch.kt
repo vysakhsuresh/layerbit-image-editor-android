@@ -44,8 +44,7 @@ object Retouch {
      * a green cast for magenta. The picture's other sliders are kept.
      */
     fun neutralise(r: Int, g: Int, b: Int, base: Tone): Tone {
-        val temperature = ((b - r) / 255f * 1.6f).coerceIn(-1f, 1f)
-        val tint = ((g - (r + b) / 2f) / 255f * 1.6f).coerceIn(-1f, 1f)
+        val (temperature, tint) = TonePipeline.neutralFor(r, g, b).let { it[0] to it[1] }
         return base.copy(temperature = temperature, tint = tint)
     }
 

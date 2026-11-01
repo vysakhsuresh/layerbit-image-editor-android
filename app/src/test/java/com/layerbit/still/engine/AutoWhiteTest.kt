@@ -26,7 +26,7 @@ class AutoWhiteTest {
     @Test
     fun aGreenCastAsksForMagenta() {
         val t = AutoWhite.tone(scene(120, 150, 120))
-        assertTrue("tint ${t.tint}", t.tint > 0.1f) // positive tint is magenta
+        assertTrue("tint ${t.tint}", t.tint < -0.1f) // the engine's positive tint is green, so less of it
     }
 
     @Test
