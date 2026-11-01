@@ -140,7 +140,9 @@ fun EffectsPanel(
     /** The brush shared with the Local tool, for an effect painted in. */
     brush: LocalTools = remember { LocalTools() },
     /** How much of the picture each area covers, measured on the preview. */
-    coverage: Map<com.layerbit.still.engine.LocalMask, Float> = emptyMap()
+    coverage: Map<com.layerbit.still.engine.LocalMask, Float> = emptyMap(),
+    /** Adds an effect suited to the picture; without it, the effect's plain defaults. */
+    onAdd: ((EffectKind) -> Unit)? = null
 ) {
     val effects = s.recipe.effects
     val sel = effectSelection(effects, chosen)
@@ -154,7 +156,7 @@ fun EffectsPanel(
                 when {
                     at >= 0 -> onChoose(at)
                     effects.size >= Effect.MAX -> onFull()
-                    else -> { s.change { it.copy(effects = it.effects + Effect.added(kind)) }; onChoose(effects.size) }
+                    else -> { if (onAdd != null) onAdd(kind) else s.change { it.copy(effects = it.effects + Effect.added(kind)) }; onChoose(effects.size) }
                 }
             }
         }

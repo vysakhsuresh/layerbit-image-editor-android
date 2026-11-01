@@ -466,6 +466,12 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
         return entry
     }
 
+    /** Where the subject sits on [base], from the same mask the other tools use, for placing a lens blur or a vignette. */
+    fun subjectPlace(base: Bitmap, cut: Cutout, key: String?, check: () -> Unit = {}): com.layerbit.still.engine.EffectAdvice.Subject? {
+        val e = maskFor(base, subjectOf(cut), key, check)
+        return com.layerbit.still.engine.EffectAdvice.subject(e.mask, e.width, e.height)
+    }
+
     /** Hard numbers about a cut-out for the panel: how much of the picture is kept. */
     fun cutoutCoverage(base: Bitmap, cut: Cutout, key: String?, check: () -> Unit = {}): Float {
         val e = maskFor(base, cut, key, check)

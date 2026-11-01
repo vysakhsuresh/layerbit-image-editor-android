@@ -136,6 +136,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val swatches: List<Int> = emptyList(),
         /** The looks that suit this picture, best first, read once per picture. */
         val suggestedLooks: List<Look> = emptyList(),
+        /** What the picture holds (sky, leaves, skin), so a new effect starts in the style that suits it. */
+        val content: com.layerbit.still.engine.EffectAdvice.Content? = null,
         /** On the Light panel: blown pixels painted red and crushed ones blue on the preview. */
         val showClipping: Boolean = false,
         /** The look of the last picture edited, offered as one tap on an untouched picture. */
@@ -738,6 +740,28 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Adds [kind] to the stack already suited to the picture: black and white with the filter the
+     * scene needs, a lens blur or a vignette placed on the subject. The user steers from there.
+     */
+    fun addEffect(kind: EffectKind) {
+        val state = _ui.value
+        if (state.recipe.effects.size >= Effect.MAX) return
+        var e = Effect.added(kind)
+        state.content?.let { c -> e = e.copy(style = com.layerbit.still.engine.EffectAdvice.style(kind, c)) }
+        val placeable = (kind == EffectKind.LENS_BLUR || kind == EffectKind.VIGNETTE) && state.recipe.expand.isIdentity
+        val b = base
+        if (!placeable || b == null) { change { it.copy(effects = it.effects + e) }; return }
+        // Placed first, so the first preview already has the focus on the subject; added plain if that fails.
+        viewModelScope.launch {
+            val r = _ui.value.recipe
+            val subject = runCatching { withContext(Dispatchers.Default) { renderer.subjectPlace(b, r.cutout, maskKey(r.geometry)) } }.getOrNull()
+            val canvas = Geometry2D.canvasSize(Geometry2D.Size(b.width, b.height), Geometry())
+            val placed = com.layerbit.still.engine.EffectAdvice.placed(e, subject, canvas.width, canvas.height)
+            change { it.copy(effects = it.effects + placed) }
+        }
+    }
+
     private var curveThumbJob: Job? = null
     private var curveThumbKey: Recipe? = null
 
@@ -843,9 +867,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                         val bmp = fresh.bitmap
                         val px = IntArray(bmp.width * bmp.height)
                         bmp.getPixels(px, 0, bmp.width, 0, 0, bmp.width, bmp.height)
-                        Palette.matched(px) to LookAdvice.suggest(px)
+                        Triple(Palette.matched(px), LookAdvice.suggest(px), com.layerbit.still.engine.EffectAdvice.content(px))
                     }
-                    _ui.update { it.copy(swatches = swatches.first, suggestedLooks = swatches.second) }
+                    _ui.update { it.copy(swatches = swatches.first, suggestedLooks = swatches.second, content = swatches.third) }
                     fresh.bitmap
                 }
                 val cutoutPanel = state.panel == ToolId.Panel.CUTOUT && !state.recipe.cutout.enabled

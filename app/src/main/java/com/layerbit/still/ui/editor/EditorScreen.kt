@@ -464,7 +464,7 @@ fun EditorScreen(
                             ToolId.Panel.EFFECTS -> {
                                 val openKind = recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.kind
                                 LaunchedEffect(ui.project?.id, openKind) { vm.ensureEffectThumbs(openKind) }
-                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) }, brush = localTools, coverage = ui.effectCoverage)
+                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) }, brush = localTools, coverage = ui.effectCoverage, onAdd = vm::addEffect)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.LOCAL -> LocalPanel(
