@@ -61,7 +61,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        handleIntent(intent)
+        // Only on a fresh start: after a rotation the picture is already open, and handling the
+        // intent again would reopen it and send the editor back to its first panel.
+        if (savedInstanceState == null) handleIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {

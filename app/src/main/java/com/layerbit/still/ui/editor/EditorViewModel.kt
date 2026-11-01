@@ -190,19 +190,34 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------------------------ opening
 
+    /**
+     * What this editor was asked to open. The screen asks again when it is rebuilt after a
+     * rotation; the editor is already open then, with its panel and undo history, and stays so.
+     */
+    private var openedFor: String? = null
+
+    private fun alreadyOpen(key: String): Boolean {
+        if (openedFor == key) return true
+        openedFor = key
+        return false
+    }
+
     fun open(projectId: String, panel: ToolId.Panel, tool: ToolId? = null) {
+        if (alreadyOpen("project:$projectId")) return
         val p = store.project(projectId)
-        if (p == null) { message(Strings.get(R.string.editor_project_gone)); return }
+        if (p == null) { openedFor = null; message(Strings.get(R.string.editor_project_gone)); return }
         install(p, panel, tool)
     }
 
     fun openUri(uri: Uri, panel: ToolId.Panel, tool: ToolId? = null) {
+        if (alreadyOpen("uri:$uri")) return
         _ui.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {
                 val p = store.importProject(uri)
                 install(p, panel, tool)
             } catch (e: Exception) {
+                openedFor = null
                 _ui.update { it.copy(loading = false, message = e.message ?: Strings.get(R.string.app_error_not_image, "")) }
             }
         }
