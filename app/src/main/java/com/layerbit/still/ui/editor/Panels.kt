@@ -116,7 +116,7 @@ fun Hint(text: String) = Text(text, style = MaterialTheme.typography.bodySmall, 
 // ------------------------------------------------------------------ crop
 
 @Composable
-fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit, onAutoStraighten: () -> Unit = {}) {
+fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit, onAutoStraighten: () -> Unit = {}, focus: Pt? = null) {
     val g = s.recipe.geometry
     val turned = Geometry2D.turned(s.source, g.quarterTurns)
     val canvas = if (kotlin.math.abs(g.straighten) < 0.01f) turned else Geometry2D.rotatedBounds(turned.width, turned.height, g.straighten)
@@ -124,7 +124,7 @@ fun CropPanel(s: PanelScope, lockAspect: Float, onLockAspect: (Float) -> Unit, o
     ChipRow(aspects, lockAspect, onSelect = { a ->
         onLockAspect(a)
         val ratio = if (a == -1f) s.source.aspect else a
-        if (ratio > 0f) s.change { it.copy(geometry = it.geometry.copy(crop = Geometry2D.aspectCrop(canvas, ratio))) }
+        if (ratio > 0f) s.change { it.copy(geometry = it.geometry.copy(crop = Geometry2D.aspectCrop(canvas, ratio, focus))) }
     })
     Hint(stringResource(if (lockAspect == PASSPORT_ASPECT) R.string.crop_passport_hint else R.string.crop_hint))
     Knob(stringResource(R.string.crop_straighten), g.straighten, -45f..45f, onChange = { v -> s.draft(s.recipe.copy(geometry = g.copy(straighten = v))) }, onDone = s.commit,

@@ -136,6 +136,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val swatches: List<Int> = emptyList(),
         /** The looks that suit this picture, best first, read once per picture. */
         val suggestedLooks: List<Look> = emptyList(),
+        /** The subject's centre on the uncropped picture, so a crop shape frames it; null when none stands out. */
+        val cropFocus: Pt? = null,
         /** What the picture holds (sky, leaves, skin), so a new effect starts in the style that suits it. */
         val content: com.layerbit.still.engine.EffectAdvice.Content? = null,
         /** On the Light panel: blown pixels painted red and crushed ones blue on the preview. */
@@ -218,7 +220,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         effectJob?.cancel(); effectSmall = null; effectThumbKey = null
         // Another picture: the frame and curve strips must not show the last one.
         frameThumbJob?.cancel(); frameSmall = null; frameThumbKey = null
-        curveThumbJob?.cancel(); curveThumbKey = null
+        curveThumbJob?.cancel(); curveThumbKey = null; cropFocusKey = null
         undo.clear(); redo.clear()
         baseline = p.recipe
         _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), lastEdits = store.lastEdits(), loading = false) }
@@ -762,6 +764,20 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private var cropFocusKey: String? = null
+
+    /** Measures where the subject sits on the uncropped picture the Crop panel shows, once per picture and geometry. */
+    private fun findCropFocus(b: Bitmap, shown: Recipe) {
+        val key = maskKey(shown.geometry) + "|" + shown.cutout.maskKey
+        if (key == cropFocusKey) return
+        cropFocusKey = key
+        viewModelScope.launch {
+            val s = runCatching { withContext(Dispatchers.Default) { renderer.subjectPlace(b, shown.cutout, maskKey(shown.geometry)) } }.getOrNull()
+            val focus = s?.takeIf { it.coverage in 0.02f..0.7f }?.let { Pt(it.cx, it.cy) }
+            _ui.update { it.copy(cropFocus = focus) }
+        }
+    }
+
     private var curveThumbJob: Job? = null
     private var curveThumbKey: Recipe? = null
 
@@ -919,6 +935,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
                 // old one, and from API 26 the garbage collector frees pixel memory itself.
                 _ui.update { it.copy(preview = shown2, original = original, histogram = histogram, previewBusy = false, canvasSize = canvas, cutoutKept = kept, skinKept = skinKept, previewFast = fast, palette = palette, localCoverage = coverage, effectCoverage = effectAreas) }
                 if (pagePending) findPage(quiet = true)
+                if (state.panel == ToolId.Panel.CROP && !fast) findCropFocus(b, shown)
             } catch (c: CancellationException) {
                 throw c
             } catch (e: OutOfMemoryError) {

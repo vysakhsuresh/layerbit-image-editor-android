@@ -99,7 +99,22 @@ object Geometry2D {
      * where the canvas is what the crop is measured against - so a preset chosen after a
      * quarter turn means what it says.
      */
-    fun aspectCrop(canvas: Size, aspect: Float): Crop {
+    fun aspectCrop(canvas: Size, aspect: Float): Crop = aspectCrop(canvas, aspect, null)
+
+    /**
+     * The largest crop with [aspect], slid so [focus] (canvas fractions; the subject's centre) sits
+     * as near its middle as the picture allows. Without a focus it is centred.
+     */
+    fun aspectCrop(canvas: Size, aspect: Float, focus: Pt?): Crop {
+        val c = centredAspectCrop(canvas, aspect)
+        if (focus == null || !focus.finite) return c
+        val w = c.width; val h = c.height
+        val left = (focus.x - w / 2f).coerceIn(0f, 1f - w)
+        val top = (focus.y - h / 2f).coerceIn(0f, 1f - h)
+        return Crop(left, top, left + w, top + h)
+    }
+
+    private fun centredAspectCrop(canvas: Size, aspect: Float): Crop {
         require(aspect > 0f && aspect.isFinite())
         val current = canvas.aspect
         return if (current > aspect) {

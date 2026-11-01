@@ -441,7 +441,7 @@ fun EditorScreen(
                     val panelScroll = androidx.compose.runtime.key(panel) { rememberScrollState() }
                     Column(Modifier.fillMaxWidth().verticalScroll(panelScroll).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         when (panel) {
-                            ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it }, onAutoStraighten = vm::autoStraighten)
+                            ToolId.Panel.NONE, ToolId.Panel.CROP -> CropPanel(scope, lockAspect, onLockAspect = { lockAspect = it }, onAutoStraighten = vm::autoStraighten, focus = ui.cropFocus)
                             ToolId.Panel.PERSPECTIVE -> PerspectivePanel(scope, onFindPage = { vm.findPage() })
                             ToolId.Panel.LIGHT -> LightPanel(scope, ui.histogram, settings.showHistogram, onAuto = vm::auto, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.LIGHT }, onAutoAmount = vm::setAutoAmount, showClipping = ui.showClipping, onShowClipping = vm::setShowClipping)
                             ToolId.Panel.COLOUR -> ColourPanelWithNeutral(scope, pickingNeutral, onPick = { pickingNeutral = it }, onAuto = { pickingNeutral = false; vm.autoColour() }, autoStep = ui.autoStep.takeIf { ui.autoPanel == ToolId.Panel.COLOUR }, onAutoAmount = vm::setAutoAmount)

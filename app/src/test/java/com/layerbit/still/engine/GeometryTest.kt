@@ -115,4 +115,17 @@ class GeometryTest {
             }
         }
     }
+
+    @Test
+    fun anAspectCropSlidesToTheSubject() {
+        val canvas = Geometry2D.Size(1600, 900)
+        val centred = Geometry2D.aspectCrop(canvas, 1f)
+        val onSubject = Geometry2D.aspectCrop(canvas, 1f, Pt(0.35f, 0.5f))
+        org.junit.Assert.assertEquals(centred.width, onSubject.width, 1e-5f)
+        org.junit.Assert.assertEquals(0.35f, (onSubject.left + onSubject.right) / 2f, 1e-4f)
+        // Near the edge it stops at the edge rather than leaving the picture.
+        val atEdge = Geometry2D.aspectCrop(canvas, 1f, Pt(0.02f, 0.5f))
+        org.junit.Assert.assertEquals(0f, atEdge.left, 1e-6f)
+        org.junit.Assert.assertTrue(atEdge.valid)
+    }
 }
