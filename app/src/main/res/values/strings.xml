@@ -658,7 +658,7 @@
 
     <!-- Home, one gesture -->
     <string name="home_open_pictures">Open pictures</string>
-    <string name="home_open_pictures_body">One opens in the editor. Several go to a batch, where you switch on what to do to all of them.</string>
+    <string name="home_open_pictures_body">One opens in the editor. Several go to a batch, done in one go.</string>
     <string name="app_pill_originals">Originals untouched</string>
     <string name="home_or">Or go straight to</string>
     <string name="home_door_edit">Edit one picture</string>

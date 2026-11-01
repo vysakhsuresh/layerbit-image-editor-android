@@ -197,11 +197,12 @@ fun HomeScreen(
             Column(rise(3)) {
                 SectionHeading(stringResource(R.string.home_or), modifier = Modifier.padding(top = 2.dp, bottom = 8.dp))
                 // Four doors as a bento: two rows of two, each wearing its own colour.
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                // Each row as tall as its tallest door, so the bento reads as one even grid.
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
                     Door(Glyph.EDIT, Neon.Sky, stringResource(R.string.home_door_edit), stringResource(R.string.home_door_edit_body), onEditOne, Modifier.weight(1f))
                     Door(Glyph.RECIPE, Neon.Mint, stringResource(R.string.home_door_batch), stringResource(R.string.home_door_batch_body), { onProcessMany(null) }, Modifier.weight(1f))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp).height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
                     Door(Glyph.COLLAGE, Neon.Magenta, stringResource(R.string.home_door_collage), stringResource(R.string.home_door_collage_body), onCollage, Modifier.weight(1f))
                     Door(Glyph.LAYERS, Neon.Violet, stringResource(R.string.home_door_tools), stringResource(R.string.home_door_tools_body), onTools, Modifier.weight(1f))
                 }
@@ -297,7 +298,7 @@ private fun Door(glyph: Glyph, accent: Color, title: String, body: String, onCli
     val interaction = remember { MutableInteractionSource() }
     val dark = StillColors.isDark
     Column(
-        modifier = modifier.heightIn(min = 128.dp)
+        modifier = modifier.heightIn(min = 128.dp).fillMaxHeight()
             .pressScale(interaction, 0.965f)
             .shadow(if (dark) 10.dp else 6.dp, shape, clip = false, ambientColor = accent.copy(alpha = 0.4f), spotColor = accent.copy(alpha = 0.5f))
             .clip(shape)
@@ -312,7 +313,7 @@ private fun Door(glyph: Glyph, accent: Color, title: String, body: String, onCli
         }
         Spacer(Modifier.weight(1f))
         Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.padding(top = 10.dp), maxLines = 2)
-        Text(body, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.82f), modifier = Modifier.padding(top = 2.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(body, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.82f), modifier = Modifier.padding(top = 2.dp), maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
