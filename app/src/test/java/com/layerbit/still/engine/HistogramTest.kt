@@ -84,4 +84,18 @@ class HistogramTest {
         val bright = IntArray(20_000) { i -> val v = 170 + i % 60; Argb.pack(255, v, v - 10, v - 20) }
         assertTrue(AutoEnhance.tone(Histogram.of(bright, 1)).exposure < 0f)
     }
+
+    @Test
+    fun autoLeavesAFlatGraphicAlone() {
+        // Three flat colours, as a logo or a screenshot: no stretching, no cast removed.
+        val px = IntArray(600 * 400) { i -> val x = i % 600; if (x < 200) Argb.pack(255, 160, 184, 255) else if (x < 400) Argb.pack(255, 144, 110, 120) else Argb.pack(255, 72, 128, 120) }
+        val h = Histogram.of(px, 1)
+        assertTrue(h.isGraphic)
+        assertEquals(Tone(), AutoEnhance.tone(h))
+        assertFalse(AutoEnhance.worthwhile(h))
+        assertEquals(Tone(), AutoWhite.tone(px))
+        // A photograph's smooth spread of levels is not a graphic.
+        val photo = IntArray(20_000) { i -> val v = 30 + (i * 7) % 200; Argb.pack(255, v, v, v) }
+        assertFalse(Histogram.of(photo, 1).isGraphic)
+    }
 }

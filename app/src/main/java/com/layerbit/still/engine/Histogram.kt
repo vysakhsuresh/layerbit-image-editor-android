@@ -17,6 +17,20 @@ class Histogram private constructor(
     val luma: IntArray, val red: IntArray, val green: IntArray, val blue: IntArray, val total: Long
 ) {
 
+    /**
+     * A graphic rather than a photograph: nearly all of it in a handful of exact brightness levels
+     * (a screenshot, a logo, a flat poster). Light and colour from a photo's statistics would
+     * wreck it, so the automatic tools leave it alone.
+     */
+    val isGraphic: Boolean
+        get() {
+            if (total < 1000) return false
+            val top = luma.sortedDescending()
+            var sum = 0L
+            for (k in 0 until 6) sum += top[k]
+            return sum >= total * 0.85
+        }
+
     /** Fraction of pixels at or below [v] in the luminance histogram. */
     fun cumulative(v: Int): Float {
         var sum = 0L
@@ -70,7 +84,7 @@ object AutoEnhance {
      * picture someone already warmed keeps it warm.
      */
     fun tone(h: Histogram, base: Tone = Tone()): Tone {
-        if (h.total == 0L) return base
+        if (h.total == 0L || h.isGraphic) return base
         val low = h.percentile(0.005f) / 255f
         val high = h.percentile(0.995f) / 255f
         val median = h.percentile(0.5f) / 255f

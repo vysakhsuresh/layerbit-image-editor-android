@@ -52,6 +52,8 @@ object AutoWhite {
      * kept. Returns [base] unchanged when there is nothing to correct.
      */
     fun tone(pixels: IntArray, base: Tone = Tone()): Tone {
+        // A graphic's colours are chosen, not cast: nothing to correct.
+        if (Histogram.of(pixels).isGraphic) return base
         val e = estimate(pixels) ?: return base
         val target = Retouch.neutralise(e.r, e.g, e.b, Tone())
         val k = if (e.fromNeutrals) 1f else 0.5f
