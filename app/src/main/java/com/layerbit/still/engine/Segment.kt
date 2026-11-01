@@ -246,11 +246,17 @@ object Segment {
             { if (hasRemove) geodesic(pixels, w, h, stroked, 2, null, towardsSubject = false, check) else null }
         )
         val seed = stroked.copyOf()
-        // The border is background unless a keep stroke reaches it through flat colour.
+        // A face found in the picture is a person: their skin is subject, and the body below it is
+        // allowed to run off the frame, as shoulders do in nearly every portrait.
+        val face = faceIn(pixels, w, h)
+        if (face != null) for (i in face.pixels) if (seed[i].toInt() == 0 && (fromRemove == null || fromRemove[i] > STROKE_REACH)) seed[i] = 1
+        // The border is background unless a keep stroke reaches it through flat colour, or it is below a face.
         val band = max(2, (0.03f * shorter).roundToInt())
         for (y in 0 until h) for (x in 0 until w) {
             if (x < band || y < band || x >= w - band || y >= h - band) {
                 val i = y * w + x
+                // Below a face the edges are left to the colours to decide: shoulders often reach the corners.
+                if (face != null && y > face.bottom) continue
                 if (seed[i].toInt() == 0 && (fromKeep == null || fromKeep[i] > STROKE_REACH)) seed[i] = 2
             }
         }
@@ -290,6 +296,47 @@ object Segment {
         }
         tidy(mask, w, h, stroked, minArea = max(16, n / 250))
         return mask
+    }
+
+    /** A face: its skin pixels and its lowest row. */
+    private class Face(val pixels: IntArray, val bottom: Int)
+
+    /**
+     * The largest compact patch of skin of a face's size, not at the bottom of the picture: a
+     * head, not an arm along the edge or a sandy beach. Null when there is none.
+     */
+    private fun faceIn(pixels: IntArray, w: Int, h: Int): Face? {
+        val n = w * h
+        val skin = runCatching { Portrait.skin(pixels, w, h) }.getOrNull() ?: return null
+        if (!skin.found || skin.width != w || skin.height != h) return null
+        val label = IntArray(n); val stack = IntArray(n)
+        var best: IntArray? = null; var by1 = 0
+        var next = 1
+        for (start in 0 until n) {
+            if (label[start] != 0 || skin.mask[start] < 128) continue
+            var sp = 0; stack[sp++] = start; label[start] = next
+            val members = ArrayList<Int>()
+            var x0 = w; var x1 = 0; var y0 = h; var y1 = 0
+            while (sp > 0) {
+                val i = stack[--sp]; members += i
+                val x = i % w; val y = i / w
+                if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y
+                fun visit(j: Int) { if (label[j] == 0 && skin.mask[j] >= 128) { label[j] = next; stack[sp++] = j } }
+                if (x > 0) visit(i - 1); if (x < w - 1) visit(i + 1); if (y > 0) visit(i - w); if (y < h - 1) visit(i + w)
+            }
+            next++
+            val area = members.size
+            if (area < n * 0.004f || area > n * 0.25f) continue
+            val boxArea = (x1 - x0 + 1) * (y1 - y0 + 1)
+            // A face is round-ish and fills its box; an arm or a strip of sand does not.
+            if (area < boxArea * 0.4f) continue
+            val aspect = (y1 - y0 + 1).toFloat() / (x1 - x0 + 1)
+            if (aspect < 0.6f || aspect > 2.2f) continue
+            if ((y0 + y1) / 2f > h * 0.75f) continue
+            if (best == null || area > best.size) { best = members.toIntArray(); by1 = y1 }
+        }
+        val pixelsOf = best ?: return null
+        return Face(pixelsOf, by1)
     }
 
     /** How far, in flat colour, a stroke's say reaches past its own pixels: about a few percent of the picture. */
