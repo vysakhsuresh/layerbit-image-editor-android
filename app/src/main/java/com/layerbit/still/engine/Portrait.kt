@@ -96,6 +96,15 @@ object Portrait {
     /** The skin found on a picture: a 0..255 mask at the analysis size and the skin's own colour. */
     class Skin(val mask: IntArray, val width: Int, val height: Int, val cb: Float, val cr: Float, val found: Boolean) {
         val coverage: Float get() = Segment.coverage(mask)
+
+        /** The mask with small holes closed (a dark spot often does not read as skin): made once, for Clear spots. */
+        val closed: IntArray by lazy {
+            val r = max(2, (0.012f * min(width, height)).roundToInt())
+            Segment.shrink(Segment.grow(mask, width, height, r), width, height, r)
+        }
+
+        /** A much softer mask, for Face light: a glow on the face rather than a cut-out of it. Made once. */
+        val glow: IntArray by lazy { Segment.feather(mask, width, height, max(1, (0.03f * min(width, height)).roundToInt())) }
     }
 
     // Generic skin cluster centre and spread in Cb/Cr (0..255), from the usual skin-tone literature.
@@ -383,33 +392,39 @@ object Portrait {
         val smoothR = max(1, (5f * scale).roundToInt())
         val evenR = max(2, (30f * scale).roundToInt())
         // Face light reads a much softer mask: a glow on the face, not a cut-out of it.
-        val glow = if (p.light > 0f) Segment.feather(skin.mask, mw, mh, max(1, (0.03f * min(mw, mh)).roundToInt())) else null
+        val glow = if (p.light > 0f) skin.glow else null
         // Work only inside the skin's bounds and a margin as wide as the widest filter.
         val bounds = Segment.bounds(skin.mask, mw, mh, margin = 0f, threshold = 8) ?: return
         val spotR = max(2, (7f * scale).roundToInt())
-        val margin = 3 * max(max(smoothR, evenR), spotR * 5) + 2
+        val margin = 3 * max(max(smoothR, evenR), spotR * 4) + 2
         val x0 = ((bounds[0] * w).toInt() - margin).coerceIn(0, w - 1); val y0 = ((bounds[1] * h).toInt() - margin).coerceIn(0, h - 1)
         val x1 = ((bounds[2] * w).roundToInt() + margin).coerceIn(x0 + 1, w); val y1 = ((bounds[3] * h).roundToInt() + margin).coerceIn(y0 + 1, h)
         val ww = x1 - x0; val wh = y1 - y0; val n = ww * wh
         val ys = FloatArray(n); val cbs = FloatArray(n); val crs = FloatArray(n)
-        for (y in 0 until wh) for (x in 0 until ww) {
-            val ycc = ycbcr(px[(y + y0) * w + x + x0])
+        // The skin mask read once per pixel, for every pass below.
+        val ms = FloatArray(n)
+        val sxm = (mw - 1).toFloat() / max(1, w - 1); val sym = (mh - 1).toFloat() / max(1, h - 1)
+        Parallel.bands(wh) { from, to -> for (y in from until to) for (x in 0 until ww) {
+            val c = px[(y + y0) * w + x + x0]
+            val r = Argb.red(c).toFloat(); val g = Argb.green(c).toFloat(); val b = Argb.blue(c).toFloat()
             val i = y * ww + x
-            ys[i] = ycc[0]; cbs[i] = ycc[1]; crs[i] = ycc[2]
-        }
+            ys[i] = 0.299f * r + 0.587f * g + 0.114f * b
+            cbs[i] = 128f - 0.168736f * r - 0.331264f * g + 0.5f * b
+            crs[i] = 128f + 0.5f * r - 0.418688f * g - 0.081312f * b
+            ms[i] = Segment.sample(skin.mask, mw, mh, (x + x0) * sxm, (y + y0) * sym) / 255f
+        } }
         check()
         // Spots first, so smoothing and even tone work on clear skin. A spot is darker (or redder)
         // than the skin a little way round it, at a size above pores: the near mean is compared with
         // a wider ring, so single-pixel pore texture never counts, and the spot is lifted to the ring.
         if (p.spots > 0f) {
             val near = boxMean(ys, ww, wh, max(1, spotR / 3))
-            val wide = boxMean(ys, ww, wh, spotR * 4)
+            val wide = wideMean(ys, ww, wh, spotR * 4)
             val crNearS = boxMean(crs, ww, wh, max(1, spotR / 3))
-            val crWideS = boxMean(crs, ww, wh, spotR * 4)
+            val crWideS = wideMean(crs, ww, wh, spotR * 4)
             val sxs = (mw - 1).toFloat() / max(1, w - 1); val sys = (mh - 1).toFloat() / max(1, h - 1)
             // A spot is often too dark to read as skin itself, so the mask's small holes are closed first.
-            val closeR = max(2, (0.012f * min(mw, mh)).roundToInt())
-            val closed = Segment.shrink(Segment.grow(skin.mask, mw, mh, closeR), mw, mh, closeR)
+            val closed = skin.closed
             Parallel.bands(wh) { from, to -> for (y in from until to) for (x in 0 until ww) {
                 val i = y * ww + x
                 val dark = wide[i] - near[i]
@@ -442,15 +457,15 @@ object Portrait {
             low = FloatArray(n) { am[it] * ys[it] + bm[it] }
             check()
         }
-        val cbWide = if (p.even > 0f) boxMean(cbs, ww, wh, evenR) else null
-        val crWide = if (p.even > 0f) boxMean(crs, ww, wh, evenR) else null
+        val cbWide = if (p.even > 0f) wideMean(cbs, ww, wh, evenR) else null
+        val crWide = if (p.even > 0f) wideMean(crs, ww, wh, evenR) else null
         val cbNear = if (p.smooth > 0f) boxMean(cbs, ww, wh, smoothR) else null
         val crNear = if (p.smooth > 0f) boxMean(crs, ww, wh, smoothR) else null
         check()
         val sx = (mw - 1).toFloat() / max(1, w - 1); val sy = (mh - 1).toFloat() / max(1, h - 1)
         Parallel.bands(wh) { from, to -> for (y in from until to) for (x in 0 until ww) {
             val gx = x + x0; val gy = y + y0
-            val m = Segment.sample(skin.mask, mw, mh, gx * sx, gy * sy) / 255f
+            val m = ms[y * ww + x]
             val g = glow?.let { Segment.sample(it, mw, mh, gx * sx, gy * sy) / 255f } ?: 0f
             if (m <= 0f && g <= 0f) continue
             val i = y * ww + x
@@ -528,28 +543,18 @@ object Portrait {
     }
 
     /** A box mean of radius [r] with clamped edges, in two separable running-sum passes. */
-    fun boxMean(src: FloatArray, w: Int, h: Int, r: Int): FloatArray {
-        val tmp = FloatArray(src.size); val out = FloatArray(src.size)
-        val win = (2 * r + 1).toFloat()
-        Parallel.bands(h) { from, to -> for (y in from until to) {
-            val row = y * w
-            var sum = 0f
-            for (k in -r..r) sum += src[row + k.coerceIn(0, w - 1)]
-            for (x in 0 until w) {
-                tmp[row + x] = sum / win
-                sum += src[row + (x + r + 1).coerceAtMost(w - 1)] - src[row + (x - r).coerceAtLeast(0)]
-            }
-        } }
-        Parallel.bands(w) { from, to -> for (x in from until to) {
-            var sum = 0f
-            for (k in -r..r) sum += tmp[k.coerceIn(0, h - 1) * w + x]
-            for (y in 0 until h) {
-                out[y * w + x] = sum / win
-                sum += tmp[(y + r + 1).coerceAtMost(h - 1) * w + x] - tmp[(y - r).coerceAtLeast(0) * w + x]
-            }
-        } }
-        return out
+    /**
+     * A wide box mean worked at half size and read back bilinearly: at a radius of eight or more the
+     * difference is far below a level, and it costs a quarter.
+     */
+    private fun wideMean(src: FloatArray, w: Int, h: Int, r: Int): FloatArray {
+        if (r < 8 || w < 32 || h < 32) return boxMean(src, w, h, r)
+        val hw = (w + 1) / 2; val hh = (h + 1) / 2
+        return Planes.upsample(boxMean(Planes.halve(src, w, h), hw, hh, (r + 1) / 2), hw, hh, w, h)
     }
+
+    /** One box pass with clamped edges: rows, then columns a band at a time so memory is read in order. */
+    fun boxMean(src: FloatArray, w: Int, h: Int, r: Int): FloatArray = Planes.box(src, w, h, r)
 
     /** Variance of the luminance's high band (pixel minus a small blur) over the pixels where [where] is true: a texture measure for tests and the panel. */
     fun highFrequencyVariance(pixels: IntArray, w: Int, h: Int, where: (Int, Int) -> Boolean): Double {
