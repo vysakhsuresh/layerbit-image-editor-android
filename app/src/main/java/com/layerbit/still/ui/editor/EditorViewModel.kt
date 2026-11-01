@@ -68,6 +68,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -676,6 +677,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
 
     private var thumbJob: Job? = null
 
+    /** Thumbnails are drawn only while the main preview is idle, so the picture itself always comes first. */
+    private suspend fun previewIdle() { _ui.first { !it.previewBusy } }
+
     /** Renders every look over a small copy of the picture, once per project, for the Looks strip. */
     fun ensureLookThumbs() {
         if (_ui.value.lookThumbs.isNotEmpty() || thumbJob?.isActive == true) return
@@ -684,7 +688,7 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val small = withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }
                 val thumbs = LinkedHashMap<Look, Bitmap>()
-                for (look in Look.entries) thumbs[look] = renderer.finish(small, Recipe(look = look))
+                for (look in Look.entries) { previewIdle(); thumbs[look] = renderer.finish(small, Recipe(look = look)) }
                 _ui.update { it.copy(lookThumbs = thumbs) }
             } catch (c: CancellationException) {
                 throw c
@@ -710,8 +714,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val small = frameSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { frameSmall = it }
                 val thumbs = LinkedHashMap<com.layerbit.still.engine.FrameStyle?, Bitmap>()
-                thumbs[null] = renderer.finish(small, look)
+                previewIdle(); thumbs[null] = renderer.finish(small, look)
                 for (style in com.layerbit.still.engine.FrameStyle.entries) {
+                    previewIdle()
                     thumbs[style] = renderer.finish(small, look.copy(frame = com.layerbit.still.engine.FrameStyles.preset(style).copy(caption = "")))
                 }
                 frameThumbKey = look
@@ -745,15 +750,21 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val small = effectSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { effectSmall = it }
                 fun sample(k: EffectKind, style: Int) = baseRecipe.copy(effects = listOf((if (k == EffectKind.VIGNETTE) Effect.added(k).copy(style = style, strength = 0.8f) else Effect(k, style = style, strength = 0.8f, size = 0.12f))))
-                if (effectThumbKey != baseRecipe) {
-                    val thumbs = LinkedHashMap<EffectKind, Bitmap>()
-                    for (k in EffectKind.entries) thumbs[k] = renderer.finish(small, sample(k, 0))
-                    effectThumbKey = baseRecipe
-                    _ui.update { it.copy(effectThumbs = thumbs, effectStyleThumbs = emptyMap()) }
+                // The open effect's styles first, since those are what the user is looking at.
+                if (kind != null && (effectThumbKey != baseRecipe || _ui.value.effectStyleThumbs[kind] == null)) {
+                    val styles = (0 until kind.styles).map { previewIdle(); renderer.finish(small, sample(kind, it)) }
+                    val fresh = effectThumbKey == baseRecipe
+                    _ui.update { it.copy(effectStyleThumbs = (if (fresh) it.effectStyleThumbs else emptyMap()) + (kind to styles)) }
                 }
-                if (kind != null && _ui.value.effectStyleThumbs[kind] == null) {
-                    val styles = (0 until kind.styles).map { renderer.finish(small, sample(kind, it)) }
-                    _ui.update { it.copy(effectStyleThumbs = it.effectStyleThumbs + (kind to styles)) }
+                if (effectThumbKey != baseRecipe) {
+                    // Each one replaces its old thumbnail as it is ready, so the strip never goes blank.
+                    for (k in EffectKind.entries) {
+                        previewIdle()
+                        val t = renderer.finish(small, sample(k, 0))
+                        _ui.update { it.copy(effectThumbs = it.effectThumbs + (k to t)) }
+                    }
+                    effectThumbKey = baseRecipe
+                    _ui.update { u -> u.copy(effectStyleThumbs = u.effectStyleThumbs.filterKeys { it == kind }) }
                 }
             } catch (c: CancellationException) {
                 throw c
