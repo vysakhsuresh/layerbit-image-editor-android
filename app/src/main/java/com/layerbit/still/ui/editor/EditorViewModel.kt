@@ -119,6 +119,8 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
         val frameThumbs: Map<com.layerbit.still.engine.FrameStyle?, Bitmap> = emptyMap(),
         /** Each effect over a small copy of the picture in the user's own colour, for the Effects strip. */
         val effectThumbs: Map<EffectKind, Bitmap> = emptyMap(),
+        /** The picture under each curve preset, in the user's own light and colour, for the Curves strip. */
+        val curveThumbs: Map<com.layerbit.still.engine.CurvePreset, Bitmap> = emptyMap(),
         /** Every style of an effect the user has opened, the same way. */
         val effectStyleThumbs: Map<EffectKind, List<Bitmap>> = emptyMap(),
         /** True while the preview is the quick half-size one shown during a slider move. */
@@ -209,6 +211,9 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     private fun install(p: ImageStore.Project, panel: ToolId.Panel, tool: ToolId? = null) {
         dropBase()
         effectJob?.cancel(); effectSmall = null; effectThumbKey = null
+        // Another picture: the frame and curve strips must not show the last one.
+        frameThumbJob?.cancel(); frameSmall = null; frameThumbKey = null
+        curveThumbJob?.cancel(); curveThumbKey = null
         undo.clear(); redo.clear()
         baseline = p.recipe
         _ui.update { Ui(project = p, recipe = p.recipe, panel = if (panel == ToolId.Panel.NONE) ToolId.Panel.CROP else panel, presets = store.presets(), lastEdits = store.lastEdits(), loading = false) }
@@ -726,6 +731,33 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 // The strip falls back to names alone; the frames themselves are unaffected.
                 android.util.Log.w("Still", "frame thumbnails", e)
+            }
+        }
+    }
+
+    private var curveThumbJob: Job? = null
+    private var curveThumbKey: Recipe? = null
+
+    /** Each curve preset over a small copy of the picture as the user has it, without their own curves; redrawn when that changes. */
+    fun ensureCurveThumbs() {
+        val base = effectThumbBase(_ui.value.recipe).copy(curves = com.layerbit.still.engine.Curves())
+        if (curveThumbKey == base && _ui.value.curveThumbs.isNotEmpty()) return
+        curveThumbJob?.cancel()
+        curveThumbJob = viewModelScope.launch {
+            val project = _ui.value.project ?: return@launch
+            try {
+                val small = frameSmall ?: withContext(Dispatchers.Default) { renderer.decode(project.file.file, Budget.LOOK_THUMB_PIXELS) }.also { frameSmall = it }
+                for (p in com.layerbit.still.engine.CurvePreset.entries) {
+                    previewIdle()
+                    val t = renderer.finish(small, base.copy(curves = com.layerbit.still.engine.CurvePresets.curves(p)))
+                    _ui.update { it.copy(curveThumbs = it.curveThumbs + (p to t)) }
+                }
+                curveThumbKey = base
+            } catch (c: CancellationException) {
+                throw c
+            } catch (e: Exception) {
+                // The strip falls back to names alone; the presets themselves are unaffected.
+                android.util.Log.w("Still", "curve thumbnails", e)
             }
         }
     }

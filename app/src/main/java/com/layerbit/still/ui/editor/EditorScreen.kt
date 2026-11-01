@@ -433,7 +433,10 @@ fun EditorScreen(
                             )
                             ToolId.Panel.DOUBLE -> DoublePanel(scope, onPick = { pickSecond.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
                             ToolId.Panel.SCAN -> ScanPanel(scope, onFindPage = { vm.findPage() }, onAdjustCorners = { vm.setPanel(ToolId.Panel.PERSPECTIVE) })
-                            ToolId.Panel.CURVES -> CurvesPanel(scope, ui.histogram)
+                            ToolId.Panel.CURVES -> {
+                                LaunchedEffect(ui.project?.id, recipe.tone, recipe.look, recipe.lookStrength, recipe.mix) { vm.ensureCurveThumbs() }
+                                CurvesPanel(scope, ui.histogram, ui.curveThumbs)
+                            }
                             ToolId.Panel.LOOKS -> {
                                 LaunchedEffect(ui.project?.id) { vm.ensureLookThumbs() }
                                 LooksPanel(scope, ui.presets, ui.lookThumbs, ui.suggestedLooks, onSavePreset = { presetDialog = true }, onApplyPreset = vm::applyPreset, onRemovePreset = vm::removePreset, onRenamePreset = vm::renamePreset)

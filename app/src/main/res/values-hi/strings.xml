@@ -278,6 +278,15 @@
     <string name="curves_reset_channel">यह चैनल रीसेट करें</string>
     <string name="curves_reset_all">सब रीसेट करें</string>
     <string name="curves_hint">बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें, हटाने के लिए ऊपर या नीचे से बाहर खींचें. कर्व अपने बिंदुओं के बीच कभी उछलता नहीं.</string>
+    <string name="curve_brighten">उजला</string>
+    <string name="curve_darken">गहरा</string>
+    <string name="curve_contrast">कंट्रास्ट</string>
+    <string name="curve_soft">नरम</string>
+    <string name="curve_matte">मैट</string>
+    <string name="curve_faded">फीका</string>
+    <string name="curve_cross">क्रॉस प्रोसेस</string>
+    <string name="curve_warm_light">गर्म रोशनी</string>
+    <string name="curve_cool_shadows">ठंडी छाया</string>
 
     <!-- Looks -->
     <string name="look_none">कोई नहीं</string>

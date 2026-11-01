@@ -197,7 +197,7 @@ fun EffectsPanel(
 }
 
 @Composable
-private fun ThumbCard(label: String, bitmap: Bitmap?, active: Boolean, inStack: Boolean, small: Boolean = false, onClick: () -> Unit) {
+internal fun ThumbCard(label: String, bitmap: Bitmap?, active: Boolean, inStack: Boolean, small: Boolean = false, onClick: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     val side = if (small) 60.dp else 72.dp
     val frame by animateColorAsState(if (active) StillColors.Band else if (inStack) StillColors.BorderStrong else StillColors.Border, label = "effectFrame")

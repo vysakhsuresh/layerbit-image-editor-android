@@ -254,9 +254,19 @@ fun ColourPanelWithNeutral(s: PanelScope, picking: Boolean, onPick: (Boolean) ->
 }
 
 @Composable
-fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? = null) {
+fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? = null, thumbs: Map<com.layerbit.still.engine.CurvePreset, Bitmap> = emptyMap()) {
     var channel by rememberSaveable { mutableStateOf("master") }
     val c = s.recipe.curves
+    // One tap to a starting curve, shown on the picture itself; every point stays draggable after.
+    val chosen = com.layerbit.still.engine.CurvePresets.which(c)
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        items(com.layerbit.still.engine.CurvePreset.entries.size) { i ->
+            val p = com.layerbit.still.engine.CurvePreset.entries[i]
+            ThumbCard(stringResource(curvePresetRes(p)), thumbs[p], active = chosen == p, inStack = false, small = true) {
+                s.change { r -> r.copy(curves = if (chosen == p) Curves() else com.layerbit.still.engine.CurvePresets.curves(p)) }
+            }
+        }
+    }
     ChipRow(listOf("master" to stringResource(R.string.curves_master), "red" to stringResource(R.string.curves_red), "green" to stringResource(R.string.curves_green), "blue" to stringResource(R.string.curves_blue)), channel, { channel = it })
     val points = when (channel) { "red" -> c.red; "green" -> c.green; "blue" -> c.blue; else -> c.master }
     val accent = when (channel) { "red" -> androidx.compose.ui.graphics.Color(0xFFE8705F); "green" -> androidx.compose.ui.graphics.Color(0xFF4CCB8F); "blue" -> androidx.compose.ui.graphics.Color(0xFF5BA9E8); else -> StillColors.Band }
@@ -268,6 +278,18 @@ fun CurvesPanel(s: PanelScope, histogram: com.layerbit.still.engine.Histogram? =
         SecondaryButton(stringResource(R.string.curves_reset_all), onClick = { s.change { it.copy(curves = Curves()) } }, modifier = Modifier.weight(1f), tall = false, enabled = !c.isIdentity)
     }
     Hint(stringResource(R.string.curves_hint))
+}
+
+fun curvePresetRes(p: com.layerbit.still.engine.CurvePreset): Int = when (p) {
+    com.layerbit.still.engine.CurvePreset.BRIGHTEN -> R.string.curve_brighten
+    com.layerbit.still.engine.CurvePreset.DARKEN -> R.string.curve_darken
+    com.layerbit.still.engine.CurvePreset.CONTRAST -> R.string.curve_contrast
+    com.layerbit.still.engine.CurvePreset.SOFT -> R.string.curve_soft
+    com.layerbit.still.engine.CurvePreset.MATTE -> R.string.curve_matte
+    com.layerbit.still.engine.CurvePreset.FADED -> R.string.curve_faded
+    com.layerbit.still.engine.CurvePreset.CROSS -> R.string.curve_cross
+    com.layerbit.still.engine.CurvePreset.WARM_LIGHT -> R.string.curve_warm_light
+    com.layerbit.still.engine.CurvePreset.COOL_SHADOWS -> R.string.curve_cool_shadows
 }
 
 // ------------------------------------------------------------------ looks and presets

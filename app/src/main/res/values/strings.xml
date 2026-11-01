@@ -278,6 +278,15 @@
     <string name="curves_reset_channel">Reset this channel</string>
     <string name="curves_reset_all">Reset all</string>
     <string name="curves_hint">Tap to add a point, drag to move it, drag off the top or bottom to remove it. The curve never overshoots between its points.</string>
+    <string name="curve_brighten">Brighten</string>
+    <string name="curve_darken">Darken</string>
+    <string name="curve_contrast">Contrast</string>
+    <string name="curve_soft">Soft</string>
+    <string name="curve_matte">Matte</string>
+    <string name="curve_faded">Faded</string>
+    <string name="curve_cross">Cross process</string>
+    <string name="curve_warm_light">Warm light</string>
+    <string name="curve_cool_shadows">Cool shadows</string>
 
     <!-- Looks -->
     <string name="look_none">None</string>
