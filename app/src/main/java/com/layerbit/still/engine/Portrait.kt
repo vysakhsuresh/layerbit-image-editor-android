@@ -403,25 +403,27 @@ object Portrait {
         // a wider ring, so single-pixel pore texture never counts, and the spot is lifted to the ring.
         if (p.spots > 0f) {
             val near = boxMean(ys, ww, wh, max(1, spotR / 3))
-            val wide = boxMean(boxMean(ys, ww, wh, spotR * 3), ww, wh, spotR * 2)
+            val wide = boxMean(ys, ww, wh, spotR * 4)
             val crNearS = boxMean(crs, ww, wh, max(1, spotR / 3))
-            val crWideS = boxMean(boxMean(crs, ww, wh, spotR * 3), ww, wh, spotR * 2)
+            val crWideS = boxMean(crs, ww, wh, spotR * 4)
             val sxs = (mw - 1).toFloat() / max(1, w - 1); val sys = (mh - 1).toFloat() / max(1, h - 1)
             // A spot is often too dark to read as skin itself, so the mask's small holes are closed first.
             val closeR = max(2, (0.012f * min(mw, mh)).roundToInt())
             val closed = Segment.shrink(Segment.grow(skin.mask, mw, mh, closeR), mw, mh, closeR)
-            for (y in 0 until wh) for (x in 0 until ww) {
+            Parallel.bands(wh) { from, to -> for (y in from until to) for (x in 0 until ww) {
                 val i = y * ww + x
-                val m = Segment.sample(closed, mw, mh, (x + x0) * sxs, (y + y0) * sys) / 255f
-                if (m <= 0f) continue
                 val dark = wide[i] - near[i]
                 val red = crNearS[i] - crWideS[i]
+                // Most skin is no spot: the mask is read only where something stands out.
+                if (dark <= 4f && red <= 3f) continue
+                val m = Segment.sample(closed, mw, mh, (x + x0) * sxs, (y + y0) * sys) / 255f
+                if (m <= 0f) continue
                 val k = max(smoothstep(4f, 14f, dark), smoothstep(3f, 10f, red)) * m * p.spots
                 if (k <= 0f) continue
                 // Lifted by the darkness and redness, keeping the pixel's own texture round the near mean.
                 ys[i] += max(0f, dark) * k
                 crs[i] -= max(0f, red) * k
-            }
+            } }
             check()
         }
         // Frequency separation: a self-guided filter is the low band (edges kept, soft wobble flattened),
