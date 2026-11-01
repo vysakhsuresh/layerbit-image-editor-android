@@ -192,7 +192,12 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
         }
         // The one button floats over the list, so it is there whatever is scrolled; a ring while the run is on.
         if (shown !is JobState.Finished) {
-            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+            // The list fades out under the button rather than showing card edges round it.
+            Box(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to StillColors.Background.copy(alpha = 0f), 0.3f to StillColors.Background, 1f to StillColors.Background))
+                    .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 16.dp)
+            ) {
                 if (shown is JobState.Running) {
                     Row(
                         Modifier.align(Alignment.Center).clip(ButtonShape).background(StillColors.Glass).border(1.dp, StillColors.BorderStrong, ButtonShape).padding(horizontal = 18.dp, vertical = 10.dp),
@@ -203,7 +208,7 @@ fun PipelineRoute(preset: String?, onOpenInEditor: (StillFile) -> Unit, vm: Pipe
                         Text(if (shown.unitsTotal > 0) "${shown.unitsDone} / ${shown.unitsTotal}" else shown.label, style = MaterialTheme.typography.titleMedium, color = StillColors.Text, modifier = Modifier.padding(start = 12.dp))
                     }
                 } else {
-                    val label = when { vm.steps.pdfOn -> stringResource(R.string.pipeline_run_pdf, ui.files.size); vm.steps.anyOn -> stringResource(R.string.pipeline_run, ui.files.size); else -> stringResource(R.string.pipeline_run_clean, ui.files.size) }
+                    val label = when { ui.files.isEmpty() -> stringResource(R.string.pipeline_run_empty); vm.steps.pdfOn -> stringResource(R.string.pipeline_run_pdf, ui.files.size); vm.steps.anyOn -> stringResource(R.string.pipeline_run, ui.files.size); else -> stringResource(R.string.pipeline_run_clean, ui.files.size) }
                     PrimaryButton(label, onClick = batchRun, modifier = Modifier.fillMaxWidth().testTag("pipelineRun"), enabled = ui.files.isNotEmpty() && !ui.importing, iconRes = R.drawable.ic_tool_export)
                 }
             }

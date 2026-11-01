@@ -682,6 +682,7 @@
     <string name="pipeline_total">%1$d pictures, %2$s</string>
     <string name="pipeline_run_pdf">Make a %1$d-page PDF</string>
     <string name="pipeline_run">Run on %1$d pictures</string>
+    <string name="pipeline_run_empty">Add pictures to begin</string>
     <string name="pipeline_run_clean">Remove hidden data from %1$d pictures</string>
     <string name="step_resize_detail">Longest edge, percent or exact pixels</string>
     <string name="step_under_detail">Best quality that fits, then smaller only if it must</string>
