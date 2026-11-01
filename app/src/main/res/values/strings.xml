@@ -556,6 +556,7 @@
     <string name="tools_pictures">Pictures</string>
     <string name="tools_add_photos">Add photos</string>
     <string name="tools_browse_files">Browse files</string>
+    <string name="collage_empty_hint">Add two to twelve pictures. Each is copied privately first; your originals are never changed.</string>
     <string name="tools_empty_hint">Add one picture or a hundred. Each is copied privately first; your originals are never changed.</string>
     <string name="tools_clear_all">Clear the list</string>
     <string name="tools_options">Options</string>

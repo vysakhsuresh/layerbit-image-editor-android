@@ -200,7 +200,7 @@ fun ToolScreen(
                 SecondaryButton(stringResource(R.string.tools_browse_files), onClick = onAddFiles, modifier = Modifier.weight(1f), tall = false, enabled = job !is JobState.Running)
             }
             if (importing) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp), color = StillColors.Band, trackColor = StillColors.SurfaceDim)
-            if (files.isEmpty() && !importing) Hint(stringResource(R.string.tools_empty_hint))
+            if (files.isEmpty() && !importing) Hint(stringResource(if (tool == ToolId.COLLAGE) R.string.collage_empty_hint else R.string.tools_empty_hint))
         }
         if (files.isNotEmpty()) item {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

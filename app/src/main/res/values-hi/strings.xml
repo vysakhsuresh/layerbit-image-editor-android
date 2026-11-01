@@ -556,6 +556,7 @@
     <string name="tools_pictures">तस्वीरें</string>
     <string name="tools_add_photos">फ़ोटो जोड़ें</string>
     <string name="tools_browse_files">फ़ाइलें देखें</string>
+    <string name="collage_empty_hint">दो से बारह तस्वीरें जोड़ें. हर एक की पहले निजी कॉपी बनती है; आपकी असली तस्वीरें कभी नहीं बदलतीं.</string>
     <string name="tools_empty_hint">एक तस्वीर जोड़ें या सौ. हर एक पहले निजी तौर पर कॉपी होती है; आपकी मूल तस्वीरें कभी नहीं बदलतीं.</string>
     <string name="tools_clear_all">सूची खाली करें</string>
     <string name="tools_options">विकल्प</string>
