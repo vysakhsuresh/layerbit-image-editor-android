@@ -367,7 +367,7 @@ object Effects {
         val cx = w / 2f; val cy = h / 2f
         // Corners measured on an ellipse that fits the frame, so the falloff is the same shape at any size.
         val ix = 1f / max(1f, cx); val iy = 1f / max(1f, cy)
-        val wash = 0.22f
+        val wash = 0.12f
         val out = IntArray(px.size)
         Parallel.bands(h) { from, to ->
             for (y in from until to) {
@@ -379,7 +379,7 @@ object Effects {
                     val l = 0.299f * r + 0.587f * g + 0.114f * b
                     r = l + (r - l) * st.keep; g = l + (g - l) * st.keep; b = l + (b - l) * st.keep
                     // Faded: blacks lifted, whites held down.
-                    r = 0.07f + r * 0.86f; g = 0.07f + g * 0.86f; b = 0.06f + b * 0.84f
+                    r = 0.05f + r * 0.9f; g = 0.05f + g * 0.9f; b = 0.045f + b * 0.88f
                     // The wash, screened: it tints the shadows most and leaves the whites near white.
                     r = 1f - (1f - r) * (1f - wash * st.r); g = 1f - (1f - g) * (1f - wash * st.g); b = 1f - (1f - b) * (1f - wash * st.b)
                     r *= 0.9f + 0.1f * st.r; g *= 0.9f + 0.1f * st.g; b *= 0.9f + 0.1f * st.b

@@ -206,8 +206,9 @@ object LocalMasks {
                 val small = when (mask.kind) {
                     MaskKind.POINT -> point(an.pixels, an.width, an.height, mask.a, mask.radiusX, mask.range)
                     MaskKind.SKY -> sky(an.pixels, an.width, an.height, check)
-                    MaskKind.SUBJECT -> FloatArray(an.subject.size) { an.subject[it] / 255f }
-                    else -> FloatArray(an.subject.size) { 1f - an.subject[it] / 255f }
+                    // The cut-out's edge is hard; a light feather keeps a change from drawing a line round the subject.
+                    MaskKind.SUBJECT -> blur(FloatArray(an.subject.size) { an.subject[it] / 255f }, an.width, an.height, max(1, (0.006f * min(an.width, an.height)).roundToInt()))
+                    else -> blur(FloatArray(an.subject.size) { 1f - an.subject[it] / 255f }, an.width, an.height, max(1, (0.006f * min(an.width, an.height)).roundToInt()))
                 }
                 upsample(small, an.width, an.height, gw, gh)
             }
@@ -433,6 +434,13 @@ object LocalMasks {
             if (y > 0) visit(i - w); if (y < h - 1) visit(i + w)
         }
         check()
+        // A sky stays up. A bright, plain region that also spreads across the bottom of the frame
+        // is a wall, a ceiling seen from below or a sheet, unless it fills nearly the whole picture
+        // (a photo of the sky alone).
+        val bandFrom = h - max(1, (h * 0.12f).roundToInt())
+        var low = 0; var all = 0
+        for (i in 0 until n) if (region[i] > 0f) { all++; if (i / w >= bandFrom) low++ }
+        if (all < n * 0.9f && low > (h - bandFrom) * w * 0.3f) return FloatArray(n)
         val soft = blur(region, w, h, max(1, (0.006f * min(w, h)).roundToInt()))
         for (i in 0 until n) soft[i] = (soft[i] * step(0.1f, 0.45f, colour[i]) * 1.25f).coerceIn(0f, 1f)
         return soft

@@ -248,4 +248,13 @@ class LocalAdjustTest {
         assertTrue("sky ${mean(m, 0.2f, 0f, 1f, 0.1f)}", mean(m, 0.2f, 0f, 1f, 0.1f) > 0.5f)
         assertTrue("foreground ${mean(m, 0f, 0.3f, 1f, 1f)}", mean(m, 0f, 0.3f, 1f, 1f) < 0.05f)
     }
+
+    @Test
+    fun aPlainWallFromTopToBottomIsNotSky() {
+        // An indoor shot: a bright cream wall down the left two thirds, top to bottom, and a dark figure on the right.
+        val w = 120; val h = 90
+        val px = IntArray(w * h) { i -> val x = i % w; if (x < 80) Argb.pack(255, 236, 228, 210) else Argb.pack(255, 25, 22, 24) }
+        val m = LocalMasks.sky(px, w, h)
+        assertTrue("wall taken as sky: ${m.average()}", m.average() < 0.02)
+    }
 }
