@@ -242,6 +242,9 @@
     <!-- Perspective -->
     <string name="perspective_hint">चारों कोनों को पन्ने, स्क्रीन या बोर्ड के कोनों पर खींचें. तस्वीर उनके बीच चौकोर खिंच जाती है.</string>
     <string name="page_find">पेज खोजें</string>
+    <string name="upright_auto">ऑटो सीधा</string>
+    <string name="upright_done">खड़ी रेखाएँ सीधी कीं. बारीकी के लिए कोना खींचें.</string>
+    <string name="upright_none">झुकी खड़ी रेखाएँ नहीं मिलीं. कोने खींचकर खुद सेट करें.</string>
     <string name="page_adjust">कोने ठीक करें</string>
     <string name="page_found">पेज मिला और सीधा किया. कोई कोना गलत हो तो Perspective पर खींचें.</string>
     <string name="page_not_found">यहाँ पेज के साफ़ किनारे नहीं मिले. चारों कोनों को पेज तक खींचें.</string>

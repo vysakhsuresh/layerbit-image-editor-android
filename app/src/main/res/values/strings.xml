@@ -242,6 +242,9 @@
     <!-- Perspective -->
     <string name="perspective_hint">Drag the four corners onto the corners of the page, screen or sign. The picture is pulled square between them.</string>
     <string name="page_find">Find the page</string>
+    <string name="upright_auto">Auto upright</string>
+    <string name="upright_done">Verticals stood upright. Drag a corner to fine-tune.</string>
+    <string name="upright_none">No leaning verticals found. Drag the corners to set it by hand.</string>
     <string name="page_adjust">Adjust corners</string>
     <string name="page_found">Page found and flattened. Drag a corner on Perspective if it is off.</string>
     <string name="page_not_found">No clear page edges here. Drag the four corners to the page.</string>

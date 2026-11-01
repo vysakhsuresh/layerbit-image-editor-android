@@ -177,9 +177,13 @@ fun fieldColours() = OutlinedTextFieldDefaults.colors(
 // ------------------------------------------------------------------ perspective
 
 @Composable
-fun PerspectivePanel(s: PanelScope, onFindPage: () -> Unit = {}) {
+fun PerspectivePanel(s: PanelScope, onFindPage: () -> Unit = {}, onUpright: () -> Unit = {}) {
     Text(stringResource(R.string.perspective_hint), style = MaterialTheme.typography.bodyMedium, color = StillColors.Muted)
-    PrimaryButton(stringResource(R.string.page_find), onClick = onFindPage, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), tall = false, iconRes = R.drawable.ic_tool_scan)
+    // Two automatic starts: a building stood upright, or a page squared up. The corners stay draggable after either.
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+        PrimaryButton(stringResource(R.string.upright_auto), onClick = onUpright, modifier = Modifier.weight(1f), tall = false)
+        PrimaryButton(stringResource(R.string.page_find), onClick = onFindPage, modifier = Modifier.weight(1f), tall = false, iconRes = R.drawable.ic_tool_scan)
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
         SecondaryButton(stringResource(R.string.perspective_inset), onClick = { s.change { it.copy(geometry = it.geometry.copy(quad = Quad(Pt(0.08f, 0.08f), Pt(0.92f, 0.08f), Pt(0.92f, 0.92f), Pt(0.08f, 0.92f)))) } }, modifier = Modifier.weight(1f), tall = false)
         SecondaryButton(stringResource(R.string.perspective_reset), onClick = { s.change { it.copy(geometry = it.geometry.copy(quad = Quad.IDENTITY)) } }, modifier = Modifier.weight(1f), tall = false, enabled = !s.recipe.geometry.quad.isIdentity)

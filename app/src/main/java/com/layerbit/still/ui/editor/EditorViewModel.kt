@@ -508,6 +508,21 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
      * Finds the page's four corners on the upright picture and flattens it. The corners are the
      * Perspective handles, so a wrong guess is a drag away from right.
      */
+    /** Stands leaning verticals upright with a perspective correction, measured on the picture as stored. */
+    fun autoUpright() {
+        val o = _ui.value.original?.takeIf { !it.isRecycled } ?: return
+        val turned = _ui.value.recipe.geometry.quarterTurns % 2 == 1
+        val w = o.width; val h = o.height
+        val px = IntArray(w * h)
+        o.getPixels(px, 0, w, 0, 0, w, h)
+        viewModelScope.launch {
+            val quad = withContext(Dispatchers.Default) { if (turned) com.layerbit.still.engine.Upright.suggestTransposed(px, w, h) else com.layerbit.still.engine.Upright.suggest(px, w, h) }
+            if (quad == null) { message(Strings.get(R.string.upright_none)); return@launch }
+            change { it.copy(geometry = it.geometry.copy(quad = quad)) }
+            message(Strings.get(R.string.upright_done))
+        }
+    }
+
     fun findPage(quiet: Boolean = false) {
         val o = _ui.value.original?.takeIf { !it.isRecycled }
         if (o == null) { pagePending = true; return }
