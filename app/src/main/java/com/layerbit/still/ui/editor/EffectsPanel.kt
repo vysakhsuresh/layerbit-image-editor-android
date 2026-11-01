@@ -59,6 +59,7 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 // ------------------------------------------------------------------ names
@@ -132,7 +133,9 @@ fun EffectsPanel(
     onChoose: (Int) -> Unit,
     thumbs: Map<EffectKind, Bitmap>,
     styleThumbs: Map<EffectKind, List<Bitmap>>,
-    onFull: () -> Unit
+    onFull: () -> Unit,
+    /** The brush shared with the Local tool, for an effect painted in. */
+    brush: LocalTools = remember { LocalTools() }
 ) {
     val effects = s.recipe.effects
     val sel = effectSelection(effects, chosen)
@@ -179,6 +182,13 @@ fun EffectsPanel(
         listOf<Pair<com.layerbit.still.engine.MaskKind?, String>>(null to stringResource(R.string.effects_area_all)) + Effect.AREAS.map { it to maskLabel(it) },
         open.area, { a -> s.changeEffect(sel) { it.copy(area = a) } }
     )
+    if (open.area == com.layerbit.still.engine.MaskKind.BRUSH) {
+        com.layerbit.still.ui.components.ChipRow(listOf(false to stringResource(R.string.local_paint), true to stringResource(R.string.local_erase)), brush.erase, { brush.erase = it }, modifier = Modifier.padding(top = 6.dp))
+        Knob(stringResource(R.string.local_brush_size), brush.width, 0.01f..0.3f, onChange = { brush.width = it }, onDone = {}, onReset = { brush.width = 0.08f }, haptics = s.haptics, format = { "${(it * 1000).roundToInt()}" })
+        Knob(stringResource(R.string.local_softness), brush.softness, 0f..1f, onChange = { brush.softness = it }, onDone = {}, onReset = { brush.softness = 0.6f }, haptics = s.haptics)
+        Hint(stringResource(if (open.strokes.isEmpty()) R.string.effects_paint_hint else R.string.local_brush_hint))
+        if (open.strokes.isNotEmpty()) SecondaryButton(stringResource(R.string.effects_paint_clear), onClick = { s.changeEffect(sel) { it.copy(strokes = emptyList()) } }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), tall = false)
+    }
     if (kind == EffectKind.LENS_BLUR) Hint(stringResource(if (open.style == 0) R.string.effects_lens_hint else R.string.effects_lens_round_hint))
     if (kind.seeded) SecondaryButton(stringResource(R.string.effects_shuffle), onClick = { s.changeEffect(sel) { it.copy(seed = (it.seed % 99_991) + 1) } }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), tall = false)
 

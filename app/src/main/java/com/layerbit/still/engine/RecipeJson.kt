@@ -138,7 +138,8 @@ object RecipeJson {
     private fun effect(e: Effect) = jsonOf(
         "kind" to e.kind.name.json(), "style" to e.style.json(), "strength" to e.strength.json(), "extra" to e.extra.json(),
         "seed" to e.seed.json(), "center" to listOf(e.center.x.json(), e.center.y.json()).json(), "size" to e.size.json(),
-        "angle" to e.angle.json(), "aspect" to e.aspect.json(), "area" to e.area?.name?.json()
+        "angle" to e.angle.json(), "aspect" to e.aspect.json(), "area" to e.area?.name?.json(),
+        "strokes" to if (e.strokes.isEmpty()) null else e.strokes.map { s -> jsonOf("points" to points(s.points), "width" to s.width.json(), "softness" to s.softness.json(), "erase" to s.erase.json()) }.json()
     )
 
     /** An effect this app does not know, from a newer one, is left out rather than refusing the recipe. */
@@ -150,7 +151,8 @@ object RecipeJson {
             extra = v["extra"]?.num()?.toFloat() ?: d.extra, seed = v["seed"]?.num()?.toInt() ?: d.seed,
             center = v["center"]?.let { pt(it) } ?: d.center, size = v["size"]?.num()?.toFloat() ?: d.size,
             angle = v["angle"]?.num()?.toFloat() ?: d.angle, aspect = v["aspect"]?.num()?.toFloat() ?: d.aspect,
-            area = v["area"]?.str()?.let { name -> Effect.AREAS.firstOrNull { it.name == name } }
+            area = v["area"]?.str()?.let { name -> Effect.AREAS.firstOrNull { it.name == name } },
+            strokes = v["strokes"]?.arr()?.map { s -> BrushStroke(s["points"]?.let { pts(it) } ?: emptyList(), s["width"]?.num()?.toFloat() ?: 0.08f, s["softness"]?.num()?.toFloat() ?: 0.6f, s["erase"]?.bool() ?: false) } ?: emptyList()
         )
     }
 

@@ -209,6 +209,8 @@ fun EditorScreen(
             stroke = if (portraitTool == PortraitTool.BRUSH) Overlay.Stroke(MarkKind.DRAW, strokePoints, if (skinAdd) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), skinWidth, null) else null
         )
         panel == ToolId.Panel.CUTOUT -> Overlay.Stroke(MarkKind.DRAW, strokePoints, if (cutKeep) 0xFF4CCB8F.toInt() else 0xFFE63946.toInt(), cutWidth, null)
+        panel == ToolId.Panel.EFFECTS && recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.area == com.layerbit.still.engine.MaskKind.BRUSH ->
+            Overlay.Stroke(MarkKind.DRAW, strokePoints, if (localTools.erase) 0xFFE63946.toInt() else 0xFF4CCB8F.toInt(), localTools.width, null)
         panel == ToolId.Panel.EFFECTS -> recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))
             ?.takeIf { it.kind == com.layerbit.still.engine.EffectKind.LENS_BLUR || it.kind == com.layerbit.still.engine.EffectKind.VIGNETTE }?.let { lensOverlay(it) } ?: Overlay.None
         else -> Overlay.None
@@ -336,7 +338,22 @@ fun EditorScreen(
         }
         ToolId.Panel.EFFECTS -> {
             val sel = effectSelection(recipe.effects, effectChosen)
-            if (recipe.effects.getOrNull(sel)?.kind.let { it != com.layerbit.still.engine.EffectKind.LENS_BLUR && it != com.layerbit.still.engine.EffectKind.VIGNETTE }) viewOrScrub
+            // Painted in: a finger paints (or erases) where the effect goes.
+            if (recipe.effects.getOrNull(sel)?.area == com.layerbit.still.engine.MaskKind.BRUSH) TouchMode.Draw(
+                onStart = { p -> strokePoints = listOf(p) },
+                onMove = { p -> if (strokePoints.size < Mark.MAX_POINTS) strokePoints = strokePoints + p },
+                onEnd = {
+                    val pts = strokePoints; strokePoints = emptyList()
+                    val stroke = com.layerbit.still.engine.BrushStroke(pts, localTools.width, localTools.softness, localTools.erase)
+                    if (stroke.valid) vm.change { r ->
+                        val e = r.effects.getOrNull(sel)
+                        if (e == null || e.strokes.size >= com.layerbit.still.engine.LocalMask.MAX_STROKES) r
+                        else r.copy(effects = r.effects.toMutableList().apply { set(sel, e.copy(strokes = e.strokes + stroke)) })
+                    }
+                },
+                onCancel = { strokePoints = emptyList() }
+            )
+            else if (recipe.effects.getOrNull(sel)?.kind.let { it != com.layerbit.still.engine.EffectKind.LENS_BLUR && it != com.layerbit.still.engine.EffectKind.VIGNETTE }) viewOrScrub
             else lensTouch(
                 effect = { vm.ui.value.recipe.effects.getOrNull(sel) }, t = transform, reach = reach,
                 update = { e -> val r = vm.ui.value.recipe; if (sel in r.effects.indices) vm.draft(r.copy(effects = r.effects.toMutableList().apply { set(sel, e) })) },
@@ -445,7 +462,7 @@ fun EditorScreen(
                             ToolId.Panel.EFFECTS -> {
                                 val openKind = recipe.effects.getOrNull(effectSelection(recipe.effects, effectChosen))?.kind
                                 LaunchedEffect(ui.project?.id, openKind) { vm.ensureEffectThumbs(openKind) }
-                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) })
+                                EffectsPanel(scope, effectChosen, onChoose = { effectChosen = it }, ui.effectThumbs, ui.effectStyleThumbs, onFull = { vm.message(context.getString(R.string.effects_full)) }, brush = localTools)
                             }
                             ToolId.Panel.DETAIL -> DetailPanel(scope)
                             ToolId.Panel.LOCAL -> LocalPanel(

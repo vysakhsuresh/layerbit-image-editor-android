@@ -303,7 +303,7 @@ class Renderer(private val budget: Long = Budget.exportPixels) {
             if (w.toLong() * h <= Budget.PREVIEW_PIXELS) earlyCache = Early(earlyKey, working.copyOf())
         }
         // An effect kept to the subject, background or sky uses the same mask the Local tool would draw.
-        val effectArea: (com.layerbit.still.engine.MaskKind) -> com.layerbit.still.engine.LocalMasks.Grid = { k -> localMask(base, com.layerbit.still.engine.LocalMask(k), w, h, maskKey, check) }
+        val effectArea: (com.layerbit.still.engine.LocalMask) -> com.layerbit.still.engine.LocalMasks.Grid = { m -> localMask(base, m, w, h, maskKey, check) }
         // Filter effects: tone ones before sharpening, the lens after it, film surfaces last.
         if (r.effects.isNotEmpty()) working = Effects.apply(working, w, h, r.effects, Effects.Stage.TONE, check, effectArea)
         if (tone.clarity != 0f || tone.dehaze > 0f || tone.sharpness > 0f) {

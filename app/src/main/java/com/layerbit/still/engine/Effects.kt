@@ -76,7 +76,9 @@ data class Effect(
     /** Lens blur, round style: the ellipse's height over its width. */
     val aspect: Float = 1f,
     /** Where the effect lands: the whole picture when null, else the subject, the background or the sky as the Local tool finds them. */
-    val area: MaskKind? = null
+    val area: MaskKind? = null,
+    /** Where the user painted the effect in, when [area] is the brush. */
+    val strokes: List<BrushStroke> = emptyList()
 ) {
     val isIdentity: Boolean get() = strength == 0f
 
@@ -88,14 +90,18 @@ data class Effect(
         get() = style in 0 until kind.styles && strength.isFinite() && strength in kind.strengthRange &&
             extra.isFinite() && extra in kind.extraRange && center.finite && center.x in 0f..1f && center.y in 0f..1f &&
             size.isFinite() && size in MIN_SIZE..MAX_SIZE && angle.isFinite() && angle in -360f..360f &&
-            aspect.isFinite() && aspect in MIN_ASPECT..MAX_ASPECT && (area == null || area in AREAS)
+            aspect.isFinite() && aspect in MIN_ASPECT..MAX_ASPECT && (area == null || area in AREAS) &&
+            strokes.size <= LocalMask.MAX_STROKES && strokes.all { it.valid }
+
+    /** The mask an [area] stands for, as the Local tool would draw it. */
+    val areaMask: LocalMask? get() = area?.let { LocalMask(it, strokes = if (it == MaskKind.BRUSH) strokes else emptyList()) }
 
     companion object {
         /** A new effect as the panel adds it: a vignette starts as a wide oval round the middle. */
         fun added(kind: EffectKind): Effect = if (kind == EffectKind.VIGNETTE) Effect(kind, strength = 0.6f, size = 0.55f, aspect = 1.25f) else Effect(kind)
 
-        /** The places an effect can be kept to, each found without the user painting. */
-        val AREAS = listOf(MaskKind.SUBJECT, MaskKind.BACKGROUND, MaskKind.SKY)
+        /** The places an effect can be kept to: three found without help, and wherever the user paints. */
+        val AREAS = listOf(MaskKind.SUBJECT, MaskKind.BACKGROUND, MaskKind.SKY, MaskKind.BRUSH)
 
         const val MIN_SIZE = 0.01f
         const val MAX_SIZE = 1.5f
@@ -123,14 +129,14 @@ object Effects {
      */
     fun apply(
         px: IntArray, w: Int, h: Int, effects: List<Effect>, stage: Stage, check: () -> Unit = {},
-        area: ((MaskKind) -> LocalMasks.Grid)? = null
+        area: ((LocalMask) -> LocalMasks.Grid)? = null
     ): IntArray {
         var out = px
         for (e in effects) {
             if (e.kind.stage != stage || e.isIdentity) continue
             check()
             val done = applyOne(out, w, h, e, check)
-            val mask = e.area?.let { area?.invoke(it) }
+            val mask = e.areaMask?.let { area?.invoke(it) }
             out = if (mask == null) done else within(out, done, w, h, mask)
         }
         return out

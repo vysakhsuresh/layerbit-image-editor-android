@@ -353,5 +353,11 @@ class EffectsTest {
         val r = RecipeJson.read(RecipeJson.write(Recipe(effects = listOf(e))))
         org.junit.Assert.assertEquals(MaskKind.SUBJECT, r.effects.single().area)
         org.junit.Assert.assertNull(RecipeJson.read(RecipeJson.write(Recipe(effects = listOf(Effect(EffectKind.DRAMA))))).effects.single().area)
+        // Painted in: the strokes travel with it, and the brush mask is what gets drawn.
+        val painted = Effect(EffectKind.DRAMA, area = MaskKind.BRUSH, strokes = listOf(BrushStroke(listOf(Pt(0.2f, 0.5f), Pt(0.4f, 0.5f)), 0.1f, 0.5f, false)))
+        org.junit.Assert.assertTrue(painted.valid)
+        org.junit.Assert.assertEquals(painted, RecipeJson.read(RecipeJson.write(Recipe(effects = listOf(painted)))).effects.single())
+        org.junit.Assert.assertEquals(MaskKind.BRUSH, painted.areaMask!!.kind)
+        org.junit.Assert.assertEquals(painted.strokes, painted.areaMask!!.strokes)
     }
 }

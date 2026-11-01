@@ -1011,6 +1011,8 @@
     <string name="effect_drama">Drama</string>
     <string name="effects_where">Where</string>
     <string name="effects_area_all">Whole picture</string>
+    <string name="effects_paint_hint">Paint where the effect should go. Until you paint, it shows nowhere.</string>
+    <string name="effects_paint_clear">Clear the painting</string>
     <string name="effect_black_white">Black &amp; White</string>
     <string name="effect_filter_red">Red filter</string>
     <string name="effect_filter_orange">Orange filter</string>
