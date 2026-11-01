@@ -68,7 +68,7 @@
     <string name="tool_crop_summary">कोने खींचें, क्षितिज सीधा करें, घुमाएं और पलटें, सटीक पिक्सेल तय करें</string>
     <string name="tool_crop_action">क्रॉप करें</string>
     <string name="tool_perspective_title">दस्तावेज़ सीधा करें</string>
-    <string name="tool_perspective_summary">पन्ने, स्क्रीन या बोर्ड के चारों कोनों पर खींचें और वह चौकोर हो जाता है</string>
+    <string name="tool_perspective_summary">झुकी इमारत को एक टैप में सीधा करें, या पन्ना, स्क्रीन या बोर्ड चौकोर करें</string>
     <string name="tool_perspective_action">चौकोर करें</string>
     <string name="tool_light_title">रोशनी</string>
     <string name="tool_light_summary">एक्सपोज़र, कंट्रास्ट, हाइलाइट, छाया, सफ़ेद और काला, एक टैप के ऑटो के साथ</string>
@@ -131,7 +131,7 @@
     <string name="home_no_match">इससे कुछ मेल नहीं खाता. खोज खाली होने पर सभी टूल दिखते हैं.</string>
     <string name="tools_search_clear">खोज साफ़ करें</string>
     <string name="tool_words_crop">काटें घुमाएँ सीधा cut trim rotate</string>
-    <string name="tool_words_perspective">तिरछा keystone skew</string>
+    <string name="tool_words_perspective">तिरछा keystone skew इमारत सीधा upright building</string>
     <string name="tool_words_light">रोशनी चमक brightness exposure</string>
     <string name="tool_words_colour">रंग color saturation</string>
     <string name="tool_words_curves">टोन curves levels</string>
@@ -1224,5 +1224,7 @@
     <string name="guide_expand_title">तस्वीर के चारों ओर और जगह</string>
     <string name="guide_expand_body">फैलाएँ कैनवस को स्क्वेयर, स्टोरी या किसी भी आकार तक बढ़ाकर तस्वीर से ही भरता है.</string>
     <string name="guide_history_title">हर बदलाव साफ़ शब्दों में</string>
+    <string name="guide_auto_title">पहले अपने आप, फिर आप सँभालें</string>
+    <string name="guide_auto_body">ज़्यादातर टूल आपकी तस्वीर देखकर अच्छा अनुमान लगाकर शुरू होते हैं. ऑटो सीधा झुकी इमारत को सीधा करता है. क्रॉप का आकार सब्जेक्ट को फ़्रेम करता है. ब्लैक एंड व्हाइट दृश्य के हिसाब से फ़िल्टर चुनता है; लेंस ब्लर और विनेट सब्जेक्ट पर बैठते हैं. रंग का असर हटाने के लिए कोई सफ़ेद चीज़ टैप करें. बैकग्राउंड में सब्जेक्ट एक बार ठीक करें, हर टूल वही इस्तेमाल करेगा.</string>
     <string name="guide_history_body">इतिहास हर बदलाव दिखाता है. तुलना के लिए छिपाएँ, कोई भी हटाएँ, या सभी को दूसरी तस्वीर पर कॉपी करें.</string>
 </resources>
