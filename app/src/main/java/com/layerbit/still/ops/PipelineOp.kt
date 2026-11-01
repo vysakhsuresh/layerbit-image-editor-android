@@ -135,12 +135,13 @@ class PipelineOp(private val p: Pipeline) : PerFileOp() {
         if (p.look != Look.NONE) r = r.copy(look = p.look, lookStrength = p.lookStrength)
         if (p.enhance) {
             val preview = context.renderer.decode(input.file, Budget.PREVIEW_PIXELS, context.check)
-            val histogram = try {
-                val px = IntArray(preview.width * preview.height)
-                preview.getPixels(px, 0, preview.width, 0, 0, preview.width, preview.height)
-                Histogram.of(px)
+            val px = try {
+                IntArray(preview.width * preview.height).also { preview.getPixels(it, 0, preview.width, 0, 0, preview.width, preview.height) }
             } finally { preview.recycle() }
-            if (AutoEnhance.worthwhile(histogram)) r = r.copy(tone = AutoEnhance.tone(histogram, r.tone))
+            val histogram = Histogram.of(px)
+            // Light from the histogram, then the colour cast from what ought to be grey: the same as Auto fix in the editor.
+            val light = if (AutoEnhance.worthwhile(histogram)) AutoEnhance.tone(histogram, r.tone) else r.tone
+            r = r.copy(tone = com.layerbit.still.engine.AutoWhite.tone(px, light))
         }
         var geometry = r.geometry
         if (p.passport) {

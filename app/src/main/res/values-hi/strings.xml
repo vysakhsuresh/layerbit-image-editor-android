@@ -116,7 +116,7 @@
     <string name="tool_details_summary">पिक्सेल, कैमरा फ़ील्ड और फ़ाइल में लोकेशन छिपी है या नहीं</string>
     <string name="tool_details_action">अंदर देखें</string>
     <string name="tool_enhance_title">अपने आप निखारें</string>
-    <string name="tool_enhance_summary">हर तस्वीर के अपने हिस्टोग्राम से लेवल और एक्सपोज़र, बिना किसी मॉडल के</string>
+    <string name="tool_enhance_summary">हर तस्वीर की अपनी वैल्यू से रोशनी और रंग का असर ठीक, बिना किसी मॉडल के</string>
     <string name="tool_enhance_action">निखारें</string>
     <string name="tool_recipe_title">रेसिपी लागू करें</string>
     <string name="tool_recipe_summary">आपका सहेजा संपादन, जितनी चाहें उतनी तस्वीरों पर</string>
@@ -688,7 +688,7 @@
     <string name="step_resize_detail">सबसे लंबा किनारा, प्रतिशत या सटीक पिक्सेल</string>
     <string name="step_under_detail">जो समाए उसमें सबसे अच्छी गुणवत्ता, फिर ज़रूरत हो तभी छोटा</string>
     <string name="step_format_detail">JPEG, PNG, WebP या लॉसलेस WebP; बंद रहने पर हर तस्वीर का अपना फ़ॉर्मैट</string>
-    <string name="step_enhance_detail">हर तस्वीर के हिस्टोग्राम से लेवल और एक्सपोज़र</string>
+    <string name="step_enhance_detail">हर तस्वीर की अपनी वैल्यू से रोशनी और रंग का असर</string>
     <string name="step_look_detail">कोई लुक, या एडिटर में सहेजी आपकी रेसिपी</string>
     <string name="step_watermark_detail">हर तस्वीर पर आपका नाम या ©</string>
     <string name="step_frame_detail">आकार तक पैड, किनारा, गोल कोने</string>

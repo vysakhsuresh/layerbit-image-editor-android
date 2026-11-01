@@ -116,7 +116,7 @@
     <string name="tool_details_summary">Dimensions, camera fields and whether a location is hidden in the file</string>
     <string name="tool_details_action">Look inside</string>
     <string name="tool_enhance_title">Enhance automatically</string>
-    <string name="tool_enhance_summary">Levels and exposure from each picture\'s own histogram, no model involved</string>
+    <string name="tool_enhance_summary">Light and colour cast fixed from each picture\'s own values, no model involved</string>
     <string name="tool_enhance_action">Enhance them</string>
     <string name="tool_recipe_title">Apply a recipe</string>
     <string name="tool_recipe_summary">An edit you saved, run over as many pictures as you like</string>
@@ -688,7 +688,7 @@
     <string name="step_resize_detail">Longest edge, percent or exact pixels</string>
     <string name="step_under_detail">Best quality that fits, then smaller only if it must</string>
     <string name="step_format_detail">JPEG, PNG, WebP or lossless WebP; off keeps each picture\'s own</string>
-    <string name="step_enhance_detail">Levels and exposure from each picture\'s histogram</string>
+    <string name="step_enhance_detail">Light and colour cast, from each picture\'s own values</string>
     <string name="step_look_detail">One of the looks, or a recipe you saved in the editor</string>
     <string name="step_watermark_detail">Your name or © across every picture</string>
     <string name="step_frame_detail">Pad to a shape, border, rounded corners</string>
