@@ -67,7 +67,7 @@
     <string name="tool_crop_title">Crop and straighten</string>
     <string name="tool_crop_summary">Drag the corners, level the horizon, turn and flip, set the exact pixels</string>
     <string name="tool_crop_action">Crop it</string>
-    <string name="tool_perspective_title">Straighten a document</string>
+    <string name="tool_perspective_title">Upright and square up</string>
     <string name="tool_perspective_summary">Stand a leaning building upright in one tap, or square up a page, screen or sign</string>
     <string name="tool_perspective_action">Square it up</string>
     <string name="tool_light_title">Light</string>

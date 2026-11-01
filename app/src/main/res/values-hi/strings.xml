@@ -67,7 +67,7 @@
     <string name="tool_crop_title">क्रॉप और सीधा करें</string>
     <string name="tool_crop_summary">कोने खींचें, क्षितिज सीधा करें, घुमाएं और पलटें, सटीक पिक्सेल तय करें</string>
     <string name="tool_crop_action">क्रॉप करें</string>
-    <string name="tool_perspective_title">दस्तावेज़ सीधा करें</string>
+    <string name="tool_perspective_title">सीधा और चौकोर करें</string>
     <string name="tool_perspective_summary">झुकी इमारत को एक टैप में सीधा करें, या पन्ना, स्क्रीन या बोर्ड चौकोर करें</string>
     <string name="tool_perspective_action">चौकोर करें</string>
     <string name="tool_light_title">रोशनी</string>
