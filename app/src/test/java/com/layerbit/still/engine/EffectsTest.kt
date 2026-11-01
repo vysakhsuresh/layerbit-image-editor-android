@@ -317,4 +317,13 @@ class EffectsTest {
         org.junit.Assert.assertTrue("edge lighter", Argb.red(bright[60 * w + 195]) > 220)
         org.junit.Assert.assertEquals(px.toList(), Effects.apply(px, w, h, listOf(e.copy(strength = 0f)), Effects.Stage.LENS).toList())
     }
+
+    @Test
+    fun theTableTanhMatchesTheRealOne() {
+        var x = -6f
+        while (x <= 6f) {
+            org.junit.Assert.assertEquals("at $x", kotlin.math.tanh(x), Effects.softTanh(x), 1e-3f)
+            x += 0.0137f
+        }
+    }
 }
