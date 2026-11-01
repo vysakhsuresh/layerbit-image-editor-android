@@ -295,11 +295,41 @@ object Segment {
             when (stroked[i].toInt()) { 1 -> 255; 2 -> 0; else -> if (toKeep[i] < toRemove[i]) 255 else 0 }
         }
         tidy(mask, w, h, stroked, minArea = max(16, n / 250))
+        if (face != null) dropLoosePatches(mask, w, h, stroked, face)
         return mask
     }
 
-    /** A face: its skin pixels and its lowest row. */
-    private class Face(val pixels: IntArray, val bottom: Int)
+    /**
+     * With a person in the picture, a kept patch that touches neither the person nor a keep stroke
+     * and holds no skin of its own (another person) is a guess at the background: a sign, a lamp, a
+     * hill. It goes; a keep stroke brings it back.
+     */
+    private fun dropLoosePatches(mask: IntArray, w: Int, h: Int, stroked: ByteArray, face: Face) {
+        val n = w * h
+        val isFace = BooleanArray(n); for (i in face.pixels) isFace[i] = true
+        val label = IntArray(n); val stack = IntArray(n)
+        var next = 1
+        for (start in 0 until n) {
+            if (label[start] != 0 || mask[start] != 255) continue
+            var sp = 0; stack[sp++] = start; label[start] = next
+            val members = ArrayList<Int>()
+            var keep = false; var skinCount = 0
+            while (sp > 0) {
+                val i = stack[--sp]; members += i
+                if (isFace[i] || stroked[i].toInt() == 1) keep = true
+                if (face.skin[i] >= 128) skinCount++
+                val x = i % w; val y = i / w
+                fun visit(j: Int) { if (label[j] == 0 && mask[j] == 255) { label[j] = next; stack[sp++] = j } }
+                if (x > 0) visit(i - 1); if (x < w - 1) visit(i + 1); if (y > 0) visit(i - w); if (y < h - 1) visit(i + w)
+            }
+            next++
+            if (keep || skinCount >= face.pixels.size / 5) continue
+            for (i in members) mask[i] = 0
+        }
+    }
+
+    /** A face: its skin pixels, its lowest row, and the picture's whole skin mask. */
+    private class Face(val pixels: IntArray, val bottom: Int, val skin: IntArray)
 
     /**
      * The largest compact patch of skin of a face's size, not at the bottom of the picture: a
@@ -336,7 +366,7 @@ object Segment {
             if (best == null || area > best.size) { best = members.toIntArray(); by1 = y1 }
         }
         val pixelsOf = best ?: return null
-        return Face(pixelsOf, by1)
+        return Face(pixelsOf, by1, skin.mask)
     }
 
     /** How far, in flat colour, a stroke's say reaches past its own pixels: about a few percent of the picture. */
