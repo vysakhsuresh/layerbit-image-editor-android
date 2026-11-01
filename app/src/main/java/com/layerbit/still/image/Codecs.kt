@@ -126,6 +126,7 @@ class Codecs(private val renderer: Renderer) {
                 bytes = encode(working, format, quality)
             }
             destination.writeBytes(bytes)
+            val hadTransparency = !format.alpha && hasTransparentPixels(working)
             if (format == OutputFormat.JPEG && options.keepCameraFields && sourceForExif != null) {
                 copyCameraFields(sourceForExif, destination)
                 // The fields can push a file over its limit; measured, so step down until under.
@@ -139,7 +140,8 @@ class Codecs(private val renderer: Renderer) {
             if (options.targetBytes > 0) require(destination.length() <= options.targetBytes) { Strings.get(R.string.engine_target_unreachable_any, FitSize.sizeText(options.targetBytes.toLong())) }
             val notes = buildList {
                 if (options.sticker) add(Strings.get(R.string.engine_note_sticker))
-                if (!format.alpha) add(Strings.get(R.string.engine_note_flattened))
+                // Said only when something was see-through: a plain photo has nothing to flatten.
+                if (!format.alpha && hadTransparency) add(Strings.get(R.string.engine_note_flattened))
                 add(Strings.get(if (format.lossy) R.string.engine_note_lossy else R.string.engine_note_lossless))
                 add(Strings.get(if (format == OutputFormat.JPEG && options.keepCameraFields) R.string.engine_note_camera_kept else R.string.engine_note_metadata_removed))
                 if (shrunk) add(Strings.get(R.string.engine_note_shrunk_for_target, working.width, working.height))
@@ -152,6 +154,17 @@ class Codecs(private val renderer: Renderer) {
         } finally {
             if (working !== picture) working.recycle()
         }
+    }
+
+    /** Whether any pixel of [b] is less than fully opaque, read a row at a time and stopping at the first. */
+    private fun hasTransparentPixels(b: Bitmap): Boolean {
+        if (!b.hasAlpha()) return false
+        val row = IntArray(b.width)
+        for (y in 0 until b.height) {
+            b.getPixels(row, 0, b.width, 0, y, b.width, 1)
+            for (c in row) if ((c ushr 24) != 0xFF) return true
+        }
+        return false
     }
 
     /** Room left for the camera fields when a limit is set: they are measured afterwards anyway. */
